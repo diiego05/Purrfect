@@ -1,0 +1,450 @@
+.auth-page-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 160px);
+  padding: 40px 24px;
+  background: transparent;
+  font-family: var(--font-primary);
+}
+
+.auth-page-card {
+  position: relative;
+  width: 100%;
+  max-width: 1060px;
+  min-height: 540px;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+  display: flex;
+  align-items: center;
+}
+
+/* Left Form Column: Nền trùng màu nền tổng thể */
+.auth-form-column {
+  flex: 1;
+  max-width: 480px;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: transparent;
+}
+
+.auth-header-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
+}
+
+.auth-header-subtitle {
+  font-size: 14.5px;
+  color: #64748b;
+  text-align: center;
+  margin: 0 0 28px 0;
+  line-height: 1.5;
+}
+
+/* Form Groups & Inputs */
+.auth-form-group {
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-input-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #475569;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+/* Dấu * đỏ */
+.auth-star-required {
+  color: #ef4444;
+  margin-left: 3px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input {
+  width: 100%;
+  height: 48px;
+  padding: 12px 16px;
+  font-size: 14.5px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  color: #0f172a;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+.auth-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+
+.auth-input-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.auth-input-toggle:hover {
+  color: #0f172a;
+}
+
+/* Active Email Badge */
+.auth-email-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  font-size: 13.5px;
+  color: #334155;
+}
+
+.auth-email-badge-email {
+  font-weight: 600;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-change-email-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.auth-change-email-btn:hover {
+  text-decoration: underline;
+  background: #eff6ff;
+}
+
+/* Checkbox Row */
+.auth-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.auth-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid #94a3b8;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.auth-checkbox-label {
+  font-size: 13.5px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+/* Buttons */
+.auth-btn-primary {
+  width: 100%;
+  height: 48px;
+  background-color: #18181b;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(24, 24, 27, 0.2);
+}
+
+.auth-btn-primary:hover:not(:disabled) {
+  background-color: #27272a;
+  transform: translateY(-1px);
+}
+
+.auth-btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.auth-divider span {
+  padding: 0 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+.auth-btn-google {
+  width: 100%;
+  height: 48px;
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+.auth-btn-google:hover:not(:disabled) {
+  background-color: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.auth-btn-back {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 14px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.auth-btn-back:hover {
+  color: #0f172a;
+}
+
+.auth-forgot-link {
+  font-size: 13px;
+  color: #2563eb;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: right;
+  margin-top: -8px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.auth-forgot-link:hover {
+  text-decoration: underline;
+}
+
+.auth-terms-row {
+  margin-top: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.auth-terms-text {
+  font-size: 12.5px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Điều khoản & Quyền riêng tư gạch chân & link */
+.auth-terms-link {
+  color: #0f172a;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.auth-terms-link:hover {
+  color: #2563eb;
+}
+
+/* Alert notifications */
+.auth-alert {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.auth-alert-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.auth-alert-success {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.auth-alert-info {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+/* Right Illustration Column: Trùng màu nền */
+.auth-illustration-column {
+  flex: 1.1;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.auth-illustration-img {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  object-fit: contain;
+  position: relative;
+  z-index: 2;
+}
+
+/* Spinner */
+.auth-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* OTP 6 Separate Input Boxes */
+.auth-otp-boxes-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 22px 0;
+}
+
+.auth-otp-box {
+  width: 52px;
+  height: 58px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  background-color: #ffffff;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.auth-otp-box:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+
+/* OTP Resend inline button */
+.auth-resend-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 18px;
+}
+
+.auth-resend-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  display: inline-block;
+}
+
+.auth-resend-btn:hover {
+  text-decoration: underline;
+}
+
+
+/* Responsive */
+@media (max-width: 860px) {
+  .auth-page-card {
+    flex-direction: column;
+    max-width: 460px;
+  }
+
+  .auth-illustration-column {
+    display: none;
+  }
+
+  .auth-form-column {
+    padding: 16px;
+    max-width: 100%;
+  }
+}

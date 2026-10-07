@@ -1,0 +1,60 @@
+/* Modern CSS Reset & Design Tokens */
+:root {
+  --font-primary: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-primary: #1a1a2e;
+  --color-primary-hover: #272744;
+  --color-blue-accent: #2563eb;
+  --color-blue-soft: #eff6ff;
+  --color-blue-border: #dbeafe;
+  --color-text-dark: #111827;
+  --color-text-body: #4b5563;
+  --color-text-muted: #6b7280;
+  --color-bg-white: #ffffff;
+  --color-bg-footer: #e6e6e6;
+  --color-border: #e5e7eb;
+  --color-green-check: #10b981;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-primary);
+  background-color: var(--color-bg-white);
+  color: var(--color-text-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+ul {
+  list-style: none;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
