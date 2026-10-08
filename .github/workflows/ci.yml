@@ -2,9 +2,9 @@ name: Purrfect CI Check
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "develop" ]
 
 jobs:
   backend:
