@@ -16,10 +16,16 @@ export const connectDB = async (): Promise<void> => {
       serverSelectionTimeoutMS: 5000,
     });
 
-    console.log(`[MongoDB] Connected successfully: ${conn.connection.host} (DB: ${conn.connection.name})`);
-  } catch (error: any) {
-    console.error('[MongoDB] Initial connection error:', error?.message || error);
-    console.warn('⚠️ LƯU Ý: Nếu gặp lỗi server selection timeout, hãy kiểm tra Network Access trên MongoDB Atlas và thêm IP hiện tại hoặc 0.0.0.0/0');
+    console.log(
+      `[MongoDB] Connected successfully: ${conn.connection.host} (DB: ${conn.connection.name})`,
+    );
+  } catch (error: unknown) {
+    console.error(
+      '[MongoDB] Initial connection error:',
+      error instanceof Error ? error.message : error,
+    );
+    console.warn(
+      'LƯU Ý: Nếu gặp lỗi server selection timeout, hãy kiểm tra Network Access trên MongoDB Atlas và thêm IP hiện tại hoặc 0.0.0.0/0',
+    );
   }
 };
-

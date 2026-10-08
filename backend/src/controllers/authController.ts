@@ -19,10 +19,16 @@ export const upload = multer({
 // Hàm tạo Access Token (7 ngày) và Refresh Token (30 ngày)
 const generateTokens = async (userId: string, email: string, role: string) => {
   const secret = process.env.JWT_SECRET || 'purrfect_secret_key_learnova_2026';
-  const refreshSecret = process.env.REFRESH_TOKEN_SECRET || 'purrfect_refresh_secret_key_learnova_2026';
+  const refreshSecret =
+    process.env.REFRESH_TOKEN_SECRET ||
+    'purrfect_refresh_secret_key_learnova_2026';
 
-  const accessToken = jwt.sign({ id: userId, email, role }, secret, { expiresIn: '7d' });
-  const refreshToken = jwt.sign({ id: userId, email }, refreshSecret, { expiresIn: '30d' });
+  const accessToken = jwt.sign({ id: userId, email, role }, secret, {
+    expiresIn: '7d',
+  });
+  const refreshToken = jwt.sign({ id: userId, email }, refreshSecret, {
+    expiresIn: '30d',
+  });
 
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await RefreshToken.create({
@@ -35,11 +41,17 @@ const generateTokens = async (userId: string, email: string, role: string) => {
 };
 
 // 1. Kiểm tra Email: Nếu đã có -> Chuyển sang Login; Nếu chưa có -> Tự động gửi OTP REGISTER
-export const checkEmail = async (req: Request, res: Response): Promise<void> => {
+export const checkEmail = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { email } = req.body;
     if (!email || typeof email !== 'string') {
-      res.status(400).json({ success: false, message: 'Vui lòng cung cấp địa chỉ email hợp lệ' });
+      res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp địa chỉ email hợp lệ',
+      });
       return;
     }
 
@@ -56,6 +68,7 @@ export const checkEmail = async (req: Request, res: Response): Promise<void> => 
           fullName: existingUser.fullName,
           avatarUrl: existingUser.avatarUrl,
           hasPassword: !!existingUser.passwordHash,
+          isGoogleAccount: !!existingUser.googleId,
           isBlocked: existingUser.status === 'BLOCKED',
         },
       });
@@ -68,7 +81,7 @@ export const checkEmail = async (req: Request, res: Response): Promise<void> => 
 
     await Otp.updateMany(
       { email: normalizedEmail, type: 'REGISTER', isUsed: false },
-      { $set: { isUsed: true } }
+      { $set: { isUsed: true } },
     );
 
     const otpRecord = new Otp({
@@ -80,8 +93,10 @@ export const checkEmail = async (req: Request, res: Response): Promise<void> => 
     });
     await otpRecord.save();
 
-    console.log(`[AUTH-OTP] Mã OTP đăng ký tài khoản cho ${normalizedEmail}: ${otpCode}`);
-    const emailSent = await sendOtpEmail(normalizedEmail, otpCode, 'REGISTER');
+    console.log(
+      `[AUTH-OTP] Mã OTP đăng ký tài khoản cho ${normalizedEmail}: ${otpCode}`,
+    );
+    await sendOtpEmail(normalizedEmail, otpCode, 'REGISTER');
 
     res.json({
       success: true,
@@ -90,18 +105,24 @@ export const checkEmail = async (req: Request, res: Response): Promise<void> => 
       message: 'Mã xác nhận OTP đã được gửi đến email của bạn',
     });
   } catch (error) {
-
     console.error('Lỗi khi kiểm tra email:', error);
-    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi kiểm tra email' });
+    res
+      .status(500)
+      .json({ success: false, message: 'Lỗi máy chủ khi kiểm tra email' });
   }
 };
 
 // 2. Gửi lại OTP đăng ký (Resend Register OTP)
-export const resendRegisterOtp = async (req: Request, res: Response): Promise<void> => {
+export const resendRegisterOtp = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { email } = req.body;
     if (!email) {
-      res.status(400).json({ success: false, message: 'Vui lòng cung cấp email' });
+      res
+        .status(400)
+        .json({ success: false, message: 'Vui lòng cung cấp email' });
       return;
     }
 
@@ -132,9 +153,8 @@ export const resendRegisterOtp = async (req: Request, res: Response): Promise<vo
 
     await Otp.updateMany(
       { email: normalizedEmail, type: 'REGISTER', isUsed: false },
-      { $set: { isUsed: true } }
+      { $set: { isUsed: true } },
     );
-
 
     const otpRecord = new Otp({
       email: normalizedEmail,
@@ -145,25 +165,33 @@ export const resendRegisterOtp = async (req: Request, res: Response): Promise<vo
     });
     await otpRecord.save();
 
-    console.log(`[AUTH-OTP] Gửi lại mã OTP đăng ký cho ${normalizedEmail}: ${otpCode}`);
-    const emailSent = await sendOtpEmail(normalizedEmail, otpCode, 'REGISTER');
+    console.log(
+      `[AUTH-OTP] Gửi lại mã OTP đăng ký cho ${normalizedEmail}: ${otpCode}`,
+    );
+    await sendOtpEmail(normalizedEmail, otpCode, 'REGISTER');
 
     res.json({
       success: true,
       message: 'Mã xác nhận OTP mới đã được gửi đến email của bạn',
     });
-  } catch (error) {
-
-    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi gửi lại mã OTP' });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: 'Lỗi máy chủ khi gửi lại mã OTP' });
   }
 };
 
 // 2.1 Xác thực OTP đăng ký trước khi nhập thông tin & mật khẩu
-export const verifyRegisterOtp = async (req: Request, res: Response): Promise<void> => {
+export const verifyRegisterOtp = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { email, code } = req.body;
     if (!email || !code) {
-      res.status(400).json({ success: false, message: 'Vui lòng cung cấp email và mã OTP' });
+      res
+        .status(400)
+        .json({ success: false, message: 'Vui lòng cung cấp email và mã OTP' });
       return;
     }
 
@@ -177,7 +205,10 @@ export const verifyRegisterOtp = async (req: Request, res: Response): Promise<vo
     });
 
     if (!otpRecord) {
-      res.status(400).json({ success: false, message: 'Mã xác nhận không đúng hoặc đã hết hạn (5 phút)' });
+      res.status(400).json({
+        success: false,
+        message: 'Mã xác nhận không đúng hoặc đã hết hạn (5 phút)',
+      });
       return;
     }
 
@@ -185,11 +216,12 @@ export const verifyRegisterOtp = async (req: Request, res: Response): Promise<vo
       success: true,
       message: 'Mã xác nhận hợp lệ',
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi kiểm tra mã OTP' });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: 'Lỗi máy chủ khi kiểm tra mã OTP' });
   }
 };
-
 
 // 3. Đăng nhập
 export const login = async (req: Request, res: Response): Promise<void> => {
@@ -197,7 +229,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ email và mật khẩu' });
+      res.status(400).json({
+        success: false,
+        message: 'Vui lòng điền đầy đủ email và mật khẩu',
+      });
       return;
     }
 
@@ -205,30 +240,43 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
-      res.status(404).json({ success: false, message: 'Tài khoản không tồn tại trên hệ thống' });
+      res.status(404).json({
+        success: false,
+        message: 'Tài khoản không tồn tại trên hệ thống',
+      });
       return;
     }
 
     if (user.status === 'BLOCKED') {
-      res.status(403).json({ success: false, message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.' });
+      res.status(403).json({
+        success: false,
+        message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.',
+      });
       return;
     }
 
     if (!user.passwordHash) {
       res.status(400).json({
         success: false,
-        message: 'Tài khoản này được đăng ký qua Google. Vui lòng đăng nhập bằng Google hoặc bấm Quên mật khẩu để đặt mật khẩu mới.',
+        message:
+          'Tài khoản này được đăng ký qua Google. Vui lòng đăng nhập bằng Google hoặc bấm Quên mật khẩu để đặt mật khẩu mới.',
       });
       return;
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      res.status(400).json({ success: false, message: 'Mật khẩu không chính xác' });
+      res
+        .status(400)
+        .json({ success: false, message: 'Mật khẩu không chính xác' });
       return;
     }
 
-    const { accessToken, refreshToken } = await generateTokens(user._id.toString(), user.email, user.role);
+    const { accessToken, refreshToken } = await generateTokens(
+      user._id.toString(),
+      user.email,
+      user.role,
+    );
 
     res.json({
       success: true,
@@ -247,7 +295,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error('Lỗi đăng nhập:', error);
-    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi đăng nhập' });
+    res
+      .status(500)
+      .json({ success: false, message: 'Lỗi máy chủ khi đăng nhập' });
   }
 };
 
@@ -257,19 +307,27 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const { email, password, fullName, phoneNumber, otpCode } = req.body;
 
     if (!email || !password || !otpCode) {
-      res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ email, mật khẩu và mã OTP' });
+      res.status(400).json({
+        success: false,
+        message: 'Vui lòng điền đầy đủ email, mật khẩu và mã OTP',
+      });
       return;
     }
 
     if (password.length < 6) {
-      res.status(400).json({ success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự' });
+      res
+        .status(400)
+        .json({ success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự' });
       return;
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
-      res.status(400).json({ success: false, message: 'Email này đã được sử dụng. Vui lòng đăng nhập.' });
+      res.status(400).json({
+        success: false,
+        message: 'Email này đã được sử dụng. Vui lòng đăng nhập.',
+      });
       return;
     }
 
@@ -283,7 +341,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (!otpRecord) {
-      res.status(400).json({ success: false, message: 'Mã OTP không đúng hoặc đã hết hạn' });
+      res
+        .status(400)
+        .json({ success: false, message: 'Mã OTP không đúng hoặc đã hết hạn' });
       return;
     }
 
@@ -307,7 +367,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     await newUser.save();
 
-    const { accessToken, refreshToken } = await generateTokens(newUser._id.toString(), newUser.email, newUser.role);
+    const { accessToken, refreshToken } = await generateTokens(
+      newUser._id.toString(),
+      newUser.email,
+      newUser.role,
+    );
 
     res.status(201).json({
       success: true,
@@ -326,12 +390,17 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error('Lỗi đăng ký:', error);
-    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi tạo tài khoản' });
+    res
+      .status(500)
+      .json({ success: false, message: 'Lỗi máy chủ khi tạo tài khoản' });
   }
 };
 
 // 5. Cấp lại Access Token từ Refresh Token (7 ngày)
-export const refreshTokenHandler = async (req: Request, res: Response): Promise<void> => {
+export const refreshTokenHandler = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {
@@ -341,38 +410,62 @@ export const refreshTokenHandler = async (req: Request, res: Response): Promise<
 
     const tokenDoc = await RefreshToken.findOne({ token: refreshToken });
     if (!tokenDoc || tokenDoc.expiresAt < new Date()) {
-      res.status(401).json({ success: false, message: 'Refresh token không hợp lệ hoặc đã hết hạn' });
+      res.status(401).json({
+        success: false,
+        message: 'Refresh token không hợp lệ hoặc đã hết hạn',
+      });
       return;
     }
 
-    const refreshSecret = process.env.REFRESH_TOKEN_SECRET || 'purrfect_refresh_secret_key_learnova_2026';
-    const decoded = jwt.verify(refreshToken, refreshSecret) as { id: string; email: string };
+    const refreshSecret =
+      process.env.REFRESH_TOKEN_SECRET ||
+      'purrfect_refresh_secret_key_learnova_2026';
+    const decoded = jwt.verify(refreshToken, refreshSecret) as {
+      id: string;
+      email: string;
+    };
 
     const user = await User.findById(decoded.id);
     if (!user || user.status === 'BLOCKED') {
-      res.status(403).json({ success: false, message: 'Tài khoản không hợp lệ hoặc bị khóa' });
+      res.status(403).json({
+        success: false,
+        message: 'Tài khoản không hợp lệ hoặc bị khóa',
+      });
       return;
     }
 
-    const secret = process.env.JWT_SECRET || 'purrfect_secret_key_learnova_2026';
-    const newAccessToken = jwt.sign({ id: user._id, email: user.email, role: user.role }, secret, { expiresIn: '7d' });
+    const secret =
+      process.env.JWT_SECRET || 'purrfect_secret_key_learnova_2026';
+    const newAccessToken = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      secret,
+      { expiresIn: '7d' },
+    );
 
     res.json({
       success: true,
       token: newAccessToken,
       accessToken: newAccessToken,
     });
-  } catch (error) {
-    res.status(401).json({ success: false, message: 'Refresh token không hợp lệ hoặc đã hết hạn' });
+  } catch {
+    res.status(401).json({
+      success: false,
+      message: 'Refresh token không hợp lệ hoặc đã hết hạn',
+    });
   }
 };
 
 // 6. Yêu cầu mã OTP Quên mật khẩu
-export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { email } = req.body;
     if (!email) {
-      res.status(400).json({ success: false, message: 'Vui lòng nhập địa chỉ email' });
+      res
+        .status(400)
+        .json({ success: false, message: 'Vui lòng nhập địa chỉ email' });
       return;
     }
 
@@ -380,7 +473,10 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
-      res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản với email này' });
+      res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy tài khoản với email này',
+      });
       return;
     }
 
@@ -389,9 +485,8 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 
     await Otp.updateMany(
       { email: normalizedEmail, type: 'FORGOT_PASSWORD', isUsed: false },
-      { $set: { isUsed: true } }
+      { $set: { isUsed: true } },
     );
-
 
     const otpRecord = new Otp({
       userId: user._id,
@@ -403,17 +498,21 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     });
     await otpRecord.save();
 
-    console.log(`[AUTH-OTP] Mã OTP khôi phục mật khẩu cho ${normalizedEmail}: ${otpCode}`);
-    const emailSent = await sendOtpEmail(normalizedEmail, otpCode, 'FORGOT_PASSWORD');
+    console.log(
+      `[AUTH-OTP] Mã OTP khôi phục mật khẩu cho ${normalizedEmail}: ${otpCode}`,
+    );
+    await sendOtpEmail(normalizedEmail, otpCode, 'FORGOT_PASSWORD');
 
     res.json({
       success: true,
       message: 'Mã xác nhận OTP đã được gửi đến email của bạn',
     });
   } catch (error) {
-
     console.error('Lỗi forgot password:', error);
-    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi gửi mã khôi phục mật khẩu' });
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi máy chủ khi gửi mã khôi phục mật khẩu',
+    });
   }
 };
 
@@ -422,7 +521,9 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, code } = req.body;
     if (!email || !code) {
-      res.status(400).json({ success: false, message: 'Vui lòng cung cấp email và mã OTP' });
+      res
+        .status(400)
+        .json({ success: false, message: 'Vui lòng cung cấp email và mã OTP' });
       return;
     }
 
@@ -436,7 +537,10 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (!otpRecord) {
-      res.status(400).json({ success: false, message: 'Mã xác nhận không đúng hoặc đã hết hạn' });
+      res.status(400).json({
+        success: false,
+        message: 'Mã xác nhận không đúng hoặc đã hết hạn',
+      });
       return;
     }
 
@@ -446,21 +550,31 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error('Lỗi kiểm tra OTP:', error);
-    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi kiểm tra OTP' });
+    res
+      .status(500)
+      .json({ success: false, message: 'Lỗi máy chủ khi kiểm tra OTP' });
   }
 };
 
 // 8. Đặt lại mật khẩu mới
-export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { email, code, newPassword } = req.body;
     if (!email || !code || !newPassword) {
-      res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ thông tin' });
+      res
+        .status(400)
+        .json({ success: false, message: 'Vui lòng điền đầy đủ thông tin' });
       return;
     }
 
     if (newPassword.length < 6) {
-      res.status(400).json({ success: false, message: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
+      res.status(400).json({
+        success: false,
+        message: 'Mật khẩu mới phải có ít nhất 6 ký tự',
+      });
       return;
     }
 
@@ -474,13 +588,18 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     });
 
     if (!otpRecord) {
-      res.status(400).json({ success: false, message: 'Mã OTP không hợp lệ hoặc đã hết hạn' });
+      res.status(400).json({
+        success: false,
+        message: 'Mã OTP không hợp lệ hoặc đã hết hạn',
+      });
       return;
     }
 
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
+      res
+        .status(404)
+        .json({ success: false, message: 'Không tìm thấy người dùng' });
       return;
     }
 
@@ -497,15 +616,108 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     });
   } catch (error) {
     console.error('Lỗi reset password:', error);
-    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi đổi mật khẩu' });
+    res
+      .status(500)
+      .json({ success: false, message: 'Lỗi máy chủ khi đổi mật khẩu' });
+  }
+};
+
+// 8.1 Đặt mật khẩu mới cho tài khoản Google (không cần OTP)
+// Bảo mật: chỉ cho phép nếu user có googleId và CHƯA có passwordHash
+export const setGooglePassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp email và mật khẩu',
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      res
+        .status(400)
+        .json({ success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự' });
+      return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      res
+        .status(404)
+        .json({ success: false, message: 'Không tìm thấy tài khoản' });
+      return;
+    }
+
+    // Chỉ cho phép nếu là tài khoản Google (có googleId) và chưa có mật khẩu
+    if (!user.googleId) {
+      res.status(403).json({
+        success: false,
+        message:
+          'Tài khoản này không phải Google. Vui lòng dùng Quên mật khẩu.',
+      });
+      return;
+    }
+
+    if (user.passwordHash) {
+      res.status(403).json({
+        success: false,
+        message:
+          'Tài khoản đã có mật khẩu. Vui lòng đăng nhập hoặc dùng Quên mật khẩu.',
+      });
+      return;
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(password, salt);
+    await user.save();
+
+    const { accessToken, refreshToken } = await generateTokens(
+      user._id.toString(),
+      user.email,
+      user.role,
+    );
+
+    res.json({
+      success: true,
+      message: 'Tạo mật khẩu thành công! Đang đăng nhập...',
+      accessToken,
+      token: accessToken,
+      refreshToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        avatarUrl: user.avatarUrl,
+        phoneNumber: user.phoneNumber,
+      },
+    });
+  } catch (error) {
+    console.error('Lỗi set google password:', error);
+    res
+      .status(500)
+      .json({ success: false, message: 'Lỗi máy chủ khi tạo mật khẩu' });
   }
 };
 
 // 9. Tải ảnh đại diện lên Cloudinary (Dùng Cloudinary lưu ảnh avatar)
-export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<void> => {
+export const uploadAvatar = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     if (!req.file) {
-      res.status(400).json({ success: false, message: 'Vui lòng chọn tệp hình ảnh để tải lên' });
+      res.status(400).json({
+        success: false,
+        message: 'Vui lòng chọn tệp hình ảnh để tải lên',
+      });
       return;
     }
 
@@ -517,12 +729,16 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: 'purrfect/avatars',
-        transformation: [{ width: 300, height: 300, crop: 'fill', gravity: 'face' }],
+        transformation: [
+          { width: 300, height: 300, crop: 'fill', gravity: 'face' },
+        ],
       },
       async (err, result) => {
         if (err || !result) {
           console.error('Cloudinary upload error:', err);
-          res.status(500).json({ success: false, message: 'Lỗi tải ảnh lên Cloudinary' });
+          res
+            .status(500)
+            .json({ success: false, message: 'Lỗi tải ảnh lên Cloudinary' });
           return;
         }
 
@@ -541,13 +757,15 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
             avatarUrl: result.secure_url,
           },
         });
-      }
+      },
     );
 
     uploadStream.end(req.file.buffer);
   } catch (error) {
     console.error('Lỗi upload avatar:', error);
-    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi tải ảnh lên' });
+    res
+      .status(500)
+      .json({ success: false, message: 'Lỗi máy chủ khi tải ảnh lên' });
   }
 };
 
@@ -559,7 +777,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
       await RefreshToken.deleteOne({ token: refreshToken });
     }
     res.json({ success: true, message: 'Đăng xuất thành công' });
-  } catch (err) {
+  } catch {
     res.json({ success: true, message: 'Đăng xuất thành công' });
   }
 };
@@ -586,9 +804,14 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
 };
 
 // 12. Google OAuth URL
-export const getGoogleAuthUrl = (_req: Request, res: Response): Promise<void> => {
+export const getGoogleAuthUrl = (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const callbackUrl = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/auth/google/callback';
+  const callbackUrl =
+    process.env.GOOGLE_CALLBACK_URL ||
+    'http://localhost:5000/api/auth/google/callback';
 
   if (!clientId) {
     res.json({
@@ -623,7 +846,10 @@ export const getGoogleAuthUrl = (_req: Request, res: Response): Promise<void> =>
 };
 
 // 13. Xử lý Google OAuth Callback
-export const handleGoogleCallback = async (req: Request, res: Response): Promise<void> => {
+export const handleGoogleCallback = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const code = req.query.code as string;
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 
@@ -635,7 +861,9 @@ export const handleGoogleCallback = async (req: Request, res: Response): Promise
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const callbackUrl = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/auth/google/callback';
+    const callbackUrl =
+      process.env.GOOGLE_CALLBACK_URL ||
+      'http://localhost:5000/api/auth/google/callback';
 
     if (!clientId || !clientSecret) {
       res.redirect(`${clientUrl}/login?auth_error=google_oauth_not_configured`);
@@ -654,17 +882,30 @@ export const handleGoogleCallback = async (req: Request, res: Response): Promise
       }),
     });
 
-    const tokenData = (await tokenResponse.json()) as any;
+    const tokenData = (await tokenResponse.json()) as {
+      access_token?: string;
+      error?: string;
+    };
     if (!tokenResponse.ok || !tokenData.access_token) {
       console.error('Google token error:', tokenData);
-      res.redirect(`${clientUrl}/login?auth_error=google_token_exchange_failed`);
+      res.redirect(
+        `${clientUrl}/login?auth_error=google_token_exchange_failed`,
+      );
       return;
     }
 
-    const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
-    });
-    const googleUser = (await userResponse.json()) as any;
+    const userResponse = await fetch(
+      'https://www.googleapis.com/oauth2/v2/userinfo',
+      {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      },
+    );
+    const googleUser = (await userResponse.json()) as {
+      email?: string;
+      name?: string;
+      picture?: string;
+      id?: string;
+    };
 
     if (!googleUser || !googleUser.email) {
       res.redirect(`${clientUrl}/login?auth_error=cannot_fetch_google_user`);
@@ -686,13 +927,20 @@ export const handleGoogleCallback = async (req: Request, res: Response): Promise
       await user.save();
     } else {
       if (!user.googleId) user.googleId = googleUser.id;
-      if (!user.avatarUrl && googleUser.picture) user.avatarUrl = googleUser.picture;
+      if (!user.avatarUrl && googleUser.picture)
+        user.avatarUrl = googleUser.picture;
       await user.save();
     }
 
-    const { accessToken, refreshToken } = await generateTokens(user._id.toString(), user.email, user.role);
+    const { accessToken, refreshToken } = await generateTokens(
+      user._id.toString(),
+      user.email,
+      user.role,
+    );
 
-    res.redirect(`${clientUrl}/login?token=${accessToken}&refreshToken=${refreshToken}&email=${encodeURIComponent(user.email)}`);
+    res.redirect(
+      `${clientUrl}/login?token=${accessToken}&refreshToken=${refreshToken}&email=${encodeURIComponent(user.email)}`,
+    );
   } catch (error) {
     console.error('Lỗi trong Google Callback:', error);
     res.redirect(`${clientUrl}/login?auth_error=google_internal_error`);

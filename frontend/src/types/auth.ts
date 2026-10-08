@@ -21,10 +21,10 @@ export interface CheckEmailResponse {
     fullName: string;
     avatarUrl?: string;
     hasPassword: boolean;
+    isGoogleAccount: boolean;
     isBlocked?: boolean;
   };
 }
-
 
 export interface AuthResponse {
   success: boolean;
@@ -34,7 +34,6 @@ export interface AuthResponse {
   refreshToken?: string;
   user?: User;
 }
-
 
 export interface ForgotPasswordResponse {
   success: boolean;

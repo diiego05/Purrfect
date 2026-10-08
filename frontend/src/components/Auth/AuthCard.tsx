@@ -9,7 +9,9 @@ type AuthStep =
   | 'REGISTER_OTP'
   | 'REGISTER_INFO'
   | 'FORGOT_REQUEST'
-  | 'FORGOT_VERIFY';
+  | 'FORGOT_VERIFY'
+  | 'GOOGLE_ACCOUNT_DETECTED'
+  | 'SET_GOOGLE_PASSWORD';
 
 export const AuthCard: React.FC = () => {
   const { loginSuccess } = useAuth();
@@ -25,11 +27,25 @@ export const AuthCard: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   // 6-box OTP states for Register
-  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
+  const [otpDigits, setOtpDigits] = useState<string[]>([
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+  ]);
   const otpInputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
   // 6-box OTP states for Forgot Password
-  const [forgotOtpDigits, setForgotOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
+  const [forgotOtpDigits, setForgotOtpDigits] = useState<string[]>([
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+  ]);
   const forgotOtpInputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const [newPassword, setNewPassword] = useState('');
 
@@ -54,14 +70,13 @@ export const AuthCard: React.FC = () => {
     setSuccessMsg(null);
   };
 
-
   // Helper cho 6 ô OTP
   const handleOtpBoxChange = (
     index: number,
     value: string,
     digits: string[],
     setDigits: React.Dispatch<React.SetStateAction<string[]>>,
-    refs: React.MutableRefObject<(HTMLInputElement | null)[]>
+    refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
   ) => {
     const char = value.replace(/\D/g, '').slice(-1);
     const updated = [...digits];
@@ -77,7 +92,7 @@ export const AuthCard: React.FC = () => {
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>,
     digits: string[],
-    refs: React.MutableRefObject<(HTMLInputElement | null)[]>
+    refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
   ) => {
     if (e.key === 'Backspace' && !digits[index] && index > 0) {
       refs.current[index - 1]?.focus();
@@ -87,10 +102,13 @@ export const AuthCard: React.FC = () => {
   const handleOtpBoxPaste = (
     e: React.ClipboardEvent<HTMLDivElement | HTMLInputElement>,
     setDigits: React.Dispatch<React.SetStateAction<string[]>>,
-    refs: React.MutableRefObject<(HTMLInputElement | null)[]>
+    refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
   ) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const pasted = e.clipboardData
+      .getData('text')
+      .replace(/\D/g, '')
+      .slice(0, 6);
     if (!pasted) return;
     const updated = ['', '', '', '', '', ''];
     for (let i = 0; i < 6; i++) {
@@ -100,7 +118,6 @@ export const AuthCard: React.FC = () => {
     const targetIdx = Math.min(pasted.length, 5);
     refs.current[targetIdx]?.focus();
   };
-
 
   // 1. Bước 1: Nhập Email
   const handleCheckEmail = async (e: React.FormEvent) => {
@@ -133,7 +150,11 @@ export const AuthCard: React.FC = () => {
       }
 
       if (res.exists) {
-        setStep('LOGIN_PASSWORD');
+        if (res.user && res.user.isGoogleAccount && !res.user.hasPassword) {
+          setStep('GOOGLE_ACCOUNT_DETECTED');
+        } else {
+          setStep('LOGIN_PASSWORD');
+        }
       } else {
         setOtpDigits(['', '', '', '', '', '']);
         setStep('REGISTER_OTP');
@@ -141,8 +162,7 @@ export const AuthCard: React.FC = () => {
         setSuccessMsg('Mã xác nhận OTP đã được gửi đến email của bạn.');
         setTimeout(() => otpInputsRef.current[0]?.focus(), 100);
       }
-
-    } catch (err: any) {
+    } catch {
       setErrorMsg('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
@@ -169,8 +189,11 @@ export const AuthCard: React.FC = () => {
       } else {
         setErrorMsg(res.message || 'Mã OTP không chính xác hoặc đã hết hạn');
       }
-    } catch (err: any) {
-      setErrorMsg('Lỗi xác thực OTP: ' + err.message);
+    } catch (err: unknown) {
+      setErrorMsg(
+        'Lỗi xác thực OTP: ' +
+          (err instanceof Error ? err.message : 'Vui lòng thử lại'),
+      );
     } finally {
       setLoading(false);
     }
@@ -191,13 +214,15 @@ export const AuthCard: React.FC = () => {
       } else {
         setErrorMsg(res.message || 'Không thể gửi lại mã OTP');
       }
-    } catch (err: any) {
-      setErrorMsg('Lỗi gửi lại mã OTP: ' + err.message);
+    } catch (err: unknown) {
+      setErrorMsg(
+        'Lỗi gửi lại mã OTP: ' +
+          (err instanceof Error ? err.message : 'Vui lòng thử lại'),
+      );
     } finally {
       setLoading(false);
     }
   };
-
 
   // 3. Bước 2B: Nhập thông tin & mật khẩu -> Hoàn tất đăng ký
   const handleCompleteRegister = async (e: React.FormEvent) => {
@@ -235,8 +260,11 @@ export const AuthCard: React.FC = () => {
       } else {
         setErrorMsg(res.message || 'Đăng ký không thành công');
       }
-    } catch (err: any) {
-      setErrorMsg('Lỗi tạo tài khoản: ' + (err.message || 'Vui lòng thử lại'));
+    } catch (err: unknown) {
+      setErrorMsg(
+        'Lỗi tạo tài khoản: ' +
+          (err instanceof Error ? err.message : 'Vui lòng thử lại'),
+      );
     } finally {
       setLoading(false);
     }
@@ -260,8 +288,11 @@ export const AuthCard: React.FC = () => {
       } else {
         setErrorMsg(res.message || 'Đăng nhập không thành công');
       }
-    } catch (err: any) {
-      setErrorMsg('Lỗi đăng nhập: ' + (err.message || 'Vui lòng thử lại'));
+    } catch (err: unknown) {
+      setErrorMsg(
+        'Lỗi đăng nhập: ' +
+          (err instanceof Error ? err.message : 'Vui lòng thử lại'),
+      );
     } finally {
       setLoading(false);
     }
@@ -288,8 +319,11 @@ export const AuthCard: React.FC = () => {
       } else {
         setErrorMsg(res.message || 'Không thể gửi mã xác nhận');
       }
-    } catch (err: any) {
-      setErrorMsg('Lỗi gửi OTP: ' + (err.message || 'Vui lòng thử lại'));
+    } catch (err: unknown) {
+      setErrorMsg(
+        'Lỗi gửi OTP: ' +
+          (err instanceof Error ? err.message : 'Vui lòng thử lại'),
+      );
     } finally {
       setLoading(false);
     }
@@ -321,14 +355,49 @@ export const AuthCard: React.FC = () => {
       } else {
         setErrorMsg(res.message || 'Đổi mật khẩu thất bại');
       }
-    } catch (err: any) {
-      setErrorMsg('Lỗi đổi mật khẩu: ' + (err.message || 'Vui lòng thử lại'));
+    } catch (err: unknown) {
+      setErrorMsg(
+        'Lỗi đổi mật khẩu: ' +
+          (err instanceof Error ? err.message : 'Vui lòng thử lại'),
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // 7. Google OAuth
+  // 7. Đặt mật khẩu cho tài khoản Google (không cần OTP)
+  const handleSetGooglePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    resetMessages();
+
+    if (password.length < 6) {
+      setErrorMsg('Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMsg('Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await authApi.setGooglePassword(email.trim(), password);
+      if (res.success && (res.accessToken || res.token) && res.user) {
+        loginSuccess(res.accessToken || res.token!, res.refreshToken, res.user);
+      } else {
+        setErrorMsg(res.message || 'Không thể tạo mật khẩu. Vui lòng thử lại.');
+      }
+    } catch (err: unknown) {
+      setErrorMsg(
+        'Lỗi kết nối: ' +
+          (err instanceof Error ? err.message : 'Vui lòng thử lại'),
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 8. Google OAuth
   const handleGoogleLogin = async () => {
     resetMessages();
     setLoading(true);
@@ -337,9 +406,11 @@ export const AuthCard: React.FC = () => {
       if (res.success && res.url) {
         window.location.href = res.url;
       } else {
-        setErrorMsg(res.message || 'Chưa cấu hình GOOGLE_CLIENT_ID trong backend/.env');
+        setErrorMsg(
+          res.message || 'Chưa cấu hình GOOGLE_CLIENT_ID trong backend/.env',
+        );
       }
-    } catch (err: any) {
+    } catch {
       setErrorMsg('Không thể khởi tạo đăng nhập Google');
     } finally {
       setLoading(false);
@@ -355,17 +426,21 @@ export const AuthCard: React.FC = () => {
           {step === 'REGISTER_OTP'
             ? 'Mã xác nhận OTP đã được gửi đến email của bạn.'
             : step === 'REGISTER_INFO'
-            ? 'Nhập thông tin cá nhân và mật khẩu để tạo tài khoản mới.'
-            : step === 'FORGOT_REQUEST'
-            ? 'Nhập email của bạn để nhận mã xác nhận OTP.'
-            : step === 'FORGOT_VERIFY'
-            ? 'Nhập mã xác nhận OTP và mật khẩu mới của bạn.'
-            : 'Đăng nhập vào tài khoản Purr của bạn để tiếp tục học tập.'}
+              ? 'Nhập thông tin cá nhân và mật khẩu để tạo tài khoản mới.'
+              : step === 'FORGOT_REQUEST'
+                ? 'Nhập email của bạn để nhận mã xác nhận OTP.'
+                : step === 'FORGOT_VERIFY'
+                  ? 'Nhập mã xác nhận OTP và mật khẩu mới của bạn.'
+                  : 'Đăng nhập vào tài khoản Purr của bạn để tiếp tục học tập.'}
         </p>
 
         {/* Thông báo Alert */}
-        {errorMsg && <div className="auth-alert auth-alert-error">{errorMsg}</div>}
-        {successMsg && <div className="auth-alert auth-alert-success">{successMsg}</div>}
+        {errorMsg && (
+          <div className="auth-alert auth-alert-error">{errorMsg}</div>
+        )}
+        {successMsg && (
+          <div className="auth-alert auth-alert-success">{successMsg}</div>
+        )}
 
         {/* ============================================================== */}
         {/* BƯỚC 1: NHẬP EMAIL                                             */}
@@ -401,7 +476,11 @@ export const AuthCard: React.FC = () => {
             </label>
 
             {/* Nút Tiếp tục */}
-            <button type="submit" className="auth-btn-primary" disabled={loading}>
+            <button
+              type="submit"
+              className="auth-btn-primary"
+              disabled={loading}
+            >
               {loading ? <span className="auth-spinner"></span> : 'Tiếp tục'}
             </button>
 
@@ -456,7 +535,186 @@ export const AuthCard: React.FC = () => {
         )}
 
         {/* ============================================================== */}
-        {/* NẾU ĐÃ CÓ TÀI KHOẢN -> NHẬP MẬT KHẨU LOGIN                     */}
+        {/* BƯỚC: TÀI KHOẢN GOOGLE ĐƯỢC PHÁT HIỆN                          */}
+        {/* ============================================================== */}
+        {step === 'GOOGLE_ACCOUNT_DETECTED' && (
+          <div>
+            <div className="auth-email-badge" style={{ marginBottom: '24px' }}>
+              <span className="auth-email-badge-email">{email}</span>
+              <button
+                type="button"
+                className="auth-change-email-btn"
+                onClick={() => {
+                  resetMessages();
+                  setStep('EMAIL');
+                }}
+              >
+                Thay đổi
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+                border: '1.5px solid #bfdbfe',
+                borderRadius: '14px',
+                padding: '16px 18px',
+                marginBottom: '24px',
+              }}
+            >
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                style={{ flexShrink: 0, marginTop: '2px' }}
+              >
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </svg>
+              <div>
+                <p
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    color: '#1e3a8a',
+                    marginBottom: '4px',
+                  }}
+                >
+                  Tài khoản đăng nhập bằng Google
+                </p>
+                <p
+                  style={{
+                    fontSize: '13.5px',
+                    color: '#3b82f6',
+                    lineHeight: '1.55',
+                    margin: 0,
+                  }}
+                >
+                  Email này trước đó đã đăng nhập bằng phương thức Google. Bạn
+                  có thể tiếp tục với Google hoặc tạo mật khẩu mới cho tài
+                  khoản.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="auth-btn-primary"
+              onClick={() => {
+                resetMessages();
+                setPassword('');
+                setConfirmPassword('');
+                setStep('SET_GOOGLE_PASSWORD');
+              }}
+              style={{ marginBottom: '16px' }}
+            >
+              Tạo mật khẩu mới cho email này
+            </button>
+
+            <button
+              type="button"
+              className="auth-btn-google"
+              onClick={handleGoogleLogin}
+              disabled={loading}
+            >
+              Tiếp tục với Google
+            </button>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* BƯỚC: TẠO MẬT KHẨU CHO TÀI KHOẢN GOOGLE (KHÔNG CẦN OTP)       */}
+        {/* ============================================================== */}
+        {step === 'SET_GOOGLE_PASSWORD' && (
+          <form onSubmit={handleSetGooglePassword}>
+            <div className="auth-email-badge" style={{ marginBottom: '24px' }}>
+              <span className="auth-email-badge-email">{email}</span>
+              <button
+                type="button"
+                className="auth-change-email-btn"
+                onClick={() => {
+                  resetMessages();
+                  setStep('GOOGLE_ACCOUNT_DETECTED');
+                }}
+              >
+                Quay lại
+              </button>
+            </div>
+
+            <div className="auth-form-group">
+              <label className="auth-input-label">
+                MẬT KHẨU MỚI <span className="auth-star-required">*</span>
+              </label>
+              <div className="auth-input-wrapper">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="auth-input"
+                  placeholder="Tối thiểu 6 ký tự"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoFocus
+                  required
+                />
+                <button
+                  type="button"
+                  className="auth-input-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? 'Ẩn' : 'Hiện'}
+                </button>
+              </div>
+            </div>
+
+            <div className="auth-form-group">
+              <label className="auth-input-label">
+                XÁC NHẬN MẬT KHẨU <span className="auth-star-required">*</span>
+              </label>
+              <div className="auth-input-wrapper">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="auth-input"
+                  placeholder="Nhập lại mật khẩu"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="auth-btn-primary"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="auth-spinner"></span>
+              ) : (
+                'Tạo mật khẩu & Đăng nhập'
+              )}
+            </button>
+          </form>
+        )}
+
+        {/* ============================================================== */}
+        {/* NẼU ĐÃ CÓ TÀI KHOẢN -> NHẬP MẬT KHẨU LOGIN                     */}
         {/* ============================================================== */}
         {step === 'LOGIN_PASSWORD' && (
           <form onSubmit={handleLogin}>
@@ -522,7 +780,11 @@ export const AuthCard: React.FC = () => {
             </label>
 
             {/* Nút Đăng nhập */}
-            <button type="submit" className="auth-btn-primary" disabled={loading}>
+            <button
+              type="submit"
+              className="auth-btn-primary"
+              disabled={loading}
+            >
               {loading ? <span className="auth-spinner"></span> : 'Đăng nhập'}
             </button>
 
@@ -545,14 +807,20 @@ export const AuthCard: React.FC = () => {
         {step === 'REGISTER_OTP' && (
           <form onSubmit={handleVerifyRegisterOtp}>
             <div className="auth-form-group">
-              <label className="auth-input-label" style={{ justifyContent: 'center', marginBottom: 12 }}>
-                NHẬP MÃ XÁC NHẬN OTP <span className="auth-star-required">*</span>
+              <label
+                className="auth-input-label"
+                style={{ justifyContent: 'center', marginBottom: 12 }}
+              >
+                NHẬP MÃ XÁC NHẬN OTP{' '}
+                <span className="auth-star-required">*</span>
               </label>
 
               {/* 6 ô nhập OTP riêng biệt */}
               <div
                 className="auth-otp-boxes-group"
-                onPaste={(e) => handleOtpBoxPaste(e, setOtpDigits, otpInputsRef)}
+                onPaste={(e) =>
+                  handleOtpBoxPaste(e, setOtpDigits, otpInputsRef)
+                }
               >
                 {otpDigits.map((digit, idx) => (
                   <input
@@ -566,7 +834,13 @@ export const AuthCard: React.FC = () => {
                     className="auth-otp-box"
                     value={digit}
                     onChange={(e) =>
-                      handleOtpBoxChange(idx, e.target.value, otpDigits, setOtpDigits, otpInputsRef)
+                      handleOtpBoxChange(
+                        idx,
+                        e.target.value,
+                        otpDigits,
+                        setOtpDigits,
+                        otpInputsRef,
+                      )
                     }
                     onKeyDown={(e) =>
                       handleOtpBoxKeyDown(idx, e, otpDigits, otpInputsRef)
@@ -575,7 +849,6 @@ export const AuthCard: React.FC = () => {
                   />
                 ))}
               </div>
-
 
               {/* Nút gửi lại mã với thời gian đếm ngược 2 phút */}
               <div className="auth-resend-row">
@@ -586,22 +859,35 @@ export const AuthCard: React.FC = () => {
                   onClick={handleResendRegisterOtp}
                   style={
                     resendCooldown > 0
-                      ? { opacity: 0.6, cursor: 'not-allowed', color: '#94a3b8' }
+                      ? {
+                          opacity: 0.6,
+                          cursor: 'not-allowed',
+                          color: '#94a3b8',
+                        }
                       : {}
                   }
                 >
                   {resendCooldown > 0
-                    ? `Gửi lại sau (${Math.floor(resendCooldown / 60)}:${(resendCooldown % 60)
+                    ? `Gửi lại sau (${Math.floor(resendCooldown / 60)}:${(
+                        resendCooldown % 60
+                      )
                         .toString()
                         .padStart(2, '0')})`
                     : 'Gửi lại mã'}
                 </button>
               </div>
-
             </div>
 
-            <button type="submit" className="auth-btn-primary" disabled={loading}>
-              {loading ? <span className="auth-spinner"></span> : 'Xác nhận OTP'}
+            <button
+              type="submit"
+              className="auth-btn-primary"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="auth-spinner"></span>
+              ) : (
+                'Xác nhận OTP'
+              )}
             </button>
 
             <button
@@ -641,7 +927,8 @@ export const AuthCard: React.FC = () => {
 
             <div className="auth-form-group">
               <label className="auth-input-label">
-                MẬT KHẨU (Ít nhất 6 ký tự) <span className="auth-star-required">*</span>
+                MẬT KHẨU (Ít nhất 6 ký tự){' '}
+                <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
@@ -679,8 +966,16 @@ export const AuthCard: React.FC = () => {
               </div>
             </div>
 
-            <button type="submit" className="auth-btn-primary" disabled={loading}>
-              {loading ? <span className="auth-spinner"></span> : 'Hoàn tất đăng ký & Bắt đầu'}
+            <button
+              type="submit"
+              className="auth-btn-primary"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="auth-spinner"></span>
+              ) : (
+                'Hoàn tất đăng ký & Bắt đầu'
+              )}
             </button>
 
             <button
@@ -703,7 +998,8 @@ export const AuthCard: React.FC = () => {
           <form onSubmit={handleRequestForgotOtp}>
             <div className="auth-form-group">
               <label className="auth-input-label">
-                EMAIL CẦN KHÔI PHỤC <span className="auth-star-required">*</span>
+                EMAIL CẦN KHÔI PHỤC{' '}
+                <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
@@ -718,8 +1014,16 @@ export const AuthCard: React.FC = () => {
               </div>
             </div>
 
-            <button type="submit" className="auth-btn-primary" disabled={loading}>
-              {loading ? <span className="auth-spinner"></span> : 'Gửi mã xác nhận OTP'}
+            <button
+              type="submit"
+              className="auth-btn-primary"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="auth-spinner"></span>
+              ) : (
+                'Gửi mã xác nhận OTP'
+              )}
             </button>
 
             <button
@@ -741,14 +1045,20 @@ export const AuthCard: React.FC = () => {
         {step === 'FORGOT_VERIFY' && (
           <form onSubmit={handleResetPassword}>
             <div className="auth-form-group">
-              <label className="auth-input-label" style={{ justifyContent: 'center', marginBottom: 12 }}>
-                NHẬP MÃ XÁC NHẬN OTP <span className="auth-star-required">*</span>
+              <label
+                className="auth-input-label"
+                style={{ justifyContent: 'center', marginBottom: 12 }}
+              >
+                NHẬP MÃ XÁC NHẬN OTP{' '}
+                <span className="auth-star-required">*</span>
               </label>
 
               {/* 6 ô OTP */}
               <div
                 className="auth-otp-boxes-group"
-                onPaste={(e) => handleOtpBoxPaste(e, setForgotOtpDigits, forgotOtpInputsRef)}
+                onPaste={(e) =>
+                  handleOtpBoxPaste(e, setForgotOtpDigits, forgotOtpInputsRef)
+                }
               >
                 {forgotOtpDigits.map((digit, idx) => (
                   <input
@@ -767,17 +1077,21 @@ export const AuthCard: React.FC = () => {
                         e.target.value,
                         forgotOtpDigits,
                         setForgotOtpDigits,
-                        forgotOtpInputsRef
+                        forgotOtpInputsRef,
                       )
                     }
                     onKeyDown={(e) =>
-                      handleOtpBoxKeyDown(idx, e, forgotOtpDigits, forgotOtpInputsRef)
+                      handleOtpBoxKeyDown(
+                        idx,
+                        e,
+                        forgotOtpDigits,
+                        forgotOtpInputsRef,
+                      )
                     }
                     autoFocus={idx === 0}
                   />
                 ))}
               </div>
-
             </div>
 
             <div className="auth-form-group">
@@ -804,8 +1118,16 @@ export const AuthCard: React.FC = () => {
               </div>
             </div>
 
-            <button type="submit" className="auth-btn-primary" disabled={loading}>
-              {loading ? <span className="auth-spinner"></span> : 'Xác nhận & Đổi mật khẩu'}
+            <button
+              type="submit"
+              className="auth-btn-primary"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="auth-spinner"></span>
+              ) : (
+                'Xác nhận & Đổi mật khẩu'
+              )}
             </button>
 
             <button

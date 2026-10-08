@@ -10,6 +10,7 @@ import {
   forgotPassword,
   verifyOtp,
   resetPassword,
+  setGooglePassword,
   refreshTokenHandler,
   logout,
   getMe,
@@ -28,16 +29,19 @@ router.post('/login', login);
 router.post('/register', register);
 router.post('/refresh-token', refreshTokenHandler);
 
-
 // Tải avatar lên Cloudinary
-router.post('/avatar', authenticateToken, upload.single('avatar'), uploadAvatar);
-
-
+router.post(
+  '/avatar',
+  authenticateToken,
+  upload.single('avatar'),
+  uploadAvatar,
+);
 
 // Luồng quên mật khẩu & OTP
 router.post('/forgot-password', forgotPassword);
 router.post('/verify-otp', verifyOtp);
 router.post('/reset-password', resetPassword);
+router.post('/set-google-password', setGooglePassword);
 
 // Đăng xuất và lấy thông tin phiên
 router.post('/logout', logout);
@@ -46,6 +50,5 @@ router.get('/me', authenticateToken, getMe);
 // Google OAuth
 router.get('/google/url', getGoogleAuthUrl);
 router.get('/google/callback', handleGoogleCallback);
-
 
 export default router;

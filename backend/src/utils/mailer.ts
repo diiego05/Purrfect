@@ -12,7 +12,9 @@ const getTransporter = (): Transporter | null => {
   const host = process.env.MAIL_HOST || 'smtp.gmail.com';
 
   if (!user || !pass) {
-    console.warn('[MAILER] MAIL_USER hoặc MAIL_PASS chưa được cấu hình trong .env');
+    console.warn(
+      '[MAILER] MAIL_USER hoặc MAIL_PASS chưa được cấu hình trong .env',
+    );
     return null;
   }
 
@@ -22,11 +24,13 @@ const getTransporter = (): Transporter | null => {
       port: 465,
       secure: true,
       auth: { user, pass },
-      connectionTimeout: 10000,  // 10s timeout kết nối
-      socketTimeout: 15000,       // 15s timeout gửi
+      connectionTimeout: 10000, // 10s timeout kết nối
+      socketTimeout: 15000, // 15s timeout gửi
     });
 
-    console.log(`[MAILER] Transporter SMTP được khởi tạo: ${user} → ${host}:465`);
+    console.log(
+      `[MAILER] Transporter SMTP được khởi tạo: ${user} → ${host}:465`,
+    );
   }
 
   return _transporter;
@@ -40,9 +44,14 @@ export const verifyMailerConnection = async (): Promise<void> => {
   try {
     await transporter.verify();
     console.log('[MAILER] ✅ Kết nối SMTP thành công!');
-  } catch (err: any) {
-    console.error('[MAILER] ❌ Kết nối SMTP thất bại:', err?.message || err);
-    console.error('[MAILER] → Kiểm tra MAIL_USER, MAIL_PASS trong .env (Gmail cần App Password, không dùng mật khẩu thường)');
+  } catch (err: unknown) {
+    console.error(
+      '[MAILER] Kết nối SMTP thất bại:',
+      err instanceof Error ? err.message : String(err),
+    );
+    console.error(
+      '[MAILER] → Kiểm tra MAIL_USER, MAIL_PASS trong .env (Gmail cần App Password, không dùng mật khẩu thường)',
+    );
     // Đặt lại transporter để thử lại lần sau
     _transporter = null;
   }
@@ -51,14 +60,17 @@ export const verifyMailerConnection = async (): Promise<void> => {
 export const sendOtpEmail = async (
   toEmail: string,
   otpCode: string,
-  type: 'REGISTER' | 'FORGOT_PASSWORD' = 'FORGOT_PASSWORD'
+  type: 'REGISTER' | 'FORGOT_PASSWORD' = 'FORGOT_PASSWORD',
 ): Promise<boolean> => {
   const fromName = process.env.MAIL_FROM_NAME || 'Purrfect';
   const user = process.env.MAIL_USER;
   const transporter = getTransporter();
 
   if (!transporter || !user) {
-    console.error('[MAILER] Không có transporter khả dụng. Bỏ qua gửi email đến:', toEmail);
+    console.error(
+      '[MAILER] Không có transporter khả dụng. Bỏ qua gửi email đến:',
+      toEmail,
+    );
     return false;
   }
 
@@ -92,15 +104,25 @@ export const sendOtpEmail = async (
     });
 
     const elapsed = Date.now() - startTime;
-    console.log(`[MAILER] ✅ Gửi OTP (${type}) đến ${toEmail} thành công! (${elapsed}ms)`);
+    console.log(
+      `[MAILER] Gửi OTP (${type}) đến ${toEmail} thành công! (${elapsed}ms)`,
+    );
     return true;
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Reset transporter để kết nối lại lần sau nếu bị timeout/ngắt
     _transporter = null;
-    console.error(`[MAILER] ❌ Gửi email đến ${toEmail} thất bại:`);
-    console.error(`[MAILER]   code: ${err?.code}`);
-    console.error(`[MAILER]   message: ${err?.message}`);
-    if (err?.response) console.error(`[MAILER]   SMTP response: ${err.response}`);
+    const errorInfo = err as {
+      code?: string;
+      message?: string;
+      response?: string;
+    };
+    console.error(`[MAILER] Gửi email đến ${toEmail} thất bại:`);
+    console.error(`[MAILER] code: ${errorInfo?.code}`);
+    console.error(
+      `[MAILER] message: ${errorInfo?.message || (err instanceof Error ? err.message : String(err))}`,
+    );
+    if (errorInfo?.response)
+      console.error(`[MAILER] SMTP response: ${errorInfo.response}`);
     return false;
   }
 };

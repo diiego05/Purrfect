@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User } from '../types/auth';
-import { authApi, setTokens, clearTokens, getAccessToken } from '../services/authApi';
+import {
+  authApi,
+  setTokens,
+  clearTokens,
+  getAccessToken,
+} from '../services/authApi';
 
 interface AuthContextType {
   user: User | null;
@@ -9,17 +14,25 @@ interface AuthContextType {
   isLoading: boolean;
   currentPath: string;
   navigate: (path: string) => void;
-  loginSuccess: (accessToken: string, refreshToken: string | undefined, user: User) => void;
+  loginSuccess: (
+    accessToken: string,
+    refreshToken: string | undefined,
+    user: User,
+  ) => void;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() => getAccessToken());
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname);
+  const [currentPath, setCurrentPath] = useState<string>(
+    () => window.location.pathname,
+  );
 
   // Sync navigation with browser URL
   const navigate = (path: string) => {
@@ -74,7 +87,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
-  const loginSuccess = (accessToken: string, refreshToken: string | undefined, newUser: User) => {
+  const loginSuccess = (
+    accessToken: string,
+    refreshToken: string | undefined,
+    newUser: User,
+  ) => {
     setTokens(accessToken, refreshToken);
     setToken(accessToken);
     setUser(newUser);
@@ -111,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
