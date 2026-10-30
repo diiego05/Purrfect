@@ -1,0 +1,769 @@
+/* ==========================================================================
+   Onboarding Flow Styles
+   Theme: Platform background (nền sàn Purrfect) with Red Season Cards
+   ========================================================================== */
+
+.onboarding-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+  color: #111827;
+  font-family: var(
+    --font-primary,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif
+  );
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Ambient Background Blobs matching platform */
+.onboarding-bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(90px);
+  z-index: 0;
+}
+
+.onboarding-blob-1 {
+  top: -80px;
+  left: -80px;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(
+    circle,
+    rgba(235, 243, 255, 0.9) 0%,
+    rgba(240, 248, 255, 0) 70%
+  );
+}
+
+.onboarding-blob-2 {
+  bottom: 40px;
+  right: -60px;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(
+    circle,
+    rgba(254, 242, 242, 0.7) 0%,
+    rgba(255, 255, 255, 0) 70%
+  );
+}
+
+/* Top Progress Header */
+.onboarding-top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.onboarding-top-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.onboarding-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.onboarding-logo-img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Step Bar */
+.onboarding-progress-wrapper {
+  flex: 1;
+  max-width: 480px;
+}
+
+.onboarding-step-text-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 6px;
+}
+
+.onboarding-step-highlight {
+  color: #2563eb;
+}
+
+.onboarding-progress-track {
+  height: 6px;
+  background-color: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.onboarding-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+  border-radius: 9999px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.onboarding-skip-btn {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #64748b;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.onboarding-skip-btn:hover {
+  color: #1e293b;
+  background-color: #f1f5f9;
+}
+
+/* Main Content Area */
+.onboarding-main-container {
+  flex: 1;
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 24px 60px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding-header-group {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 36px;
+}
+
+.onboarding-step-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #2563eb;
+  background-color: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+
+.onboarding-title {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  margin-bottom: 10px;
+}
+
+.onboarding-subtitle {
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+/* ==========================================================================
+   BƯỚC 1: 4 Ô VUÔNG MÀU ĐỎ (4 MÙA) THEO HÌNH MẪU
+   ========================================================================== */
+.season-cards-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 36px;
+  padding: 60px 10px 80px;
+  flex-wrap: nowrap;
+}
+
+.season-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  outline: none;
+  width: 180px;
+  flex-shrink: 0;
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* So le theo mẫu hình ảnh: Ô 1 lệch dưới, Ô 2 nhô lên, Ô 3 lệch dưới, Ô 4 nhô lên */
+.season-card-wrapper.stagger-low {
+  transform: translateY(28px);
+}
+
+.season-card-wrapper.stagger-high {
+  transform: translateY(-24px);
+}
+
+.season-card-wrapper:hover {
+  transform: translateY(var(--hover-y, 0)) scale(1.04);
+}
+
+.season-card-wrapper.stagger-low:hover {
+  transform: translateY(18px) scale(1.05);
+}
+
+.season-card-wrapper.stagger-high:hover {
+  transform: translateY(-34px) scale(1.05);
+}
+
+/* Ô VUÔNG ĐỎ ĐẬM BO GÓC CHÍNH XÁC NHƯ ẢNH MẪU */
+.season-red-box {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  background-color: #591720; /* Màu đỏ rượu / đỏ đô đậm chính xác theo ảnh mẫu */
+  border-radius: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 14px 28px -8px rgba(89, 23, 32, 0.35),
+    0 6px 12px -4px rgba(0, 0, 0, 0.1);
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+/* 2 cặp ngôi sao lấp lánh ở góc đối xứng: Trên-Phải và Dưới-Trái */
+.sparkle-top-right {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.sparkle-bottom-left {
+  position: absolute;
+  bottom: -8px;
+  left: -8px;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Trạng thái được chọn (Selected) */
+.season-card-wrapper.selected .season-red-box {
+  background-color: #6b1d28;
+  box-shadow:
+    0 0 0 4px #2563eb,
+    0 18px 36px -6px rgba(89, 23, 32, 0.45);
+}
+
+.season-check-badge {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #2563eb;
+  color: #ffffff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+  border: 2px solid #ffffff;
+}
+
+/* Nhãn bên dưới ô vuông */
+.season-card-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f2937;
+  text-align: center;
+  max-width: 170px;
+  line-height: 1.35;
+  transition: color 0.2s ease;
+}
+
+.season-card-wrapper.selected .season-card-label {
+  color: #2563eb;
+}
+
+.season-card-sublabel {
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+  margin-top: -8px;
+}
+
+/* ==========================================================================
+   BƯỚC 2: LIỆT KÊ TẤT CẢ CATEGORY + THANH TÌM KIẾM
+   ========================================================================== */
+.category-step-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.search-box-row {
+  max-width: 540px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+
+.search-icon-inside {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.onboarding-search-input {
+  width: 100%;
+  padding: 14px 18px 14px 46px;
+  font-size: 15px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #ffffff;
+  color: #0f172a;
+  outline: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.onboarding-search-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.category-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.category-select-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+}
+
+.category-select-card:hover {
+  border-color: #93c5fd;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.08);
+}
+
+.category-select-card.selected {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+}
+
+.category-card-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.category-select-card.selected .category-card-icon-wrap {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.category-card-content {
+  flex: 1;
+}
+
+.category-card-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.category-select-card.selected .category-card-name {
+  color: #1e40af;
+}
+
+.category-card-desc {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.category-checkbox-indicator {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #ffffff;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.category-select-card.selected .category-checkbox-indicator {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+/* ==========================================================================
+   BƯỚC 3: KỸ NĂNG CỤ THỂ CỦA SÀN (SKILLS)
+   ========================================================================== */
+.skills-step-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.category-tab-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.cat-tab-btn {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #475569;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.cat-tab-btn:hover {
+  border-color: #cbd5e1;
+  background-color: #f8fafc;
+}
+
+.cat-tab-btn.active {
+  background-color: #1e293b;
+  color: #ffffff;
+  border-color: #1e293b;
+}
+
+.skills-pills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  padding: 10px 0;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.skill-pill-chip {
+  padding: 10px 18px;
+  background-color: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.skill-pill-chip:hover {
+  border-color: #93c5fd;
+  color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.skill-pill-chip.selected {
+  background-color: #eff6ff;
+  border-color: #2563eb;
+  color: #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.skill-pill-plus {
+  font-size: 15px;
+  font-weight: 700;
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+
+.skill-pill-chip.selected .skill-pill-plus {
+  color: #2563eb;
+  transform: rotate(45deg);
+}
+
+/* ==========================================================================
+   BƯỚC 4: TRÌNH ĐỘ HIỆN TẠI (SINGLE-SELECT)
+   ========================================================================== */
+.level-cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.level-card {
+  background-color: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.22s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+  position: relative;
+}
+
+.level-card:hover {
+  border-color: #93c5fd;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+}
+
+.level-card.selected {
+  border-color: #2563eb;
+  background-color: #fafcff;
+  box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.18);
+}
+
+.level-icon-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background-color: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin-bottom: 18px;
+}
+
+.level-card.selected .level-icon-badge {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.level-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.level-card.selected .level-card-title {
+  color: #2563eb;
+}
+
+.level-card-desc {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.level-radio-dot {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.level-card.selected .level-radio-dot {
+  border-color: #2563eb;
+}
+
+.level-card.selected .level-radio-dot::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background-color: #2563eb;
+  border-radius: 50%;
+}
+
+/* ==========================================================================
+   Bottom Action Bar
+   ========================================================================== */
+.onboarding-bottom-bar {
+  margin-top: auto;
+  padding-top: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #e5e7eb;
+}
+
+.onboarding-counter-badge {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.onboarding-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.onboarding-back-btn {
+  padding: 12px 22px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #475569;
+  background-color: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.onboarding-back-btn:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+
+.onboarding-next-btn {
+  padding: 13px 32px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.onboarding-next-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+}
+
+.onboarding-next-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Success Celebration Screen */
+.onboarding-success-screen {
+  text-align: center;
+  padding: 60px 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.success-icon-badge {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 46px;
+  margin: 0 auto 24px;
+  box-shadow: 0 10px 25px rgba(22, 163, 74, 0.2);
+}
+
+.success-screen-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+.success-screen-desc {
+  font-size: 16px;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .season-cards-container {
+    gap: 20px;
+  }
+  .season-card-wrapper.stagger-low,
+  .season-card-wrapper.stagger-high {
+    transform: none !important;
+  }
+  .season-red-box {
+    width: 130px;
+    height: 130px;
+    border-radius: 22px;
+  }
+  .onboarding-title {
+    font-size: 24px;
+  }
+  .onboarding-top-container {
+    padding: 12px 16px;
+  }
+}

@@ -8,6 +8,7 @@ export interface User {
   avatarUrl?: string;
   phoneNumber?: string;
   bio?: string;
+  onboardingCompleted?: boolean;
 }
 
 export interface CheckEmailResponse {
@@ -16,6 +17,7 @@ export interface CheckEmailResponse {
   email: string;
   message?: string;
   otpDevCode?: string;
+  remainingResends?: number;
   user?: {
     email: string;
     fullName: string;
@@ -39,4 +41,5 @@ export interface ForgotPasswordResponse {
   success: boolean;
   message: string;
   otpDevCode?: string;
+  remainingResends?: number;
 }

@@ -1,23 +1,37 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../services/authApi';
 import './AuthCard.css';
 
 type AuthStep =
-  | 'EMAIL'
-  | 'LOGIN_PASSWORD'
+  | 'LOGIN'
+  | 'REGISTER_EMAIL'
   | 'REGISTER_OTP'
-  | 'REGISTER_INFO'
+  | 'REGISTER_PASSWORD'
   | 'FORGOT_REQUEST'
   | 'FORGOT_VERIFY'
   | 'GOOGLE_ACCOUNT_DETECTED'
   | 'SET_GOOGLE_PASSWORD';
 
-export const AuthCard: React.FC = () => {
+export interface AuthCardProps {
+  initialStep?: AuthStep;
+}
+
+export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
   const { loginSuccess } = useAuth();
 
+  const getInitialStep = (): AuthStep => {
+    if (initialStep) return initialStep;
+    const path = window.location.pathname.replace(/\/+$/, '') || '/';
+    if (path === '/register') return 'REGISTER_EMAIL';
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'register') return 'REGISTER_EMAIL';
+    return 'LOGIN';
+  };
+
   // Form states
-  const [step, setStep] = useState<AuthStep>('EMAIL');
+  const [step, setStep] = useState<AuthStep>(getInitialStep);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -25,6 +39,7 @@ export const AuthCard: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(true);
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // 6-box OTP states for Register
   const [otpDigits, setOtpDigits] = useState<string[]>([
@@ -36,6 +51,10 @@ export const AuthCard: React.FC = () => {
     '',
   ]);
   const otpInputsRef = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Giới hạn gửi lại OTP đăng ký: tối đa 3 lần
+  const [remainingResends, setRemainingResends] = useState<number>(3);
+  const [resendCooldown, setResendCooldown] = useState<number>(0);
 
   // 6-box OTP states for Forgot Password
   const [forgotOtpDigits, setForgotOtpDigits] = useState<string[]>([
@@ -54,10 +73,8 @@ export const AuthCard: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Đếm ngược 2 phút (120s) trước khi cho phép gửi lại mã OTP
-  const [resendCooldown, setResendCooldown] = useState<number>(0);
-
-  React.useEffect(() => {
+  // Bộ đếm ngược thời gian gửi lại mã OTP (60s mỗi lần)
+  useEffect(() => {
     if (resendCooldown <= 0) return;
     const interval = setInterval(() => {
       setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
@@ -119,8 +136,51 @@ export const AuthCard: React.FC = () => {
     refs.current[targetIdx]?.focus();
   };
 
-  // 1. Bước 1: Nhập Email
-  const handleCheckEmail = async (e: React.FormEvent) => {
+  // =========================================================================
+  // 1. ĐĂNG NHẬP (EMAIL + MẬT KHẨU)
+  // =========================================================================
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    resetMessages();
+
+    if (!email.trim()) {
+      setErrorMsg('Vui lòng nhập địa chỉ email của bạn');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setErrorMsg('Địa chỉ email không đúng định dạng');
+      return;
+    }
+
+    if (!password) {
+      setErrorMsg('Vui lòng nhập mật khẩu của bạn');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await authApi.login(email.trim(), password);
+      if (res.success && (res.accessToken || res.token) && res.user) {
+        loginSuccess(res.accessToken || res.token!, res.refreshToken, res.user);
+      } else {
+        setErrorMsg(res.message || 'Email hoặc mật khẩu không chính xác');
+      }
+    } catch (err: unknown) {
+      setErrorMsg(
+        'Lỗi đăng nhập: ' +
+          (err instanceof Error ? err.message : 'Vui lòng thử lại sau'),
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =========================================================================
+  // 2. ĐĂNG KÝ - BƯỚC 1: NHẬP EMAIL -> GỬI OTP
+  // =========================================================================
+  const handleRegisterEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     resetMessages();
 
@@ -150,18 +210,22 @@ export const AuthCard: React.FC = () => {
       }
 
       if (res.exists) {
-        if (res.user && res.user.isGoogleAccount && !res.user.hasPassword) {
-          setStep('GOOGLE_ACCOUNT_DETECTED');
-        } else {
-          setStep('LOGIN_PASSWORD');
-        }
-      } else {
-        setOtpDigits(['', '', '', '', '', '']);
-        setStep('REGISTER_OTP');
-        setResendCooldown(120);
-        setSuccessMsg('Mã xác nhận OTP đã được gửi đến email của bạn.');
-        setTimeout(() => otpInputsRef.current[0]?.focus(), 100);
+        setErrorMsg(
+          'Email này đã được sử dụng. Vui lòng chuyển sang tab Đăng nhập để tiếp tục.',
+        );
+        setLoading(false);
+        return;
       }
+
+      // Email chưa có tài khoản -> OTP đã được gửi về email
+      setOtpDigits(['', '', '', '', '', '']);
+      setRemainingResends(
+        res.remainingResends !== undefined ? res.remainingResends : 3,
+      );
+      setResendCooldown(60);
+      setStep('REGISTER_OTP');
+      setSuccessMsg(`Mã xác nhận OTP đã được gửi đến email: ${email.trim()}`);
+      setTimeout(() => otpInputsRef.current[0]?.focus(), 100);
     } catch {
       setErrorMsg('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
     } finally {
@@ -169,7 +233,9 @@ export const AuthCard: React.FC = () => {
     }
   };
 
-  // 2. Bước 2A: Xác thực 6 số OTP
+  // =========================================================================
+  // 2. ĐĂNG KÝ - BƯỚC 2: XÁC THỰC OTP (GỬI LẠI TỐI ĐA 3 LẦN)
+  // =========================================================================
   const handleVerifyRegisterOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     resetMessages();
@@ -184,7 +250,9 @@ export const AuthCard: React.FC = () => {
     try {
       const res = await authApi.verifyRegisterOtp(email.trim(), code);
       if (res.success) {
-        setStep('REGISTER_INFO');
+        setPassword('');
+        setConfirmPassword('');
+        setStep('REGISTER_PASSWORD');
         setSuccessMsg(null);
       } else {
         setErrorMsg(res.message || 'Mã OTP không chính xác hoặc đã hết hạn');
@@ -199,19 +267,33 @@ export const AuthCard: React.FC = () => {
     }
   };
 
-  // Gửi lại mã OTP đăng ký
+  // Gửi lại mã OTP đăng ký (Tối đa 3 lần)
   const handleResendRegisterOtp = async () => {
+    if (remainingResends <= 0) {
+      setErrorMsg('Bạn đã hết số lần gửi lại mã OTP (tối đa 3 lần).');
+      return;
+    }
     if (resendCooldown > 0) return;
+
     resetMessages();
     setLoading(true);
     try {
       const res = await authApi.resendRegisterOtp(email.trim());
       if (res.success) {
-        setSuccessMsg('Mã xác nhận OTP mới đã được gửi đến email của bạn.');
-        setResendCooldown(120);
+        const updatedRemaining =
+          res.remainingResends !== undefined
+            ? res.remainingResends
+            : Math.max(0, remainingResends - 1);
+
+        setRemainingResends(updatedRemaining);
+        setResendCooldown(60);
         setOtpDigits(['', '', '', '', '', '']);
+        setSuccessMsg('Mã xác nhận OTP mới đã được gửi đến email của bạn.');
         otpInputsRef.current[0]?.focus();
       } else {
+        if (res.remainingResends !== undefined) {
+          setRemainingResends(res.remainingResends);
+        }
         setErrorMsg(res.message || 'Không thể gửi lại mã OTP');
       }
     } catch (err: unknown) {
@@ -224,7 +306,9 @@ export const AuthCard: React.FC = () => {
     }
   };
 
-  // 3. Bước 2B: Nhập thông tin & mật khẩu -> Hoàn tất đăng ký
+  // =========================================================================
+  // 2. ĐĂNG KÝ - BƯỚC 3: MẬT KHẨU (NHẬP LẠI) -> HOÀN TẤT ĐĂNG KÝ
+  // =========================================================================
   const handleCompleteRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     resetMessages();
@@ -240,7 +324,7 @@ export const AuthCard: React.FC = () => {
     }
 
     if (password !== confirmPassword) {
-      setErrorMsg('Mật khẩu xác nhận không khớp');
+      setErrorMsg('Mật khẩu xác nhận không khớp. Vui lòng nhập lại.');
       return;
     }
 
@@ -256,7 +340,13 @@ export const AuthCard: React.FC = () => {
       });
 
       if (res.success && (res.accessToken || res.token) && res.user) {
-        loginSuccess(res.accessToken || res.token!, res.refreshToken, res.user);
+        // Tài khoản mới đăng ký -> Chuyển hướng sang trang khảo sát Onboarding
+        loginSuccess(
+          res.accessToken || res.token!,
+          res.refreshToken,
+          res.user,
+          '/onboarding',
+        );
       } else {
         setErrorMsg(res.message || 'Đăng ký không thành công');
       }
@@ -270,41 +360,15 @@ export const AuthCard: React.FC = () => {
     }
   };
 
-  // 4. Bước Đăng nhập khi đã có tài khoản
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    resetMessages();
-
-    if (!password) {
-      setErrorMsg('Vui lòng nhập mật khẩu');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await authApi.login(email.trim(), password);
-      if (res.success && (res.accessToken || res.token) && res.user) {
-        loginSuccess(res.accessToken || res.token!, res.refreshToken, res.user);
-      } else {
-        setErrorMsg(res.message || 'Đăng nhập không thành công');
-      }
-    } catch (err: unknown) {
-      setErrorMsg(
-        'Lỗi đăng nhập: ' +
-          (err instanceof Error ? err.message : 'Vui lòng thử lại'),
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 5. Quên mật khẩu: Gửi OTP
+  // =========================================================================
+  // 3. QUÊN MẬT KHẨU
+  // =========================================================================
   const handleRequestForgotOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     resetMessages();
 
     if (!email.trim()) {
-      setErrorMsg('Vui lòng nhập email để nhận mã OTP');
+      setErrorMsg('Vui lòng nhập email cần khôi phục');
       return;
     }
 
@@ -314,29 +378,30 @@ export const AuthCard: React.FC = () => {
       if (res.success) {
         setForgotOtpDigits(['', '', '', '', '', '']);
         setStep('FORGOT_VERIFY');
-        setSuccessMsg('Mã xác nhận OTP đã được gửi đến email của bạn.');
+        setSuccessMsg(
+          'Mã OTP khôi phục mật khẩu đã được gửi đến email của bạn.',
+        );
         setTimeout(() => forgotOtpInputsRef.current[0]?.focus(), 100);
       } else {
-        setErrorMsg(res.message || 'Không thể gửi mã xác nhận');
+        setErrorMsg(res.message || 'Không thể gửi mã khôi phục');
       }
     } catch (err: unknown) {
       setErrorMsg(
-        'Lỗi gửi OTP: ' +
-          (err instanceof Error ? err.message : 'Vui lòng thử lại'),
+        'Lỗi gửi mã OTP: ' +
+          (err instanceof Error ? err.message : 'Vui lòng thử lại sau'),
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // 6. Quên mật khẩu: Xác nhận OTP 6 số & Đổi mật khẩu
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     resetMessages();
 
     const code = forgotOtpDigits.join('');
     if (code.length !== 6) {
-      setErrorMsg('Vui lòng nhập đủ 6 chữ số mã OTP');
+      setErrorMsg('Vui lòng điền đủ 6 chữ số mã OTP');
       return;
     }
 
@@ -349,11 +414,13 @@ export const AuthCard: React.FC = () => {
     try {
       const res = await authApi.resetPassword(email.trim(), code, newPassword);
       if (res.success) {
-        setSuccessMsg('Đổi mật khẩu thành công! Bạn có thể đăng nhập ngay.');
+        setSuccessMsg(
+          'Đổi mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.',
+        );
         setPassword('');
-        setStep('LOGIN_PASSWORD');
+        setStep('LOGIN');
       } else {
-        setErrorMsg(res.message || 'Đổi mật khẩu thất bại');
+        setErrorMsg(res.message || 'Không thể đặt lại mật khẩu');
       }
     } catch (err: unknown) {
       setErrorMsg(
@@ -365,39 +432,9 @@ export const AuthCard: React.FC = () => {
     }
   };
 
-  // 7. Đặt mật khẩu cho tài khoản Google (không cần OTP)
-  const handleSetGooglePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    resetMessages();
-
-    if (password.length < 6) {
-      setErrorMsg('Mật khẩu phải có ít nhất 6 ký tự');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setErrorMsg('Mật khẩu xác nhận không khớp');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await authApi.setGooglePassword(email.trim(), password);
-      if (res.success && (res.accessToken || res.token) && res.user) {
-        loginSuccess(res.accessToken || res.token!, res.refreshToken, res.user);
-      } else {
-        setErrorMsg(res.message || 'Không thể tạo mật khẩu. Vui lòng thử lại.');
-      }
-    } catch (err: unknown) {
-      setErrorMsg(
-        'Lỗi kết nối: ' +
-          (err instanceof Error ? err.message : 'Vui lòng thử lại'),
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 8. Google OAuth
+  // =========================================================================
+  // 4. GOOGLE OAUTH & TẠO PASSWORD CHO TÀI KHOẢN GOOGLE
+  // =========================================================================
   const handleGoogleLogin = async () => {
     resetMessages();
     setLoading(true);
@@ -417,24 +454,113 @@ export const AuthCard: React.FC = () => {
     }
   };
 
+  const handleSetGooglePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    resetMessages();
+
+    if (password.length < 6) {
+      setErrorMsg('Mật khẩu mới phải chứa ít nhất 6 ký tự');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMsg('Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await authApi.setGooglePassword(email.trim(), password);
+      if (res.success && (res.accessToken || res.token) && res.user) {
+        loginSuccess(res.accessToken || res.token!, res.refreshToken, res.user);
+      } else {
+        setErrorMsg(res.message || 'Không thể tạo mật khẩu');
+      }
+    } catch (err: unknown) {
+      setErrorMsg(
+        'Lỗi tạo mật khẩu: ' +
+          (err instanceof Error ? err.message : 'Vui lòng thử lại'),
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="auth-page-card">
       {/* CỘT TRÁI: FORM AUTH */}
       <div className="auth-form-column">
-        <h2 className="auth-header-title">Chào mừng đến với Purrfect</h2>
+        {/* TAB CHUYỂN ĐỔI ĐĂNG NHẬP / ĐĂNG KÝ */}
+        {(step === 'LOGIN' || step.startsWith('REGISTER')) && (
+          <div className="auth-tabs-nav">
+            <button
+              type="button"
+              className={`auth-tab-btn ${step === 'LOGIN' ? 'active' : ''}`}
+              onClick={() => {
+                resetMessages();
+                setPassword('');
+                setStep('LOGIN');
+                if (
+                  window.location.pathname.replace(/\/+$/, '') === '/register'
+                ) {
+                  window.history.pushState({}, '', '/login');
+                }
+              }}
+            >
+              Đăng nhập
+            </button>
+            <button
+              type="button"
+              className={`auth-tab-btn ${step.startsWith('REGISTER') ? 'active' : ''}`}
+              onClick={() => {
+                resetMessages();
+                setPassword('');
+                setConfirmPassword('');
+                setStep('REGISTER_EMAIL');
+                if (window.location.pathname.replace(/\/+$/, '') === '/login') {
+                  window.history.pushState({}, '', '/register');
+                }
+              }}
+            >
+              Đăng ký
+            </button>
+          </div>
+        )}
+
+        {/* TIÊU ĐỀ THEO BƯỚC */}
+        <h2 className="auth-header-title">
+          {step === 'LOGIN'
+            ? 'Chào mừng đến với Purrfect'
+            : step === 'REGISTER_EMAIL'
+              ? 'Tạo tài khoản mới'
+              : step === 'REGISTER_OTP'
+                ? 'Xác nhận mã OTP'
+                : step === 'REGISTER_PASSWORD'
+                  ? 'Thiết lập mật khẩu'
+                  : step === 'FORGOT_REQUEST'
+                    ? 'Khôi phục mật khẩu'
+                    : step === 'FORGOT_VERIFY'
+                      ? 'Đặt lại mật khẩu mới'
+                      : 'Chào mừng đến với Purrfect'}
+        </h2>
+
         <p className="auth-header-subtitle">
-          {step === 'REGISTER_OTP'
-            ? 'Mã xác nhận OTP đã được gửi đến email của bạn.'
-            : step === 'REGISTER_INFO'
-              ? 'Nhập thông tin cá nhân và mật khẩu để tạo tài khoản mới.'
-              : step === 'FORGOT_REQUEST'
-                ? 'Nhập email của bạn để nhận mã xác nhận OTP.'
-                : step === 'FORGOT_VERIFY'
-                  ? 'Nhập mã xác nhận OTP và mật khẩu mới của bạn.'
-                  : 'Đăng nhập vào tài khoản Purr của bạn để tiếp tục học tập.'}
+          {step === 'LOGIN'
+            ? 'Đăng nhập vào tài khoản Purr của bạn để tiếp tục học tập.'
+            : step === 'REGISTER_EMAIL'
+              ? 'Nhập địa chỉ email của bạn để bắt đầu đăng ký tài khoản.'
+              : step === 'REGISTER_OTP'
+                ? `Mã xác nhận OTP đã được gửi đến email của bạn.`
+                : step === 'REGISTER_PASSWORD'
+                  ? 'Nhập thông tin cá nhân và mật khẩu (nhập lại) để hoàn tất đăng ký.'
+                  : step === 'FORGOT_REQUEST'
+                    ? 'Nhập email của bạn để nhận mã xác nhận OTP khôi phục mật khẩu.'
+                    : step === 'FORGOT_VERIFY'
+                      ? 'Nhập mã xác nhận OTP và mật khẩu mới của bạn.'
+                      : 'Truy cập vào tài khoản Purr của bạn để tiếp tục học tập.'}
         </p>
 
-        {/* Thông báo Alert */}
+        {/* THÔNG BÁO ALERT */}
         {errorMsg && (
           <div className="auth-alert auth-alert-error">{errorMsg}</div>
         )}
@@ -443,10 +569,11 @@ export const AuthCard: React.FC = () => {
         )}
 
         {/* ============================================================== */}
-        {/* BƯỚC 1: NHẬP EMAIL                                             */}
+        {/* PHẦN 1: ĐĂNG NHẬP (EMAIL + MẬT KHẨU)                            */}
         {/* ============================================================== */}
-        {step === 'EMAIL' && (
-          <form onSubmit={handleCheckEmail}>
+        {step === 'LOGIN' && (
+          <form onSubmit={handleLogin}>
+            {/* Ô Email */}
             <div className="auth-form-group">
               <label className="auth-input-label">
                 EMAIL <span className="auth-star-required">*</span>
@@ -464,24 +591,69 @@ export const AuthCard: React.FC = () => {
               </div>
             </div>
 
-            {/* Checkbox Ghi nhớ đăng nhập */}
-            <label className="auth-checkbox-row">
-              <input
-                type="checkbox"
-                className="auth-checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <span className="auth-checkbox-label">Ghi nhớ đăng nhập</span>
-            </label>
+            {/* Ô Mật khẩu */}
+            <div className="auth-form-group">
+              <label className="auth-input-label">
+                MẬT KHẨU <span className="auth-star-required">*</span>
+              </label>
+              <div className="auth-input-wrapper">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="auth-input"
+                  placeholder="Nhập mật khẩu của bạn"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="auth-input-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? 'Ẩn' : 'Hiện'}
+                </button>
+              </div>
+            </div>
 
-            {/* Nút Tiếp tục */}
+            {/* Checkbox Ghi nhớ & Link Quên mật khẩu */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '18px',
+              }}
+            >
+              <label className="auth-checkbox-row" style={{ marginBottom: 0 }}>
+                <input
+                  type="checkbox"
+                  className="auth-checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <span className="auth-checkbox-label">Ghi nhớ đăng nhập</span>
+              </label>
+
+              <span
+                className="auth-forgot-link"
+                style={{ margin: 0 }}
+                onClick={() => {
+                  resetMessages();
+                  setStep('FORGOT_REQUEST');
+                }}
+              >
+                Quên mật khẩu?
+              </span>
+            </div>
+
+            {/* Nút Đăng nhập */}
             <button
               type="submit"
               className="auth-btn-primary"
               disabled={loading}
             >
-              {loading ? <span className="auth-spinner"></span> : 'Tiếp tục'}
+              {loading ? <span className="auth-spinner"></span> : 'Đăng nhập'}
             </button>
 
             {/* Đường kẻ HOẶC */}
@@ -499,8 +671,57 @@ export const AuthCard: React.FC = () => {
               Tiếp tục với Google
             </button>
 
-            {/* Checkbox Chấp nhận điều khoản với link gạch chân */}
-            <label className="auth-terms-row">
+            {/* Link chuyển sang Đăng ký */}
+            <div className="auth-switch-footer">
+              Chưa có tài khoản?{' '}
+              <button
+                type="button"
+                className="auth-switch-btn"
+                onClick={() => {
+                  resetMessages();
+                  setPassword('');
+                  setConfirmPassword('');
+                  setStep('REGISTER_EMAIL');
+                  if (
+                    window.location.pathname.replace(/\/+$/, '') === '/login'
+                  ) {
+                    window.history.pushState({}, '', '/register');
+                  }
+                }}
+              >
+                Đăng ký ngay
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* ============================================================== */}
+        {/* PHẦN 2: ĐĂNG KÝ - BƯỚC 1: NHẬP EMAIL                           */}
+        {/* ============================================================== */}
+        {step === 'REGISTER_EMAIL' && (
+          <form onSubmit={handleRegisterEmail}>
+            <div className="auth-form-group">
+              <label className="auth-input-label">
+                EMAIL ĐĂNG KÝ <span className="auth-star-required">*</span>
+              </label>
+              <div className="auth-input-wrapper">
+                <input
+                  type="email"
+                  className="auth-input"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoFocus
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Checkbox Chấp nhận điều khoản */}
+            <label
+              className="auth-terms-row"
+              style={{ marginTop: 0, marginBottom: 18 }}
+            >
               <input
                 type="checkbox"
                 className="auth-checkbox"
@@ -531,103 +752,22 @@ export const AuthCard: React.FC = () => {
                 của Purrfect
               </span>
             </label>
-          </form>
-        )}
 
-        {/* ============================================================== */}
-        {/* BƯỚC: TÀI KHOẢN GOOGLE ĐƯỢC PHÁT HIỆN                          */}
-        {/* ============================================================== */}
-        {step === 'GOOGLE_ACCOUNT_DETECTED' && (
-          <div>
-            <div className="auth-email-badge" style={{ marginBottom: '24px' }}>
-              <span className="auth-email-badge-email">{email}</span>
-              <button
-                type="button"
-                className="auth-change-email-btn"
-                onClick={() => {
-                  resetMessages();
-                  setStep('EMAIL');
-                }}
-              >
-                Thay đổi
-              </button>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '12px',
-                background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
-                border: '1.5px solid #bfdbfe',
-                borderRadius: '14px',
-                padding: '16px 18px',
-                marginBottom: '24px',
-              }}
-            >
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                style={{ flexShrink: 0, marginTop: '2px' }}
-              >
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
-              </svg>
-              <div>
-                <p
-                  style={{
-                    fontWeight: 700,
-                    fontSize: '14px',
-                    color: '#1e3a8a',
-                    marginBottom: '4px',
-                  }}
-                >
-                  Tài khoản đăng nhập bằng Google
-                </p>
-                <p
-                  style={{
-                    fontSize: '13.5px',
-                    color: '#3b82f6',
-                    lineHeight: '1.55',
-                    margin: 0,
-                  }}
-                >
-                  Email này trước đó đã đăng nhập bằng phương thức Google. Bạn
-                  có thể tiếp tục với Google hoặc tạo mật khẩu mới cho tài
-                  khoản.
-                </p>
-              </div>
-            </div>
-
+            {/* Nút Tiếp tục */}
             <button
-              type="button"
+              type="submit"
               className="auth-btn-primary"
-              onClick={() => {
-                resetMessages();
-                setPassword('');
-                setConfirmPassword('');
-                setStep('SET_GOOGLE_PASSWORD');
-              }}
-              style={{ marginBottom: '16px' }}
+              disabled={loading}
             >
-              Tạo mật khẩu mới cho email này
+              {loading ? <span className="auth-spinner"></span> : 'Tiếp tục'}
             </button>
 
+            {/* Đường kẻ HOẶC */}
+            <div className="auth-divider">
+              <span>HOẶC</span>
+            </div>
+
+            {/* Nút Tiếp tục với Google */}
             <button
               type="button"
               className="auth-btn-google"
@@ -636,88 +776,35 @@ export const AuthCard: React.FC = () => {
             >
               Tiếp tục với Google
             </button>
-          </div>
-        )}
 
-        {/* ============================================================== */}
-        {/* BƯỚC: TẠO MẬT KHẨU CHO TÀI KHOẢN GOOGLE (KHÔNG CẦN OTP)       */}
-        {/* ============================================================== */}
-        {step === 'SET_GOOGLE_PASSWORD' && (
-          <form onSubmit={handleSetGooglePassword}>
-            <div className="auth-email-badge" style={{ marginBottom: '24px' }}>
-              <span className="auth-email-badge-email">{email}</span>
+            {/* Link chuyển sang Đăng nhập */}
+            <div className="auth-switch-footer">
+              Đã có tài khoản?{' '}
               <button
                 type="button"
-                className="auth-change-email-btn"
+                className="auth-switch-btn"
                 onClick={() => {
                   resetMessages();
-                  setStep('GOOGLE_ACCOUNT_DETECTED');
+                  setStep('LOGIN');
+                  if (
+                    window.location.pathname.replace(/\/+$/, '') === '/register'
+                  ) {
+                    window.history.pushState({}, '', '/login');
+                  }
                 }}
               >
-                Quay lại
+                Đăng nhập ngay
               </button>
             </div>
-
-            <div className="auth-form-group">
-              <label className="auth-input-label">
-                MẬT KHẨU MỚI <span className="auth-star-required">*</span>
-              </label>
-              <div className="auth-input-wrapper">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="auth-input"
-                  placeholder="Tối thiểu 6 ký tự"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoFocus
-                  required
-                />
-                <button
-                  type="button"
-                  className="auth-input-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
-                >
-                  {showPassword ? 'Ẩn' : 'Hiện'}
-                </button>
-              </div>
-            </div>
-
-            <div className="auth-form-group">
-              <label className="auth-input-label">
-                XÁC NHẬN MẬT KHẨU <span className="auth-star-required">*</span>
-              </label>
-              <div className="auth-input-wrapper">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="auth-input"
-                  placeholder="Nhập lại mật khẩu"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="auth-btn-primary"
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="auth-spinner"></span>
-              ) : (
-                'Tạo mật khẩu & Đăng nhập'
-              )}
-            </button>
           </form>
         )}
 
         {/* ============================================================== */}
-        {/* NẼU ĐÃ CÓ TÀI KHOẢN -> NHẬP MẬT KHẨU LOGIN                     */}
+        {/* PHẦN 2: ĐĂNG KÝ - BƯỚC 2: NHẬP OTP (GỬI LẠI TỐI ĐA 3 LẦN)     */}
         {/* ============================================================== */}
-        {step === 'LOGIN_PASSWORD' && (
-          <form onSubmit={handleLogin}>
+        {step === 'REGISTER_OTP' && (
+          <form onSubmit={handleVerifyRegisterOtp}>
+            {/* Badge email hiển thị */}
             <div className="auth-email-badge">
               <span className="auth-email-badge-email">{email}</span>
               <button
@@ -725,93 +812,19 @@ export const AuthCard: React.FC = () => {
                 className="auth-change-email-btn"
                 onClick={() => {
                   resetMessages();
-                  setStep('EMAIL');
+                  setStep('REGISTER_EMAIL');
                 }}
               >
-                Thay đổi
+                Thay đổi email
               </button>
             </div>
 
-            <div className="auth-form-group">
-              <label className="auth-input-label">
-                MẬT KHẨU <span className="auth-star-required">*</span>
-              </label>
-              <div className="auth-input-wrapper">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="auth-input"
-                  placeholder="Nhập mật khẩu của bạn"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoFocus
-                  required
-                />
-                <button
-                  type="button"
-                  className="auth-input-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
-                >
-                  {showPassword ? 'Ẩn' : 'Hiện'}
-                </button>
-              </div>
-            </div>
-
-            {/* Link Quên mật khẩu */}
-            <span
-              className="auth-forgot-link"
-              onClick={() => {
-                resetMessages();
-                setStep('FORGOT_REQUEST');
-              }}
-            >
-              Quên mật khẩu?
-            </span>
-
-            {/* Checkbox Ghi nhớ */}
-            <label className="auth-checkbox-row">
-              <input
-                type="checkbox"
-                className="auth-checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <span className="auth-checkbox-label">Ghi nhớ đăng nhập</span>
-            </label>
-
-            {/* Nút Đăng nhập */}
-            <button
-              type="submit"
-              className="auth-btn-primary"
-              disabled={loading}
-            >
-              {loading ? <span className="auth-spinner"></span> : 'Đăng nhập'}
-            </button>
-
-            <button
-              type="button"
-              className="auth-btn-back"
-              onClick={() => {
-                resetMessages();
-                setStep('EMAIL');
-              }}
-            >
-              ← Quay lại
-            </button>
-          </form>
-        )}
-
-        {/* ============================================================== */}
-        {/* NẾU CHƯA CÓ TÀI KHOẢN -> MÀN HÌNH NHẬP 6 Ô OTP                  */}
-        {/* ============================================================== */}
-        {step === 'REGISTER_OTP' && (
-          <form onSubmit={handleVerifyRegisterOtp}>
             <div className="auth-form-group">
               <label
                 className="auth-input-label"
                 style={{ justifyContent: 'center', marginBottom: 12 }}
               >
-                NHẬP MÃ XÁC NHẬN OTP{' '}
+                NHẬP MÃ XÁC NHẬN OTP (6 SỐ){' '}
                 <span className="auth-star-required">*</span>
               </label>
 
@@ -850,31 +863,33 @@ export const AuthCard: React.FC = () => {
                 ))}
               </div>
 
-              {/* Nút gửi lại mã với thời gian đếm ngược 2 phút */}
-              <div className="auth-resend-row">
-                <button
-                  type="button"
-                  className="auth-resend-btn"
-                  disabled={resendCooldown > 0}
-                  onClick={handleResendRegisterOtp}
-                  style={
-                    resendCooldown > 0
-                      ? {
-                          opacity: 0.6,
-                          cursor: 'not-allowed',
-                          color: '#94a3b8',
-                        }
-                      : {}
-                  }
-                >
-                  {resendCooldown > 0
-                    ? `Gửi lại sau (${Math.floor(resendCooldown / 60)}:${(
-                        resendCooldown % 60
-                      )
-                        .toString()
-                        .padStart(2, '0')})`
-                    : 'Gửi lại mã'}
-                </button>
+              {/* Hàng gửi lại mã: Tối đa 3 lần */}
+              <div className="auth-resend-row" style={{ marginTop: 12 }}>
+                {remainingResends > 0 ? (
+                  <button
+                    type="button"
+                    className="auth-resend-btn"
+                    disabled={resendCooldown > 0 || loading}
+                    onClick={handleResendRegisterOtp}
+                    style={
+                      resendCooldown > 0
+                        ? {
+                            opacity: 0.65,
+                            cursor: 'not-allowed',
+                            color: '#64748b',
+                          }
+                        : {}
+                    }
+                  >
+                    {resendCooldown > 0
+                      ? `Gửi lại sau (${resendCooldown}s)`
+                      : 'Gửi lại mã OTP'}
+                  </button>
+                ) : (
+                  <span className="auth-resend-limit-exceeded">
+                    Đã hết số lần gửi lại mã OTP (tối đa 3 lần)
+                  </span>
+                )}
               </div>
             </div>
 
@@ -895,7 +910,7 @@ export const AuthCard: React.FC = () => {
               className="auth-btn-back"
               onClick={() => {
                 resetMessages();
-                setStep('EMAIL');
+                setStep('REGISTER_EMAIL');
               }}
             >
               ← Quay lại
@@ -904,10 +919,16 @@ export const AuthCard: React.FC = () => {
         )}
 
         {/* ============================================================== */}
-        {/* BƯỚC TIẾP THEO: NHẬP THÔNG TIN VÀ MẬT KHẨU                      */}
+        {/* PHẦN 2: ĐĂNG KÝ - BƯỚC 3: MẬT KHẨU (NHẬP LẠI)                  */}
         {/* ============================================================== */}
-        {step === 'REGISTER_INFO' && (
+        {step === 'REGISTER_PASSWORD' && (
           <form onSubmit={handleCompleteRegister}>
+            {/* Badge email */}
+            <div className="auth-email-badge">
+              <span className="auth-email-badge-email">{email}</span>
+            </div>
+
+            {/* Ô Họ và tên */}
             <div className="auth-form-group">
               <label className="auth-input-label">
                 HỌ VÀ TÊN <span className="auth-star-required">*</span>
@@ -925,9 +946,10 @@ export const AuthCard: React.FC = () => {
               </div>
             </div>
 
+            {/* Ô Mật khẩu */}
             <div className="auth-form-group">
               <label className="auth-input-label">
-                MẬT KHẨU (Ít nhất 6 ký tự){' '}
+                MẬT KHẨU (TỐI THIỂU 6 KÝ TỰ){' '}
                 <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
@@ -950,22 +972,32 @@ export const AuthCard: React.FC = () => {
               </div>
             </div>
 
+            {/* Ô Nhập lại mật khẩu */}
             <div className="auth-form-group">
               <label className="auth-input-label">
-                XÁC NHẬN MẬT KHẨU <span className="auth-star-required">*</span>
+                NHẬP LẠI MẬT KHẨU <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? 'text' : 'password'}
                   className="auth-input"
-                  placeholder="Nhập lại mật khẩu"
+                  placeholder="Xác nhận lại mật khẩu vừa nhập"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
+                <button
+                  type="button"
+                  className="auth-input-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? 'Ẩn' : 'Hiện'}
+                </button>
               </div>
             </div>
 
+            {/* Nút Hoàn tất */}
             <button
               type="submit"
               className="auth-btn-primary"
@@ -986,13 +1018,13 @@ export const AuthCard: React.FC = () => {
                 setStep('REGISTER_OTP');
               }}
             >
-              ← Quay lại bước OTP
+              ← Quay lại
             </button>
           </form>
         )}
 
         {/* ============================================================== */}
-        {/* QUÊN MẬT KHẨU: YÊU CẦU MÃ OTP                                  */}
+        {/* QUÊN MẬT KHẨU: BƯỚC 1 - NHẬP EMAIL                             */}
         {/* ============================================================== */}
         {step === 'FORGOT_REQUEST' && (
           <form onSubmit={handleRequestForgotOtp}>
@@ -1031,7 +1063,7 @@ export const AuthCard: React.FC = () => {
               className="auth-btn-back"
               onClick={() => {
                 resetMessages();
-                setStep('LOGIN_PASSWORD');
+                setStep('LOGIN');
               }}
             >
               ← Quay lại đăng nhập
@@ -1040,7 +1072,7 @@ export const AuthCard: React.FC = () => {
         )}
 
         {/* ============================================================== */}
-        {/* QUÊN MẬT KHẨU: NHẬP 6 Ô OTP & ĐẶT MẬT KHẨU MỚI                */}
+        {/* QUÊN MẬT KHẨU: BƯỚC 2 - NHẬP OTP & ĐẶT MẬT KHẨU MỚI           */}
         {/* ============================================================== */}
         {step === 'FORGOT_VERIFY' && (
           <form onSubmit={handleResetPassword}>
@@ -1049,7 +1081,7 @@ export const AuthCard: React.FC = () => {
                 className="auth-input-label"
                 style={{ justifyContent: 'center', marginBottom: 12 }}
               >
-                NHẬP MÃ XÁC NHẬN OTP{' '}
+                NHẬP MÃ XÁC NHẬN OTP (6 SỐ){' '}
                 <span className="auth-star-required">*</span>
               </label>
 
@@ -1139,6 +1171,174 @@ export const AuthCard: React.FC = () => {
               }}
             >
               ← Gửi lại mã khác
+            </button>
+          </form>
+        )}
+
+        {/* ============================================================== */}
+        {/* TÀI KHOẢN GOOGLE ĐƯỢC PHÁT HIỆN                                */}
+        {/* ============================================================== */}
+        {step === 'GOOGLE_ACCOUNT_DETECTED' && (
+          <div>
+            <div className="auth-email-badge" style={{ marginBottom: '24px' }}>
+              <span className="auth-email-badge-email">{email}</span>
+              <button
+                type="button"
+                className="auth-change-email-btn"
+                onClick={() => {
+                  resetMessages();
+                  setStep('LOGIN');
+                  if (
+                    window.location.pathname.replace(/\/+$/, '') === '/register'
+                  ) {
+                    window.history.pushState({}, '', '/login');
+                  }
+                }}
+              >
+                Quay lại
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+                border: '1.5px solid #bfdbfe',
+                borderRadius: '14px',
+                padding: '16px 18px',
+                marginBottom: '24px',
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    color: '#1e3a8a',
+                    marginBottom: '4px',
+                  }}
+                >
+                  Tài khoản đăng nhập bằng Google
+                </p>
+                <p
+                  style={{
+                    fontSize: '13.5px',
+                    color: '#3b82f6',
+                    lineHeight: '1.55',
+                    margin: 0,
+                  }}
+                >
+                  Email này trước đó đã đăng nhập bằng Google. Bạn có thể tiếp
+                  tục với Google hoặc tạo mật khẩu mới cho tài khoản.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="auth-btn-primary"
+              onClick={() => {
+                resetMessages();
+                setPassword('');
+                setConfirmPassword('');
+                setStep('SET_GOOGLE_PASSWORD');
+              }}
+              style={{ marginBottom: '16px' }}
+            >
+              Tạo mật khẩu cho email này
+            </button>
+
+            <button
+              type="button"
+              className="auth-btn-google"
+              onClick={handleGoogleLogin}
+              disabled={loading}
+            >
+              Tiếp tục với Google
+            </button>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TẠO MẬT KHẨU CHO TÀI KHOẢN GOOGLE                              */}
+        {/* ============================================================== */}
+        {step === 'SET_GOOGLE_PASSWORD' && (
+          <form onSubmit={handleSetGooglePassword}>
+            <div className="auth-email-badge" style={{ marginBottom: '24px' }}>
+              <span className="auth-email-badge-email">{email}</span>
+              <button
+                type="button"
+                className="auth-change-email-btn"
+                onClick={() => {
+                  resetMessages();
+                  setStep('GOOGLE_ACCOUNT_DETECTED');
+                }}
+              >
+                Quay lại
+              </button>
+            </div>
+
+            <div className="auth-form-group">
+              <label className="auth-input-label">
+                MẬT KHẨU MỚI <span className="auth-star-required">*</span>
+              </label>
+              <div className="auth-input-wrapper">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="auth-input"
+                  placeholder="Tối thiểu 6 ký tự"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoFocus
+                  required
+                />
+                <button
+                  type="button"
+                  className="auth-input-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? 'Ẩn' : 'Hiện'}
+                </button>
+              </div>
+            </div>
+
+            <div className="auth-form-group">
+              <label className="auth-input-label">
+                XÁC NHẬN MẬT KHẨU <span className="auth-star-required">*</span>
+              </label>
+              <div className="auth-input-wrapper">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  className="auth-input"
+                  placeholder="Nhập lại mật khẩu"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="auth-input-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? 'Ẩn' : 'Hiện'}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="auth-btn-primary"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="auth-spinner"></span>
+              ) : (
+                'Tạo mật khẩu & Đăng nhập'
+              )}
             </button>
           </form>
         )}

@@ -18,6 +18,7 @@ interface AuthContextType {
     accessToken: string,
     refreshToken: string | undefined,
     user: User,
+    redirectTo?: string,
   ) => void;
   logout: () => Promise<void>;
 }
@@ -91,11 +92,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     accessToken: string,
     refreshToken: string | undefined,
     newUser: User,
+    redirectTo: string = '/',
   ) => {
     setTokens(accessToken, refreshToken);
     setToken(accessToken);
     setUser(newUser);
-    navigate('/');
+    navigate(redirectTo);
   };
 
   const logout = async () => {

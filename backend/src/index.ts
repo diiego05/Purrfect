@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import { connectDB } from './config/db';
 import authRoutes from './routes/authRoutes';
+import courseRoutes from './routes/courseRoutes';
 import { verifyMailerConnection } from './utils/mailer';
 
 const app = express();
@@ -22,13 +23,14 @@ app.use(
       'http://127.0.0.1:5173',
     ],
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/courses', courseRoutes);
 
 // Health check
 app.get('/api/health', (_req, expressRes) => {
@@ -39,7 +41,7 @@ app.get('/api/health', (_req, expressRes) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Auth routes available at http://localhost:${PORT}/api/auth`);
   // Kiểm tra kết nối SMTP ngay khi server khởi động

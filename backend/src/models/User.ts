@@ -14,6 +14,7 @@ export interface IUser extends Document {
   role: UserRole;
   status: UserStatus;
   googleId?: string;
+  onboardingCompleted?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -64,11 +65,15 @@ const userSchema = new Schema<IUser>(
       default: null,
       sparse: true,
     },
+    onboardingCompleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
     collection: 'users',
-  }
+  },
 );
 
 export const User = mongoose.model<IUser>('User', userSchema);

@@ -103,6 +103,7 @@ export const checkEmail = async (
       exists: false,
       email: normalizedEmail,
       message: 'Mã xác nhận OTP đã được gửi đến email của bạn',
+      remainingResends: 3,
     });
   } catch (error) {
     console.error('Lỗi khi kiểm tra email:', error);
@@ -128,7 +129,30 @@ export const resendRegisterOtp = async (
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Kiểm tra giới hạn 2 phút (120 giây) trước khi cho phép gửi lại mã mới
+    // Đếm tổng số OTP REGISTER đã tạo trong vòng 15 phút qua
+    const totalOtps = await Otp.countDocuments({
+      email: normalizedEmail,
+      type: 'REGISTER',
+      createdAt: { $gte: new Date(Date.now() - 15 * 60 * 1000) },
+    });
+
+    const MAX_RESENDS = 3;
+    // totalOtps = 1 (lần đầu tạo khi nhập email).
+    // Gửi lại lần 1 -> totalOtps lúc này là 1 -> cho phép.
+    // Gửi lại lần 2 -> totalOtps = 2 -> cho phép.
+    // Gửi lại lần 3 -> totalOtps = 3 -> cho phép.
+    // Gửi lại lần 4 -> totalOtps = 4 (đã gửi lại đủ 3 lần) -> từ chối!
+    if (totalOtps >= MAX_RESENDS + 1) {
+      res.status(429).json({
+        success: false,
+        message:
+          'Bạn đã đạt giới hạn tối đa 3 lần gửi lại mã OTP. Vui lòng thử lại sau 15 phút.',
+        remainingResends: 0,
+      });
+      return;
+    }
+
+    // Kiểm tra giới hạn 60 giây trước khi cho phép gửi lại mã mới
     const lastOtp = await Otp.findOne({
       email: normalizedEmail,
       type: 'REGISTER',
@@ -136,7 +160,7 @@ export const resendRegisterOtp = async (
 
     if (lastOtp && lastOtp.createdAt) {
       const elapsedMs = Date.now() - new Date(lastOtp.createdAt).getTime();
-      const cooldownMs = 2 * 60 * 1000; // 2 phút
+      const cooldownMs = 60 * 1000; // 60 giây
       if (elapsedMs < cooldownMs) {
         const remainingSec = Math.ceil((cooldownMs - elapsedMs) / 1000);
         res.status(429).json({
@@ -170,9 +194,13 @@ export const resendRegisterOtp = async (
     );
     await sendOtpEmail(normalizedEmail, otpCode, 'REGISTER');
 
+    // Sau khi tạo OTP này, số lượt gửi lại còn lại là:
+    const remainingResends = Math.max(0, MAX_RESENDS - totalOtps);
+
     res.json({
       success: true,
-      message: 'Mã xác nhận OTP mới đã được gửi đến email của bạn',
+      message: 'Mã xác nhận OTP mới đã được gửi đến email của bạn.',
+      remainingResends,
     });
   } catch {
     res
@@ -291,6 +319,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         role: user.role,
         avatarUrl: user.avatarUrl,
         phoneNumber: user.phoneNumber,
+        onboardingCompleted: user.onboardingCompleted ?? false,
       },
     });
   } catch (error) {
@@ -386,6 +415,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         role: newUser.role,
         avatarUrl: newUser.avatarUrl,
         phoneNumber: newUser.phoneNumber,
+        onboardingCompleted: false,
       },
     });
   } catch (error) {
@@ -799,6 +829,7 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
       avatarUrl: req.user.avatarUrl,
       phoneNumber: req.user.phoneNumber,
       bio: req.user.bio,
+      onboardingCompleted: req.user.onboardingCompleted ?? false,
     },
   });
 };

@@ -17,6 +17,10 @@ import {
   getGoogleAuthUrl,
   handleGoogleCallback,
 } from '../controllers/authController';
+import {
+  saveOnboardingSurvey,
+  getUserOnboarding,
+} from '../controllers/onboardingController';
 import { authenticateToken } from '../middlewares/auth';
 
 const router = Router();
@@ -46,6 +50,10 @@ router.post('/set-google-password', setGooglePassword);
 // Đăng xuất và lấy thông tin phiên
 router.post('/logout', logout);
 router.get('/me', authenticateToken, getMe);
+
+// Khảo sát định hướng Onboarding
+router.post('/onboarding', authenticateToken, saveOnboardingSurvey);
+router.get('/onboarding', authenticateToken, getUserOnboarding);
 
 // Google OAuth
 router.get('/google/url', getGoogleAuthUrl);
