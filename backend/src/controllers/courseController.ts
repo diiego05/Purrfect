@@ -406,10 +406,8 @@ export const initialCourses = [
   },
 ];
 
-// Hàm tự động seed dữ liệu nếu DB chưa có khóa học
 export const seedCoursesIfEmpty = async () => {
   try {
-    // 1. Đồng bộ Categories
     const categoryMap: Record<string, string> = {};
     for (const cat of initialCategories) {
       let existingCat = await Category.findOne({ slug: cat.slug });
@@ -419,7 +417,6 @@ export const seedCoursesIfEmpty = async () => {
       categoryMap[cat.slug] = existingCat._id.toString();
     }
 
-    // 2. Đồng bộ Courses nếu chưa có
     for (const c of initialCourses) {
       const existing = await Course.findOne({ slug: c.slug });
       if (!existing) {
@@ -447,7 +444,6 @@ export const seedCoursesIfEmpty = async () => {
       }
     }
 
-    // 3. Đảm bảo tất cả khóa học có Level và SkillIds phục vụ AI Content-Based
     const categories = await Category.find();
     for (const cat of categories) {
       const skills = await Skill.find({ categoryId: cat._id });
@@ -463,7 +459,6 @@ export const seedCoursesIfEmpty = async () => {
       }
     }
 
-    // Gán level mặc định cho các khóa nếu chưa có
     await Course.updateMany(
       {
         slug: /advanced|cybersecurity|devops|production/i,
@@ -483,32 +478,22 @@ export const seedCoursesIfEmpty = async () => {
       { $set: { level: 'Beginner' } },
     );
   } catch (error) {
-    console.error('[Seed] Lỗi khi seed dữ liệu khóa học:', error);
+    console.error('[CourseController] seedCoursesIfEmpty error:', error);
   }
 };
 
-/**
- * Lấy các nhóm khóa học cho Trang chủ:
- * 1. Dành riêng cho bạn (forYou) - Áp dụng AI Content-Based Recommendation nếu đã đăng nhập
- * 2. Khóa học bán chạy nhất (bestSellers)
- * 3. Khóa học mới ra mắt (newReleases)
- */
 export const getHomeCourses = async (
   req: AuthRequest,
   res: Response,
 ): Promise<void> => {
   try {
-    // Đảm bảo có dữ liệu
     await seedCoursesIfEmpty();
 
     let forYou: ICourse[] = [];
-
-    // Nếu học viên đã đăng nhập -> Gọi AI Content-Based Recommendation từ khảo sát Onboarding & tương tác
     if (req.user) {
       forYou = await getPersonalizedRecommendations(req.user._id.toString(), 8);
     }
 
-    // Nếu là khách hoặc chưa có gợi ý cá nhân hóa -> Lấy các khóa học mặc định isForYou
     if (!forYou || forYou.length === 0) {
       forYou = await Course.find({
         status: 'PUBLISHED',
@@ -520,7 +505,6 @@ export const getHomeCourses = async (
         .limit(8);
     }
 
-    // 2. Khóa học bán chạy nhất (sắp xếp theo totalStudents giảm dần)
     const bestSellers = await Course.find({
       status: 'PUBLISHED',
       isDeleted: false,
@@ -529,7 +513,6 @@ export const getHomeCourses = async (
       .sort({ totalStudents: -1 })
       .limit(8);
 
-    // 3. Khóa học mới ra mắt (sắp xếp theo createdAt giảm dần hoặc có badge 'NEW')
     const newReleases = await Course.find({
       status: 'PUBLISHED',
       isDeleted: false,
@@ -547,10 +530,7 @@ export const getHomeCourses = async (
       },
     });
   } catch (error) {
-    console.error(
-      '[CourseController] Lỗi khi lấy danh sách khóa học trang chủ:',
-      error,
-    );
+    console.error('[CourseController] getHomeCourses error:', error);
     res.status(500).json({
       success: false,
       message: 'Không thể tải danh sách khóa học trang chủ',
@@ -558,10 +538,6 @@ export const getHomeCourses = async (
   }
 };
 
-/**
- * Ghi nhận tương tác học viên phục vụ huấn luyện AI (tìm kiếm, xem khóa học, thêm giỏ hàng)
- * POST /api/courses/interactions
- */
 export const recordCourseInteraction = async (
   req: AuthRequest,
   res: Response,
@@ -585,7 +561,7 @@ export const recordCourseInteraction = async (
 
     res.status(200).json({ success: true, message: 'Đã ghi nhận tương tác' });
   } catch (error) {
-    console.error('[CourseController] Lỗi ghi nhận tương tác:', error);
+    console.error('[CourseController] recordCourseInteraction error:', error);
     res.status(500).json({ success: false, message: 'Lỗi ghi nhận tương tác' });
   }
 };

@@ -14,9 +14,6 @@ const INTERACTION_WEIGHTS: Record<InteractionType, number> = {
   RATING: 4.5,
 };
 
-/**
- * Ghi nhận tương tác của người dùng để làm dữ liệu huấn luyện AI
- */
 export async function recordInteraction(data: {
   userId: string | mongoose.Types.ObjectId;
   courseId?: string | mongoose.Types.ObjectId | null;
@@ -37,13 +34,10 @@ export async function recordInteraction(data: {
       metadata: data.metadata || {},
     });
   } catch (err) {
-    console.error('[RecommendationService] Lỗi khi ghi nhận tương tác:', err);
+    console.error('[RecommendationService] recordInteraction error:', err);
   }
 }
 
-/**
- * Chuẩn hóa cấp độ người dùng sang 'Beginner' | 'Intermediate' | 'Advanced'
- */
 function normalizeLevel(
   levelStr?: string,
 ): 'Beginner' | 'Intermediate' | 'Advanced' {
@@ -54,15 +48,12 @@ function normalizeLevel(
   return 'Beginner';
 }
 
-/**
- * Gọi Python AI Microservice (FastAPI + Scikit-Learn TF-IDF + SVD)
- */
 async function callPythonAIService(
   payload: Record<string, unknown>,
 ): Promise<string[] | null> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
+    const timeout = setTimeout(() => controller.abort(), 1500);
 
     const res = await fetch(`${AI_SERVICE_URL}/api/v1/recommend`, {
       method: 'POST',
@@ -79,27 +70,19 @@ async function callPythonAIService(
       }
     }
   } catch {
-    // Nếu Python AI service chưa bật hoặc timeout -> Chuyển sang fallback local
+    // Fallback to local matching
   }
   return null;
 }
 
-/**
- * Thuật toán Gợi ý cá nhân hóa:
- * 1. Ưu tiên gọi Python AI Microservice (TF-IDF + SVD + Next-in-Sequence)
- * 2. Tự động Fallback thuật toán Content-Based trên Node.js nếu Python service offline
- */
 export async function getPersonalizedRecommendations(
   userId: string,
   limit = 8,
 ): Promise<ICourse[]> {
   try {
     const userObjectId = new mongoose.Types.ObjectId(userId);
-
-    // 1. Đọc khảo sát Onboarding của học viên
     const survey = await OnboardingSurvey.findOne({ userId: userObjectId });
 
-    // 2. Đọc tương tác gần đây của học viên (tìm kiếm, xem chi tiết, đã ghi danh)
     const recentInteractions = await UserInteraction.find({
       userId: userObjectId,
     })
@@ -119,7 +102,6 @@ export async function getPersonalizedRecommendations(
       }
     }
 
-    // 3. Lấy tất cả khóa học PUBLISHED
     const allCourses = await Course.find({
       status: 'PUBLISHED',
       isDeleted: false,
@@ -128,7 +110,6 @@ export async function getPersonalizedRecommendations(
       .populate('skillIds', 'name slug')
       .lean();
 
-    // Loại trừ các khóa học đã ghi danh
     const candidates = allCourses.filter(
       (c) => !enrolledCourseIds.has(c._id.toString()),
     );
@@ -137,7 +118,6 @@ export async function getPersonalizedRecommendations(
       return [];
     }
 
-    // Nếu học viên chưa làm Onboarding và chưa tìm kiếm gì -> Fallback khóa học nổi bật
     if (!survey && searchKeywords.length === 0) {
       return (await Course.find({
         status: 'PUBLISHED',
@@ -150,7 +130,6 @@ export async function getPersonalizedRecommendations(
         .lean()) as unknown as ICourse[];
     }
 
-    // 4. THỬ GỌI PYTHON AI SERVICE (FastAPI SVD + TF-IDF)
     const pythonPayload = {
       user_id: userId,
       onboarding: survey
@@ -205,7 +184,6 @@ export async function getPersonalizedRecommendations(
       }
     }
 
-    // 5. LOCAL FALLBACK (Content-Based Matching thuần)
     const userCategoryIds = new Set(
       (survey?.interestedCategoryIds || []).map((id) => id.toString()),
     );
@@ -217,7 +195,6 @@ export async function getPersonalizedRecommendations(
     const scoredCourses = candidates.map((course) => {
       let score = 0;
 
-      // Tiêu chí A: Khớp Lĩnh vực Onboarding (Trọng số 40%)
       const catObj = course.categoryId as { _id?: unknown } | null;
       const courseCatId = catObj
         ? catObj._id
@@ -228,7 +205,6 @@ export async function getPersonalizedRecommendations(
         score += 0.4;
       }
 
-      // Tiêu chí B: Khớp Kỹ năng mục tiêu Onboarding (Trọng số 30%)
       const courseSkillList = Array.isArray(course.skillIds)
         ? course.skillIds
         : [];
@@ -241,7 +217,6 @@ export async function getPersonalizedRecommendations(
         score += 0.3 * (matchedSkills.length / courseSkillList.length);
       }
 
-      // Tiêu chí C: Khớp Cấp độ trình độ (Trọng số 20%)
       const courseLevel = normalizeLevel(course.level);
       if (courseLevel === userLevel) {
         score += 0.2;
@@ -252,7 +227,6 @@ export async function getPersonalizedRecommendations(
         score += 0.08;
       }
 
-      // Tiêu chí D: Khớp từ khóa tìm kiếm gần đây (Trọng số 10%)
       if (searchKeywords.length > 0) {
         const textCorpus = `${course.title} ${course.titleEn || ''} ${
           course.shortDescription
@@ -265,7 +239,6 @@ export async function getPersonalizedRecommendations(
         }
       }
 
-      // Tiêu chí E: Điểm uy tín chất lượng (Bonus tối đa 5%)
       score += ((course.averageRating || 5.0) / 5.0) * 0.05;
 
       return {
@@ -280,7 +253,7 @@ export async function getPersonalizedRecommendations(
       .map((item) => item.course as unknown as ICourse);
   } catch (err) {
     console.error(
-      '[RecommendationService] Lỗi khi tạo gợi ý cá nhân hóa:',
+      '[RecommendationService] getPersonalizedRecommendations error:',
       err,
     );
     return (await Course.find({

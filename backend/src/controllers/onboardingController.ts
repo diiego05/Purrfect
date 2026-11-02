@@ -83,9 +83,6 @@ export const seedSkillsIfEmpty = async () => {
       const skillNames = initialSkillsByCategory[cat.slug] || [];
       if (skillNames.length === 0) continue;
 
-      console.log(
-        `[Onboarding] Khởi tạo kỹ năng cho danh mục: ${cat.name} (${cat.slug})...`,
-      );
       for (const name of skillNames) {
         const slug = name
           .toLowerCase()

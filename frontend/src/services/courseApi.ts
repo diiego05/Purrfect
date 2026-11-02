@@ -48,18 +48,11 @@ export const fetchCategories = async (): Promise<Category[]> => {
       return json.data;
     }
     return defaultCategories;
-  } catch (error) {
-    console.warn('[CourseApi] Sử dụng danh mục mặc định:', error);
+  } catch {
     return defaultCategories;
   }
 };
 
-/**
- * Lấy danh sách khóa học cho Trang chủ:
- * - forYou: Dành riêng cho bạn (Tự động cá nhân hóa bằng AI nếu đã đăng nhập)
- * - bestSellers: Khóa học bán chạy nhất
- * - newReleases: Khóa học mới ra mắt
- */
 export const fetchHomeCourses = async (
   tokenOverride?: string,
 ): Promise<HomeCoursesData> => {
@@ -86,17 +79,11 @@ export const fetchHomeCourses = async (
     }
 
     throw new Error(data.message || 'Không thể tải dữ liệu khóa học');
-  } catch (err) {
-    console.warn('[CourseApi] Sử dụng dữ liệu dự phòng do:', err);
-    // Trả về dữ liệu mẫu chất lượng cao dự phòng nếu mạng gián đoạn
+  } catch {
     return getFallbackCourses();
   }
 };
 
-/**
- * Ghi nhận tương tác của học viên (tìm kiếm, xem khóa học, thêm giỏ hàng)
- * phục vụ huấn luyện mô hình AI gợi ý
- */
 export const recordCourseInteraction = async (data: {
   actionType: 'SEARCH' | 'VIEW' | 'CART' | 'ENROLL' | 'PROGRESS' | 'RATING';
   courseId?: string;
@@ -117,9 +104,8 @@ export const recordCourseInteraction = async (data: {
       headers,
       body: JSON.stringify(data),
     });
-  } catch (err) {
-    // Không làm gián đoạn trải nghiệm người dùng nếu log tương tác gặp lỗi mạng
-    console.debug('[CourseApi] Không thể ghi nhận tương tác:', err);
+  } catch {
+    // Ignore interaction network failure
   }
 };
 
