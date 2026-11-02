@@ -3,14 +3,21 @@ import mongoose, { Document, Schema } from 'mongoose';
 export type CourseStatus =
   'DRAFT' | 'PENDING_APPROVAL' | 'PUBLISHED' | 'REJECTED' | 'DISABLED';
 
+export type CourseLevel = 'Beginner' | 'Intermediate' | 'Advanced';
+
 export interface ICourse extends Document {
   _id: mongoose.Types.ObjectId;
   instructorId?: mongoose.Types.ObjectId | null;
   categoryId?: mongoose.Types.ObjectId | null;
+  skillIds: mongoose.Types.ObjectId[];
+  level: CourseLevel;
   title: string;
+  titleEn?: string;
   slug: string;
   shortDescription: string;
+  shortDescriptionEn?: string;
   description?: string;
+  descriptionEn?: string;
   thumbnailUrl: string;
   badge?: string; // 'NEW', 'HOT', 'BESTSELLER', etc.
   price: number;
@@ -21,6 +28,7 @@ export interface ICourse extends Document {
   averageRating: number;
   totalStudents: number;
   isForYou: boolean;
+  prerequisiteCourseIds?: mongoose.Types.ObjectId[];
   isDeleted: boolean;
   deletedAt?: Date;
   createdAt: Date;
@@ -39,9 +47,26 @@ const courseSchema = new Schema<ICourse>(
       ref: 'Category',
       default: null,
     },
+    skillIds: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Skill',
+      },
+    ],
+    level: {
+      type: String,
+      enum: ['Beginner', 'Intermediate', 'Advanced'],
+      default: 'Beginner',
+      index: true,
+    },
     title: {
       type: String,
       required: true,
+      trim: true,
+    },
+    titleEn: {
+      type: String,
+      default: '',
       trim: true,
     },
     slug: {
@@ -56,7 +81,16 @@ const courseSchema = new Schema<ICourse>(
       default: '',
       trim: true,
     },
+    shortDescriptionEn: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     description: {
+      type: String,
+      default: '',
+    },
+    descriptionEn: {
       type: String,
       default: '',
     },
@@ -90,6 +124,7 @@ const courseSchema = new Schema<ICourse>(
       type: String,
       enum: ['DRAFT', 'PENDING_APPROVAL', 'PUBLISHED', 'REJECTED', 'DISABLED'],
       default: 'PUBLISHED',
+      index: true,
     },
     averageRating: {
       type: Number,
@@ -105,9 +140,16 @@ const courseSchema = new Schema<ICourse>(
       type: Boolean,
       default: false,
     },
+    prerequisiteCourseIds: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Course',
+      },
+    ],
     isDeleted: {
       type: Boolean,
       default: false,
+      index: true,
     },
     deletedAt: {
       type: Date,
@@ -119,5 +161,9 @@ const courseSchema = new Schema<ICourse>(
     collection: 'courses',
   },
 );
+
+// Indexes phục vụ Content-Based search và lọc
+courseSchema.index({ categoryId: 1, level: 1, status: 1 });
+courseSchema.index({ skillIds: 1 });
 
 export const Course = mongoose.model<ICourse>('Course', courseSchema);

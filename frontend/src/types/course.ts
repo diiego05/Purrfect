@@ -10,8 +10,10 @@ export interface Course {
   _id: string;
   id?: string;
   title: string;
+  titleEn?: string;
   slug: string;
   shortDescription: string;
+  shortDescriptionEn?: string;
   description?: string;
   thumbnailUrl: string;
   badge?: string; // 'NEW', 'BESTSELLER', 'HOT', etc.
@@ -22,6 +24,8 @@ export interface Course {
   status: string;
   averageRating: number;
   totalStudents: number;
+  level?: 'Beginner' | 'Intermediate' | 'Advanced';
+  skillIds?: string[];
   isForYou?: boolean;
   categoryId?: Category | string;
   createdAt?: string;

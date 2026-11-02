@@ -3,3 +3,14 @@ node_modules/
 dist/
 *.log
 stash.diff
+
+# Python
+**/__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+ai_service/venv/
+ai_service/.venv/
+

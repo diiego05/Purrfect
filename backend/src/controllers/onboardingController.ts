@@ -47,20 +47,45 @@ const initialSkillsByCategory: Record<string, string[]> = {
     'Xây dựng AI Agents với LangChain & RAG',
     'Trực quan hóa dữ liệu với Power BI & Tableau',
   ],
+  languages: [
+    'Tiếng Anh giao tiếp công sở & phản xạ đột phá',
+    'Luyện thi IELTS 4 kỹ năng (Listening, Speaking, Reading, Writing)',
+    'Tiếng Nhật ứng dụng cho người đi làm (JLPT N5 - N3)',
+    'Tiếng Trung thương mại & giao tiếp thực chiến',
+    'Kỹ năng thuyết trình & đàm phán tự tin trước đám đông',
+  ],
+  finance: [
+    'Quản lý tài chính cá nhân & Kế hoạch tự do tài chính',
+    'Đầu tư chứng khoán thực chiến & Phân tích kỹ thuật',
+    'Đọc hiểu & Phân tích báo cáo tài chính doanh nghiệp',
+    'Quản trị danh mục đầu tư & Quản lý rủi ro',
+    'Tư duy tích lũy & Tạo lập thu nhập thụ động',
+  ],
+  'health-wellness': [
+    'Dinh dưỡng học ứng dụng & Chế độ ăn lành mạnh (Eat Clean)',
+    'Yoga phục hồi cổ vai gáy & Cột sống cho dân văn phòng',
+    'Rèn luyện thể lực & Tập luyện kháng lực tại nhà',
+    'Thiền định chánh niệm & Quản trị cảm xúc / Giảm stress',
+    'Chăm sóc giấc ngủ & Tối ưu năng lượng sống',
+  ],
 };
 
 // Hàm seed skills tự động nếu chưa có
 export const seedSkillsIfEmpty = async () => {
   try {
     await seedCoursesIfEmpty();
-    const count = await Skill.countDocuments();
-    if (count > 0) return;
-
-    console.log('[Onboarding] Khởi tạo dữ liệu kỹ năng mẫu (skills)...');
     const categories = await Category.find();
 
     for (const cat of categories) {
+      const existingCount = await Skill.countDocuments({ categoryId: cat._id });
+      if (existingCount > 0) continue;
+
       const skillNames = initialSkillsByCategory[cat.slug] || [];
+      if (skillNames.length === 0) continue;
+
+      console.log(
+        `[Onboarding] Khởi tạo kỹ năng cho danh mục: ${cat.name} (${cat.slug})...`,
+      );
       for (const name of skillNames) {
         const slug = name
           .toLowerCase()
@@ -76,7 +101,6 @@ export const seedSkillsIfEmpty = async () => {
         });
       }
     }
-    console.log('[Onboarding] Đã hoàn thành khởi tạo kỹ năng mẫu!');
   } catch (err) {
     console.error('[Onboarding] Lỗi khi seed skills:', err);
   }

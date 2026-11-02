@@ -1,10 +1,15 @@
 import { useEffect, useState, type FC } from 'react';
 import type { Course, HomeCoursesData } from '../../types/course';
-import { fetchHomeCourses } from '../../services/courseApi';
+import {
+  fetchHomeCourses,
+  recordCourseInteraction,
+} from '../../services/courseApi';
+import { useAuth } from '../../context/AuthContext';
 import { CourseSection } from './CourseSection';
 import './Courses.css';
 
 export const HomeCourses: FC = () => {
+  const { isAuthenticated, token } = useAuth();
   const [data, setData] = useState<HomeCoursesData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +21,7 @@ export const HomeCourses: FC = () => {
     const loadCourses = async () => {
       try {
         setLoading(true);
-        const homeData = await fetchHomeCourses();
+        const homeData = await fetchHomeCourses(token || undefined);
         if (isMounted) {
           setData(homeData);
           setError(null);
@@ -39,10 +44,16 @@ export const HomeCourses: FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [token]);
 
   const handleCourseClick = (course: Course) => {
     setSelectedCourse(course);
+    if (course._id) {
+      recordCourseInteraction({
+        actionType: 'VIEW',
+        courseId: course._id,
+      });
+    }
   };
 
   const closeModal = () => {
@@ -97,7 +108,11 @@ export const HomeCourses: FC = () => {
           <CourseSection
             sectionId="for-you"
             title="Dành riêng cho bạn"
-            subtitle="Được chọn lọc và đề xuất dựa trên xu hướng phát triển kỹ năng hàng đầu"
+            subtitle={
+              isAuthenticated
+                ? 'Được AI đề xuất dựa trên khảo sát định hướng & hành vi học tập của bạn'
+                : 'Được chọn lọc và đề xuất dựa trên xu hướng phát triển kỹ năng hàng đầu'
+            }
             courses={data.forYou}
             viewAllLink="#for-you"
             onCourseClick={handleCourseClick}

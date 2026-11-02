@@ -54,3 +54,38 @@ export const authenticateToken = async (
     });
   }
 };
+
+/**
+ * Middleware xác thực tùy chọn:
+ * Nếu có token hợp lệ -> gắn req.user
+ * Nếu không có token hoặc token hết hạn -> vẫn cho đi tiếp dưới dạng khách (req.user = undefined)
+ */
+export const optionalAuthenticateToken = async (
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token =
+      authHeader && authHeader.startsWith('Bearer ')
+        ? authHeader.split(' ')[1]
+        : null;
+
+    if (token) {
+      const secret =
+        process.env.JWT_SECRET || 'purrfect_secret_key_learnova_2026';
+      const decoded = jwt.verify(token, secret) as {
+        id: string;
+        email: string;
+      };
+      const user = await User.findById(decoded.id);
+      if (user && user.status !== 'BLOCKED') {
+        req.user = user;
+      }
+    }
+  } catch {
+    // Bỏ qua lỗi token, coi như khách
+  }
+  next();
+};

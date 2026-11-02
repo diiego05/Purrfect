@@ -1,7 +1,13 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { Course } from '../models/Course';
+import { Course, ICourse } from '../models/Course';
 import { Category } from '../models/Category';
+import { Skill } from '../models/Skill';
+import { AuthRequest } from '../middlewares/auth';
+import {
+  getPersonalizedRecommendations,
+  recordInteraction,
+} from '../services/recommendationService';
 
 // Danh sách dữ liệu mẫu chất lượng cao khởi tạo ban đầu
 export const initialCategories = [
@@ -29,6 +35,24 @@ export const initialCategories = [
     name: 'Trí tuệ nhân tạo',
     slug: 'ai-data',
     description: 'AI, Machine Learning và Data Science',
+  },
+  {
+    name: 'Ngoại ngữ & Giao tiếp',
+    slug: 'languages',
+    description:
+      'Tiếng Anh giao tiếp, IELTS, tiếng Nhật, tiếng Trung và đàm phán',
+  },
+  {
+    name: 'Tài chính & Đầu tư',
+    slug: 'finance',
+    description:
+      'Quản lý tài chính cá nhân, đầu tư chứng khoán và quản trị tài sản',
+  },
+  {
+    name: 'Sức khỏe & Đời sống',
+    slug: 'health-wellness',
+    description:
+      'Dinh dưỡng khoa học, Yoga trị liệu, rèn luyện thể lực và giảm stress',
   },
 ];
 
@@ -253,19 +277,139 @@ export const initialCourses = [
     isForYou: false,
     categorySlug: 'business',
   },
+  // --- CÁC KHÓA HỌC NGOÀI IT: NGOẠI NGỮ, TÀI CHÍNH, SỨC KHỎE ---
+  {
+    title: 'Tiếng Anh Giao Tiếp Phản Xạ Đột Phá Cho Người Mới Bắt Đầu',
+    slug: 'tieng-anh-giao-tiep-phan-xa-dot-pha',
+    shortDescription:
+      'Xây dựng phản xạ phát âm chuẩn quốc tế, tự tin giao tiếp mọi tình huống công sở và đời sống.',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&auto=format&fit=crop&q=80',
+    badge: 'HOT',
+    price: 129.99,
+    discountPrice: 89.99,
+    durationHours: 25,
+    durationText: '25h',
+    status: 'PUBLISHED',
+    averageRating: 4.9,
+    totalStudents: 1420,
+    isForYou: true,
+    categorySlug: 'languages',
+  },
+  {
+    title: 'Chiến Thuật Bứt Phá IELTS 6.5+ Toàn Diện 4 Kỹ Năng',
+    slug: 'chien-thuat-but-pha-ielts-6-5-plus',
+    shortDescription:
+      'Lộ trình học nâng cao từ nền tảng giao tiếp lên band 6.5+, tối ưu chiến lược làm bài thi.',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&auto=format&fit=crop&q=80',
+    badge: 'NEW',
+    price: 179.99,
+    discountPrice: 139.99,
+    durationHours: 40,
+    durationText: '40h',
+    status: 'PUBLISHED',
+    averageRating: 5.0,
+    totalStudents: 780,
+    isForYou: false,
+    categorySlug: 'languages',
+  },
+  {
+    title: 'Tiếng Trung Giao Tiếp Thương Mại Dành Cho Người Đi Làm',
+    slug: 'tieng-trung-giao-tiep-thuong-mai',
+    shortDescription:
+      'Nắm vững 500 từ vựng và mẫu câu giao tiếp phổ biến trong thương mại, trao đổi với đối tác.',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=80',
+    badge: 'NEW',
+    price: 119.99,
+    discountPrice: 79.99,
+    durationHours: 20,
+    durationText: '20h',
+    status: 'PUBLISHED',
+    averageRating: 4.8,
+    totalStudents: 610,
+    isForYou: true,
+    categorySlug: 'languages',
+  },
+  {
+    title: 'Quản Lý Tài Chính Cá Nhân & Tư Duy Tích Lũy Đầu Tư An Toàn',
+    slug: 'quan-ly-tai-chinh-ca-nhan-tich-luy',
+    shortDescription:
+      'Kiểm soát dòng tiền, thoát bẫy nợ nần và xây dựng quỹ dự phòng tài chính vững chắc hướng tới tự do.',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&auto=format&fit=crop&q=80',
+    badge: 'HOT',
+    price: 99.99,
+    discountPrice: 69.99,
+    durationHours: 16,
+    durationText: '16h',
+    status: 'PUBLISHED',
+    averageRating: 4.9,
+    totalStudents: 1100,
+    isForYou: true,
+    categorySlug: 'finance',
+  },
+  {
+    title: 'Đầu Tư Chứng Khoán Thực Chiến & Đọc Vị Báo Cáo Tài Chính',
+    slug: 'dau-tu-chung-khoan-thuc-chien',
+    shortDescription:
+      'Nâng cao tư duy phân tích kỹ thuật, đọc hiểu báo cáo tài chính và quản trị rủi ro danh mục đầu tư.',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop&q=80',
+    badge: 'NEW',
+    price: 159.99,
+    discountPrice: 129.99,
+    durationHours: 30,
+    durationText: '30h',
+    status: 'PUBLISHED',
+    averageRating: 4.8,
+    totalStudents: 830,
+    isForYou: false,
+    categorySlug: 'finance',
+  },
+  {
+    title: 'Dinh Dưỡng Khoa Học & Thiết Kế Thực Đơn Sống Khỏe Mỗi Ngày',
+    slug: 'dinh-duong-khoa-hoc-thuc-don-song-khoe',
+    shortDescription:
+      'Hiểu đúng về Calo, Macro, chế độ ăn Eat Clean khoa học không gây kiệt sức, nâng cao thể trạng.',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop&q=80',
+    badge: 'HOT',
+    price: 89.99,
+    discountPrice: 59.99,
+    durationHours: 14,
+    durationText: '14h',
+    status: 'PUBLISHED',
+    averageRating: 4.9,
+    totalStudents: 690,
+    isForYou: true,
+    categorySlug: 'health-wellness',
+  },
+  {
+    title: 'Yoga Trị Liệu Cổ Vai Gáy & Cải Thiện Vóc Dáng Nơi Công Sở',
+    slug: 'yoga-tri-lieu-co-vai-gay-cong-so',
+    shortDescription:
+      '15 phút mỗi ngày phục hồi cột sống thắt lưng, thư giãn tinh thần và xua tan mệt mỏi văn phòng.',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&auto=format&fit=crop&q=80',
+    badge: 'NEW',
+    price: 79.99,
+    discountPrice: 49.99,
+    durationHours: 12,
+    durationText: '12h',
+    status: 'PUBLISHED',
+    averageRating: 4.9,
+    totalStudents: 950,
+    isForYou: true,
+    categorySlug: 'health-wellness',
+  },
 ];
 
 // Hàm tự động seed dữ liệu nếu DB chưa có khóa học
 export const seedCoursesIfEmpty = async () => {
   try {
-    const courseCount = await Course.countDocuments();
-    if (courseCount > 0) {
-      return;
-    }
-
-    console.log('[Seed] Khởi tạo danh mục và khóa học mẫu cho trang chủ...');
-
-    // 1. Tạo Category map
+    // 1. Đồng bộ Categories
     const categoryMap: Record<string, string> = {};
     for (const cat of initialCategories) {
       let existingCat = await Category.findOne({ slug: cat.slug });
@@ -275,28 +419,69 @@ export const seedCoursesIfEmpty = async () => {
       categoryMap[cat.slug] = existingCat._id.toString();
     }
 
-    // 2. Tạo Courses
+    // 2. Đồng bộ Courses nếu chưa có
     for (const c of initialCourses) {
-      const categoryId = categoryMap[c.categorySlug];
-      await Course.create({
-        title: c.title,
-        slug: c.slug,
-        shortDescription: c.shortDescription,
-        thumbnailUrl: c.thumbnailUrl,
-        badge: c.badge,
-        price: c.price,
-        discountPrice: c.discountPrice,
-        durationHours: c.durationHours,
-        durationText: c.durationText,
-        status: (c.status as 'PUBLISHED' | 'DRAFT') || 'PUBLISHED',
-        averageRating: c.averageRating,
-        totalStudents: c.totalStudents,
-        isForYou: c.isForYou,
-        categoryId: categoryId ? new mongoose.Types.ObjectId(categoryId) : null,
-      });
+      const existing = await Course.findOne({ slug: c.slug });
+      if (!existing) {
+        const categoryId = categoryMap[c.categorySlug];
+        await Course.create({
+          title: c.title,
+          titleEn: c.title,
+          slug: c.slug,
+          shortDescription: c.shortDescription,
+          shortDescriptionEn: c.shortDescription,
+          thumbnailUrl: c.thumbnailUrl,
+          badge: c.badge,
+          price: c.price,
+          discountPrice: c.discountPrice,
+          durationHours: c.durationHours,
+          durationText: c.durationText,
+          status: (c.status as 'PUBLISHED' | 'DRAFT') || 'PUBLISHED',
+          averageRating: c.averageRating,
+          totalStudents: c.totalStudents,
+          isForYou: c.isForYou,
+          categoryId: categoryId
+            ? new mongoose.Types.ObjectId(categoryId)
+            : null,
+        });
+      }
     }
 
-    console.log('[Seed] Đã tạo thành công dữ liệu mẫu cho khóa học!');
+    // 3. Đảm bảo tất cả khóa học có Level và SkillIds phục vụ AI Content-Based
+    const categories = await Category.find();
+    for (const cat of categories) {
+      const skills = await Skill.find({ categoryId: cat._id });
+      if (skills.length > 0) {
+        const skillIds = skills.map((s) => s._id);
+        await Course.updateMany(
+          {
+            categoryId: cat._id,
+            $or: [{ skillIds: { $exists: false } }, { skillIds: { $size: 0 } }],
+          },
+          { $set: { skillIds: skillIds.slice(0, 3) } },
+        );
+      }
+    }
+
+    // Gán level mặc định cho các khóa nếu chưa có
+    await Course.updateMany(
+      {
+        slug: /advanced|cybersecurity|devops|production/i,
+        level: { $ne: 'Advanced' },
+      },
+      { $set: { level: 'Advanced' } },
+    );
+    await Course.updateMany(
+      {
+        slug: /mastery|architecture|typescript|modeling|ielts|thuc-chien/i,
+        level: { $ne: 'Intermediate' },
+      },
+      { $set: { level: 'Intermediate' } },
+    );
+    await Course.updateMany(
+      { level: { $exists: false } },
+      { $set: { level: 'Beginner' } },
+    );
   } catch (error) {
     console.error('[Seed] Lỗi khi seed dữ liệu khóa học:', error);
   }
@@ -304,27 +489,36 @@ export const seedCoursesIfEmpty = async () => {
 
 /**
  * Lấy các nhóm khóa học cho Trang chủ:
- * 1. Dành riêng cho bạn (forYou)
+ * 1. Dành riêng cho bạn (forYou) - Áp dụng AI Content-Based Recommendation nếu đã đăng nhập
  * 2. Khóa học bán chạy nhất (bestSellers)
  * 3. Khóa học mới ra mắt (newReleases)
  */
 export const getHomeCourses = async (
-  _req: Request,
+  req: AuthRequest,
   res: Response,
 ): Promise<void> => {
   try {
     // Đảm bảo có dữ liệu
     await seedCoursesIfEmpty();
 
-    // 1. Dành riêng cho bạn (khóa học được gắn cờ isForYou, ưu tiên khóa học mẫu hiển thị đầu tiên)
-    const forYou = await Course.find({
-      status: 'PUBLISHED',
-      isDeleted: false,
-      isForYou: true,
-    })
-      .populate('categoryId', 'name slug')
-      .sort({ createdAt: 1 })
-      .limit(8);
+    let forYou: ICourse[] = [];
+
+    // Nếu học viên đã đăng nhập -> Gọi AI Content-Based Recommendation từ khảo sát Onboarding & tương tác
+    if (req.user) {
+      forYou = await getPersonalizedRecommendations(req.user._id.toString(), 8);
+    }
+
+    // Nếu là khách hoặc chưa có gợi ý cá nhân hóa -> Lấy các khóa học mặc định isForYou
+    if (!forYou || forYou.length === 0) {
+      forYou = await Course.find({
+        status: 'PUBLISHED',
+        isDeleted: false,
+        isForYou: true,
+      })
+        .populate('categoryId', 'name slug')
+        .sort({ createdAt: 1 })
+        .limit(8);
+    }
 
     // 2. Khóa học bán chạy nhất (sắp xếp theo totalStudents giảm dần)
     const bestSellers = await Course.find({
@@ -361,6 +555,38 @@ export const getHomeCourses = async (
       success: false,
       message: 'Không thể tải danh sách khóa học trang chủ',
     });
+  }
+};
+
+/**
+ * Ghi nhận tương tác học viên phục vụ huấn luyện AI (tìm kiếm, xem khóa học, thêm giỏ hàng)
+ * POST /api/courses/interactions
+ */
+export const recordCourseInteraction = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { actionType, courseId, searchKeyword, metadata } = req.body;
+    if (!actionType) {
+      res.status(400).json({ success: false, message: 'Thiếu actionType' });
+      return;
+    }
+
+    if (req.user) {
+      await recordInteraction({
+        userId: req.user._id,
+        courseId: courseId || null,
+        actionType,
+        searchKeyword,
+        metadata,
+      });
+    }
+
+    res.status(200).json({ success: true, message: 'Đã ghi nhận tương tác' });
+  } catch (error) {
+    console.error('[CourseController] Lỗi ghi nhận tương tác:', error);
+    res.status(500).json({ success: false, message: 'Lỗi ghi nhận tương tác' });
   }
 };
 

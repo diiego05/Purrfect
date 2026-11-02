@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect, type FC } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { fetchCategories, defaultCategories } from '../services/courseApi';
+import {
+  fetchCategories,
+  defaultCategories,
+  recordCourseInteraction,
+} from '../services/courseApi';
 import type { Category } from '../types/course';
 
 export const Header: FC = () => {
@@ -209,6 +213,12 @@ export const Header: FC = () => {
             className="header-search-wrapper"
             onSubmit={(e) => {
               e.preventDefault();
+              if (searchValue.trim()) {
+                recordCourseInteraction({
+                  actionType: 'SEARCH',
+                  searchKeyword: searchValue.trim(),
+                });
+              }
               const el =
                 document.getElementById('for-you') ||
                 document.querySelector('.course-section');

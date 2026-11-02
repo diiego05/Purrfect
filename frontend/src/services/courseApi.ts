@@ -1,4 +1,5 @@
 import type { HomeCoursesData, Course, Category } from '../types/course';
+import { getAccessToken } from './authApi';
 
 const API_BASE = '/api/courses';
 
@@ -55,16 +56,24 @@ export const fetchCategories = async (): Promise<Category[]> => {
 
 /**
  * Lấy danh sách khóa học cho Trang chủ:
- * - forYou: Dành riêng cho bạn
+ * - forYou: Dành riêng cho bạn (Tự động cá nhân hóa bằng AI nếu đã đăng nhập)
  * - bestSellers: Khóa học bán chạy nhất
  * - newReleases: Khóa học mới ra mắt
  */
-export const fetchHomeCourses = async (): Promise<HomeCoursesData> => {
+export const fetchHomeCourses = async (
+  tokenOverride?: string,
+): Promise<HomeCoursesData> => {
   try {
+    const token = tokenOverride || getAccessToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch(`${API_BASE}/home`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!res.ok) {
@@ -81,6 +90,36 @@ export const fetchHomeCourses = async (): Promise<HomeCoursesData> => {
     console.warn('[CourseApi] Sử dụng dữ liệu dự phòng do:', err);
     // Trả về dữ liệu mẫu chất lượng cao dự phòng nếu mạng gián đoạn
     return getFallbackCourses();
+  }
+};
+
+/**
+ * Ghi nhận tương tác của học viên (tìm kiếm, xem khóa học, thêm giỏ hàng)
+ * phục vụ huấn luyện mô hình AI gợi ý
+ */
+export const recordCourseInteraction = async (data: {
+  actionType: 'SEARCH' | 'VIEW' | 'CART' | 'ENROLL' | 'PROGRESS' | 'RATING';
+  courseId?: string;
+  searchKeyword?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<void> => {
+  try {
+    const token = getAccessToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    await fetch(`${API_BASE}/interactions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    });
+  } catch (err) {
+    // Không làm gián đoạn trải nghiệm người dùng nếu log tương tác gặp lỗi mạng
+    console.debug('[CourseApi] Không thể ghi nhận tương tác:', err);
   }
 };
 

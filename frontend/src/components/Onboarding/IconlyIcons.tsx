@@ -504,3 +504,98 @@ export const IconlySwap: React.FC<IconProps> = ({
     <circle cx="14" cy="15.5" r="1.5" fill={color} fillOpacity="0.4" />
   </svg>
 );
+
+export const IconlyChat: React.FC<IconProps> = ({
+  size = 24,
+  color = 'currentColor',
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`iconly-icon ${className}`}
+  >
+    <path
+      d="M17 3.5H7C4.5 3.5 3 5.3 3 7.8V13.8C3 16.3 4.5 18.1 7 18.1H8.5V20.5C8.5 21.3 9.4 21.8 10.1 21.3L13.8 18.1H17C19.5 18.1 21 16.3 21 13.8V7.8C21 5.3 19.5 3.5 17 3.5Z"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="8" cy="11" r="1.25" fill={color} fillOpacity="0.4" />
+    <circle cx="12" cy="11" r="1.25" fill={color} fillOpacity="0.7" />
+    <circle cx="16" cy="11" r="1.25" fill={color} />
+  </svg>
+);
+
+export const IconlyWallet: React.FC<IconProps> = ({
+  size = 24,
+  color = 'currentColor',
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`iconly-icon ${className}`}
+  >
+    <path
+      d="M18.5 5.5H5.5C3.8 5.5 2.5 6.8 2.5 8.5V17.5C2.5 19.2 3.8 20.5 5.5 20.5H18.5C20.2 20.5 21.5 19.2 21.5 17.5V8.5C21.5 6.8 20.2 5.5 18.5 5.5Z"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M5 5.5V4.5C5 3.4 5.9 2.5 7 2.5H17C18.1 2.5 19 3.4 19 4.5V5.5"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity="0.5"
+    />
+    <path
+      d="M17 13.5H21.5V16H17C16.2 16 15.5 15.3 15.5 14.5C15.5 13.7 16.2 13.5 17 13.5Z"
+      stroke={color}
+      strokeWidth="1.5"
+      fill={color}
+      fillOpacity="0.25"
+    />
+  </svg>
+);
+
+export const IconlyHeart: React.FC<IconProps> = ({
+  size = 24,
+  color = 'currentColor',
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`iconly-icon ${className}`}
+  >
+    <path
+      d="M12.62 20.81C12.28 20.93 11.72 20.93 11.38 20.81C8.48 19.82 2 15.69 2 8.69C2 5.6 4.49 3.1 7.56 3.1C9.38 3.1 10.99 3.98 12 5.34C13.01 3.98 14.63 3.1 16.44 3.1C19.51 3.1 22 5.6 22 8.69C22 15.69 15.52 19.82 12.62 20.81Z"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M7.5 11.5L9.5 13.5L14 9"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity="0.4"
+    />
+  </svg>
+);

@@ -1,0 +1,7 @@
+@echo off
+echo ========================================================
+echo   KHOI DONG PURRFECT AI SERVICE (Python FastAPI + SVD)
+echo ========================================================
+set PYTHONPATH=.
+.\venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+

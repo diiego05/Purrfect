@@ -17,6 +17,9 @@ import {
   IconlyAward,
   IconlyTick,
   IconlySwap,
+  IconlyChat,
+  IconlyWallet,
+  IconlyHeart,
 } from './IconlyIcons';
 import type {
   OnboardingCategory,
@@ -115,6 +118,12 @@ const renderCategoryIcon = (slug: string, isSelected: boolean) => {
       return <IconlyGraph size={24} color={color} />;
     case 'digital-skills':
       return <IconlyDigital size={24} color={color} />;
+    case 'languages':
+      return <IconlyChat size={24} color={color} />;
+    case 'finance':
+      return <IconlyWallet size={24} color={color} />;
+    case 'health-wellness':
+      return <IconlyHeart size={24} color={color} />;
     default:
       return <IconlyDocument size={24} color={color} />;
   }
