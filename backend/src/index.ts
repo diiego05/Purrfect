@@ -6,6 +6,7 @@ import cors from 'cors';
 import { connectDB } from './config/db';
 import authRoutes from './routes/authRoutes';
 import courseRoutes from './routes/courseRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 import { verifyMailerConnection } from './utils/mailer';
 
 const app = express();
@@ -31,6 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Health check
 app.get('/api/health', (_req, expressRes) => {
@@ -44,6 +46,7 @@ app.get('/api/health', (_req, expressRes) => {
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Auth routes available at http://localhost:${PORT}/api/auth`);
+  console.log(`Category routes available at http://localhost:${PORT}/api/categories`);
   // Kiểm tra kết nối SMTP ngay khi server khởi động
   verifyMailerConnection();
 });
