@@ -7,6 +7,9 @@ import { connectDB } from './config/db';
 import authRoutes from './routes/authRoutes';
 import courseRoutes from './routes/courseRoutes';
 import categoryRoutes from './routes/categoryRoutes';
+import systemConfigRoutes from './routes/systemConfigRoutes';
+import bannerRoutes from './routes/bannerRoutes';
+import { seedDefaultConfigs } from './controllers/systemConfigController';
 import { verifyMailerConnection } from './utils/mailer';
 
 const app = express();
@@ -33,6 +36,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/system-configs', systemConfigRoutes);
+app.use('/api/banners', bannerRoutes);
 
 // Health check
 app.get('/api/health', (_req, expressRes) => {
@@ -47,6 +52,10 @@ app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Auth routes available at http://localhost:${PORT}/api/auth`);
   console.log(`Category routes available at http://localhost:${PORT}/api/categories`);
+  console.log(`System config routes available at http://localhost:${PORT}/api/system-configs`);
+  console.log(`Banner routes available at http://localhost:${PORT}/api/banners`);
+  // Seed default system configs (only sets missing keys)
+  seedDefaultConfigs().catch(console.error);
   // Kiểm tra kết nối SMTP ngay khi server khởi động
   verifyMailerConnection();
 });

@@ -1,0 +1,163 @@
+.banner-carousel-container {
+  max-width: 1240px;
+  margin: 0 auto 36px auto;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.banner-carousel-viewport {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  background: #f1f5f9;
+}
+
+.banner-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.6s ease-in-out, visibility 0.6s ease-in-out;
+}
+
+.banner-slide--active {
+  opacity: 1;
+  visibility: visible;
+  z-index: 1;
+}
+
+.banner-slide-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  text-decoration: none;
+}
+
+.banner-slide-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.banner-slide-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 32px 28px 20px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: flex-end;
+}
+
+.banner-slide-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: -0.01em;
+}
+
+/* Arrows */
+.banner-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.85);
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  line-height: 1;
+  color: #1e293b;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: background 0.2s, transform 0.2s, color 0.2s;
+  user-select: none;
+}
+
+.banner-arrow:hover {
+  background: #ffffff;
+  color: #6366f1;
+  transform: translateY(-50%) scale(1.08);
+}
+
+.banner-arrow--prev {
+  left: 16px;
+  padding-right: 2px;
+}
+
+.banner-arrow--next {
+  right: 16px;
+  padding-left: 2px;
+}
+
+/* Pagination Dots */
+.banner-dots {
+  position: absolute;
+  bottom: 14px;
+  right: 24px;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.banner-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s, width 0.2s;
+}
+
+.banner-dot:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.banner-dot--active {
+  background: #ffffff;
+  width: 24px;
+  border-radius: 6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .banner-carousel-viewport {
+    height: 180px;
+    border-radius: 12px;
+  }
+
+  .banner-slide-title {
+    font-size: 15px;
+  }
+
+  .banner-arrow {
+    width: 34px;
+    height: 34px;
+    font-size: 20px;
+  }
+
+  .banner-arrow--prev {
+    left: 8px;
+  }
+
+  .banner-arrow--next {
+    right: 8px;
+  }
+}
+
