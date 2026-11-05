@@ -38,7 +38,7 @@ export const getAllCoupons = async (req: Request, res: Response): Promise<void> 
     const coupons = await Coupon.find(filter).sort({ createdAt: -1 });
 
     res.json({ coupons });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi lấy danh sách mã giảm giá.' });
   }
 };
@@ -53,7 +53,7 @@ export const getCouponById = async (req: Request, res: Response): Promise<void> 
       return;
     }
     res.json({ coupon });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi lấy chi tiết mã giảm giá.' });
   }
 };
@@ -184,7 +184,7 @@ export const createCoupon = async (req: AuthRequest, res: Response): Promise<voi
     });
 
     res.status(201).json({ message: 'Tạo mã giảm giá thành công.', coupon });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi tạo mã giảm giá.' });
   }
 };
@@ -319,7 +319,7 @@ export const updateCoupon = async (req: AuthRequest, res: Response): Promise<voi
     });
 
     res.json({ message: 'Cập nhật mã giảm giá thành công.', coupon });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi cập nhật mã giảm giá.' });
   }
 };
@@ -344,7 +344,7 @@ export const deleteCoupon = async (req: AuthRequest, res: Response): Promise<voi
     });
 
     res.json({ message: 'Xóa mã giảm giá thành công.' });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi xóa mã giảm giá.' });
   }
 };
@@ -375,7 +375,7 @@ export const toggleCouponStatus = async (req: AuthRequest, res: Response): Promi
       message: `Mã giảm giá đã được ${coupon.isActive ? 'kích hoạt' : 'tạm dừng'} thành công.`,
       coupon,
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi đổi trạng thái mã giảm giá.' });
   }
 };
@@ -484,7 +484,7 @@ export const validateCoupon = async (req: Request, res: Response): Promise<void>
         description: coupon.description,
       },
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ valid: false, message: 'Lỗi server khi kiểm tra mã giảm giá.' });
   }
 };
