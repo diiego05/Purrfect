@@ -25,7 +25,7 @@ export const clearTokens = () => {
   localStorage.removeItem('purr_refresh_token');
 };
 
-const authFetch = async (
+export const authFetch = async (
   url: string,
   options: RequestInit = {},
 ): Promise<Response> => {
@@ -87,23 +87,31 @@ export const authApi = {
     return res.json();
   },
 
-  // 3. Đăng ký tài khoản (Bắt buộc mã OTP, mặc định STUDENT)
+  // 3. Đăng ký & Kích hoạt tài khoản bằng OTP
   async register(data: {
     email: string;
-    password: string;
     fullName: string;
-    otpCode: string;
+    password: string;
+    otpCode?: string;
+    otp?: string;
+    phoneNumber?: string;
   }): Promise<AuthResponse> {
+    const payload = {
+      ...data,
+      otpCode: data.otpCode || data.otp || '',
+    };
     const res = await fetch(`${API_BASE}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
     return res.json();
   },
 
-  // 4. Gửi lại mã OTP đăng ký
-  async resendRegisterOtp(email: string): Promise<ForgotPasswordResponse> {
+  // 4. Gửi lại OTP khi đăng ký (giới hạn tối đa 3 lần)
+  async resendRegisterOtp(
+    email: string,
+  ): Promise<{ success: boolean; message: string; remainingResends?: number }> {
     const res = await fetch(`${API_BASE}/resend-register-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -112,112 +120,113 @@ export const authApi = {
     return res.json();
   },
 
-  // 4.1 Xác thực OTP đăng ký trước khi nhập thông tin & mật khẩu
+  // 4b. Xác thực OTP đăng ký trước khi tạo mật khẩu
   async verifyRegisterOtp(
     email: string,
-    code: string,
+    otp: string,
   ): Promise<{ success: boolean; message: string }> {
     const res = await fetch(`${API_BASE}/verify-register-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code }),
+      body: JSON.stringify({ email, otp }),
     });
     return res.json();
   },
 
-  // 5. Tải ảnh đại diện lên Cloudinary
-
-  async uploadAvatar(
-    file: File,
-  ): Promise<{ success: boolean; avatarUrl?: string; message?: string }> {
-    const token = getAccessToken();
-    const formData = new FormData();
-    formData.append('avatar', file);
-
-    const res = await fetch(`${API_BASE}/avatar`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: formData,
-    });
-    return res.json();
-  },
-
-  // 6. Quên mật khẩu - gửi OTP
+  // 5. Yêu cầu OTP Quên Mật Khẩu
   async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
     const res = await fetch(`${API_BASE}/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-
       body: JSON.stringify({ email }),
     });
     return res.json();
   },
 
-  // 5. Xác thực OTP
+  // 6. Xác thực OTP Quên Mật Khẩu
   async verifyOtp(
     email: string,
-    code: string,
+    otp: string,
   ): Promise<{ success: boolean; message: string }> {
     const res = await fetch(`${API_BASE}/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code }),
+      body: JSON.stringify({ email, otp }),
     });
     return res.json();
   },
 
-  // 6. Đặt lại mật khẩu
+  // 7. Đặt lại Mật Khẩu Mới
   async resetPassword(
     email: string,
-    code: string,
+    otp: string,
     newPassword: string,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<AuthResponse> {
     const res = await fetch(`${API_BASE}/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code, newPassword }),
+      body: JSON.stringify({ email, otp, newPassword }),
     });
     return res.json();
   },
 
-  // 6.1 Đặt mật khẩu mới cho tài khoản Google (không cần OTP)
+  // 8. Đặt Mật Khẩu cho Tài khoản Google
   async setGooglePassword(
     email: string,
     password: string,
   ): Promise<AuthResponse> {
-    const res = await fetch(`${API_BASE}/set-google-password`, {
+    const res = await authFetch(`${API_BASE}/set-google-password`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
     return res.json();
   },
 
-  // 7. Lấy URL Google OAuth
+  // 9. Lấy URL Đăng nhập Google
   async getGoogleAuthUrl(): Promise<{
     success: boolean;
-    configured: boolean;
-    url: string | null;
+    url?: string;
     message?: string;
   }> {
     const res = await fetch(`${API_BASE}/google/url`);
     return res.json();
   },
 
-  // 8. Lấy thông tin user hiện tại (tự động refresh token nếu cần)
+  // 10. Lấy thông tin tài khoản hiện tại (Me)
   async getMe(): Promise<AuthResponse> {
     const res = await authFetch(`${API_BASE}/me`);
     return res.json();
   },
 
-  // 9. Đăng xuất
-  async logout(): Promise<{ success: boolean; message: string }> {
-    const refreshToken = getRefreshToken();
-    const res = await authFetch(`${API_BASE}/logout`, {
+  // 11. Đăng xuất (xóa token cả client & server)
+  async logout(): Promise<void> {
+    try {
+      const refreshToken = getRefreshToken();
+      await authFetch(`${API_BASE}/logout`, {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
+      });
+    } finally {
+      clearTokens();
+    }
+  },
+
+  // 12. Upload Avatar lên Cloudinary
+  async uploadAvatar(file: File): Promise<AuthResponse> {
+    const token = getAccessToken();
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const headers = new Headers();
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    const res = await fetch(`${API_BASE}/avatar`, {
       method: 'POST',
-      body: JSON.stringify({ refreshToken }),
+      headers,
+      body: formData,
     });
-    clearTokens();
     return res.json();
   },
 };
