@@ -26,7 +26,7 @@ export const getPublicConfigs = async (_req: Request, res: Response): Promise<vo
       result[c.keyName] = c.valueText;
     });
     res.json({ configs: result });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi lấy cấu hình công khai.' });
   }
 };
@@ -36,7 +36,7 @@ export const getAllConfigs = async (_req: Request, res: Response): Promise<void>
   try {
     const configs = await SystemConfig.find().sort({ group: 1, keyName: 1 });
     res.json({ configs });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi lấy danh sách cấu hình.' });
   }
 };
@@ -90,7 +90,7 @@ export const updateConfigs = async (req: Request, res: Response): Promise<void> 
     });
 
     res.json({ message: 'Cấu hình đã được lưu thành công.' });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi lưu cấu hình.' });
   }
 };
@@ -119,7 +119,7 @@ export const resetToDefaults = async (req: Request, res: Response): Promise<void
     });
 
     res.json({ message: 'Đã khôi phục cài đặt mặc định thành công.' });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi khôi phục cấu hình.' });
   }
 };
@@ -134,4 +134,3 @@ export const seedDefaultConfigs = async (): Promise<void> => {
     );
   }
 };
-

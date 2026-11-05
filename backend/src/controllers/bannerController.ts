@@ -9,7 +9,7 @@ export const getActiveBanners = async (_req: Request, res: Response): Promise<vo
   try {
     const banners = await Banner.find({ isActive: true }).sort({ orderIndex: 1 });
     res.json({ banners });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi lấy danh sách banner.' });
   }
 };
@@ -19,7 +19,7 @@ export const getAllBanners = async (_req: Request, res: Response): Promise<void>
   try {
     const banners = await Banner.find().sort({ orderIndex: 1 });
     res.json({ banners });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi lấy danh sách banner.' });
   }
 };
@@ -67,7 +67,7 @@ export const createBanner = async (req: AuthRequest, res: Response): Promise<voi
     });
 
     res.status(201).json({ message: 'Tạo banner thành công.', banner });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi tạo banner.' });
   }
 };
@@ -108,7 +108,7 @@ export const updateBanner = async (req: AuthRequest, res: Response): Promise<voi
     });
 
     res.json({ message: 'Cập nhật banner thành công.', banner });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi cập nhật banner.' });
   }
 };
@@ -133,7 +133,7 @@ export const deleteBanner = async (req: AuthRequest, res: Response): Promise<voi
     });
 
     res.json({ message: 'Xóa banner thành công.' });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi xóa banner.' });
   }
 };
@@ -164,7 +164,7 @@ export const toggleBanner = async (req: AuthRequest, res: Response): Promise<voi
       message: `Banner đã được ${banner.isActive ? 'kích hoạt' : 'tắt'} thành công.`,
       banner,
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi thay đổi trạng thái banner.' });
   }
 };
@@ -189,8 +189,7 @@ export const reorderBanners = async (req: AuthRequest, res: Response): Promise<v
     await Banner.bulkWrite(bulkOps);
 
     res.json({ message: 'Sắp xếp banner thành công.' });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Lỗi server khi sắp xếp banner.' });
   }
 };
-
