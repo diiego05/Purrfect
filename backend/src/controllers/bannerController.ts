@@ -193,4 +193,3 @@ export const reorderBanners = async (req: AuthRequest, res: Response): Promise<v
     res.status(500).json({ message: 'Lỗi server khi sắp xếp banner.' });
   }
 };
-

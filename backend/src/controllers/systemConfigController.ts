@@ -134,4 +134,3 @@ export const seedDefaultConfigs = async (): Promise<void> => {
     );
   }
 };
-
