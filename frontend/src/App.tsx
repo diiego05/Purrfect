@@ -8,6 +8,8 @@ import { OnboardingFlow } from './components/Onboarding/OnboardingFlow';
 import { NotFound } from './components/NotFound/NotFound';
 import { AdminLayout } from './components/Admin/AdminLayout';
 import { CategoryManagement } from './components/Admin/CategoryManagement/CategoryManagement';
+import SystemConfigManagement from './components/Admin/SystemConfig/SystemConfigManagement';
+import { BannerCarousel } from './components/Banner/BannerCarousel';
 import './App.css';
 
 function MainRouter() {
@@ -67,13 +69,7 @@ function MainRouter() {
   if (normalizedPath === '/admin/system-configs') {
     return (
       <AdminLayout activeTab="system-configs" pageTitle="Cấu hình hệ thống & Banner">
-        <div className="cat-empty-state" style={{ background: '#111827', borderRadius: '12px', padding: '4rem 2rem' }}>
-          <div className="cat-empty-icon" style={{ fontSize: '3.5rem' }}>⚙️</div>
-          <h2 style={{ color: '#fff', margin: '0.5rem 0' }}>Cấu hình hệ thống (Use Case UC31)</h2>
-          <p style={{ color: '#94a3b8', maxWidth: '500px', margin: '0 auto' }}>
-            Phân hệ cấu hình tỷ lệ hoa hồng sàn, hạn mức rút tiền và quản lý banner quảng cáo trang chủ. Sẽ được triển khai ở bước kế tiếp!
-          </p>
-        </div>
+        <SystemConfigManagement />
       </AdminLayout>
     );
   }
@@ -99,6 +95,7 @@ function MainRouter() {
         <Header />
         <main className="main-content">
           <Hero />
+          <BannerCarousel />
           <HomeCourses />
         </main>
         <Footer />
