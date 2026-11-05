@@ -9,6 +9,7 @@ import { NotFound } from './components/NotFound/NotFound';
 import { AdminLayout } from './components/Admin/AdminLayout';
 import { CategoryManagement } from './components/Admin/CategoryManagement/CategoryManagement';
 import SystemConfigManagement from './components/Admin/SystemConfig/SystemConfigManagement';
+import CouponManagement from './components/Admin/CouponManagement/CouponManagement';
 import { BannerCarousel } from './components/Banner/BannerCarousel';
 import './App.css';
 
@@ -55,13 +56,7 @@ function MainRouter() {
   if (normalizedPath === '/admin/coupons') {
     return (
       <AdminLayout activeTab="coupons" pageTitle="Quản lý mã giảm giá">
-        <div className="cat-empty-state" style={{ background: '#111827', borderRadius: '12px', padding: '4rem 2rem' }}>
-          <div className="cat-empty-icon" style={{ fontSize: '3.5rem' }}>🎟️</div>
-          <h2 style={{ color: '#fff', margin: '0.5rem 0' }}>Quản lý mã giảm giá (Use Case UC18)</h2>
-          <p style={{ color: '#94a3b8', maxWidth: '500px', margin: '0 auto' }}>
-            Phân hệ khởi tạo coupon, thiết lập phần trăm hoặc số tiền giảm, thời hạn có hiệu lực và hạn mức sử dụng. Sẽ được triển khai ở bước kế tiếp!
-          </p>
-        </div>
+        <CouponManagement />
       </AdminLayout>
     );
   }
