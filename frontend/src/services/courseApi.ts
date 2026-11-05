@@ -117,13 +117,23 @@ export const fetchCourseBySlug = async (
 ): Promise<Course | null> => {
   try {
     const res = await fetch(`${API_BASE}/${slug}`);
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.success ? json.data : null;
-  } catch (error) {
-    console.error('[CourseApi] Lỗi lấy chi tiết khóa học:', error);
-    return null;
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data) {
+        return json.data;
+      }
+    }
+  } catch {
+    // Fallback if offline
   }
+
+  const fallbacks = getFallbackCourses();
+  const all = [
+    ...fallbacks.forYou,
+    ...fallbacks.bestSellers,
+    ...fallbacks.newReleases,
+  ];
+  return all.find((c) => c.slug === slug || c._id === slug) || null;
 };
 
 // Dữ liệu dự phòng chuẩn đẹp (chính xác mẫu trong ảnh)
@@ -137,8 +147,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
         'Master cutting-edge techniques in this comprehensive course.',
       thumbnailUrl: '/assets/advanced_digital_skills.jpg',
       badge: 'NEW',
-      price: 199.99,
-      discountPrice: 159.99,
+      price: 2000000,
+      discountPrice: 1600000,
       durationHours: 20,
       durationText: '20h',
       status: 'PUBLISHED',
@@ -155,8 +165,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
       thumbnailUrl:
         'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80',
       badge: 'NEW',
-      price: 149.99,
-      discountPrice: 119.99,
+      price: 1500000,
+      discountPrice: 1200000,
       durationHours: 35,
       durationText: '35h',
       status: 'PUBLISHED',
@@ -173,8 +183,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
       thumbnailUrl:
         'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=800&auto=format&fit=crop&q=80',
       badge: 'HOT',
-      price: 129.99,
-      discountPrice: 99.99,
+      price: 1300000,
+      discountPrice: 1000000,
       durationHours: 18,
       durationText: '18h',
       status: 'PUBLISHED',
@@ -191,8 +201,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
       thumbnailUrl:
         'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
       badge: 'NEW',
-      price: 249.99,
-      discountPrice: 199.99,
+      price: 2500000,
+      discountPrice: 2000000,
       durationHours: 24,
       durationText: '24h',
       status: 'PUBLISHED',
@@ -211,8 +221,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
       thumbnailUrl:
         'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=80',
       badge: 'BESTSELLER',
-      price: 189.99,
-      discountPrice: 139.99,
+      price: 1900000,
+      discountPrice: 1400000,
       durationHours: 42,
       durationText: '42h',
       status: 'PUBLISHED',
@@ -228,8 +238,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
       thumbnailUrl:
         'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80',
       badge: 'BESTSELLER',
-      price: 159.99,
-      discountPrice: 109.99,
+      price: 1600000,
+      discountPrice: 1100000,
       durationHours: 28,
       durationText: '28h',
       status: 'PUBLISHED',
@@ -245,8 +255,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
       thumbnailUrl:
         'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&auto=format&fit=crop&q=80',
       badge: 'HOT',
-      price: 169.99,
-      discountPrice: 129.99,
+      price: 1700000,
+      discountPrice: 1300000,
       durationHours: 26,
       durationText: '26h',
       status: 'PUBLISHED',
@@ -262,8 +272,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
       thumbnailUrl:
         'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80',
       badge: 'BESTSELLER',
-      price: 179.99,
-      discountPrice: 139.99,
+      price: 1800000,
+      discountPrice: 1400000,
       durationHours: 50,
       durationText: '50h',
       status: 'PUBLISHED',
@@ -281,8 +291,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
       thumbnailUrl:
         'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80',
       badge: 'NEW',
-      price: 219.99,
-      discountPrice: 179.99,
+      price: 2200000,
+      discountPrice: 1800000,
       durationHours: 32,
       durationText: '32h',
       status: 'PUBLISHED',
@@ -298,8 +308,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
       thumbnailUrl:
         'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80',
       badge: 'NEW',
-      price: 139.99,
-      discountPrice: 99.99,
+      price: 1400000,
+      discountPrice: 1000000,
       durationHours: 16,
       durationText: '16h',
       status: 'PUBLISHED',
@@ -315,8 +325,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
       thumbnailUrl:
         'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop&q=80',
       badge: 'NEW',
-      price: 199.99,
-      discountPrice: 149.99,
+      price: 2000000,
+      discountPrice: 1500000,
       durationHours: 30,
       durationText: '30h',
       status: 'PUBLISHED',
@@ -332,8 +342,8 @@ const getFallbackCourses = (): HomeCoursesData => ({
       thumbnailUrl:
         'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&auto=format&fit=crop&q=80',
       badge: 'NEW',
-      price: 149.99,
-      discountPrice: 119.99,
+      price: 1500000,
+      discountPrice: 1200000,
       durationHours: 15,
       durationText: '15h',
       status: 'PUBLISHED',

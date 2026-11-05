@@ -1,5 +1,6 @@
 import { useState, type FC } from 'react';
 import type { Course } from '../../types/course';
+import { formatVND } from '../../utils/format';
 
 interface CourseCardProps {
   course: Course;
@@ -22,9 +23,7 @@ export const CourseCard: FC<CourseCardProps> = ({ course, onClick }) => {
     thumbnailUrl || '/assets/advanced_digital_skills.jpg',
   );
 
-  // Format display price (e.g. $199.99)
-  const displayPrice =
-    typeof price === 'number' ? `$${price.toFixed(2)}` : price;
+  const displayPrice = formatVND(price);
 
   // Format duration (e.g. "20h")
   const displayDuration =

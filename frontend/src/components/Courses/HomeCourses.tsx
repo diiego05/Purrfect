@@ -9,11 +9,10 @@ import { CourseSection } from './CourseSection';
 import './Courses.css';
 
 export const HomeCourses: FC = () => {
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, navigate } = useAuth();
   const [data, setData] = useState<HomeCoursesData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -47,17 +46,13 @@ export const HomeCourses: FC = () => {
   }, [token]);
 
   const handleCourseClick = (course: Course) => {
-    setSelectedCourse(course);
     if (course._id) {
       recordCourseInteraction({
         actionType: 'VIEW',
         courseId: course._id,
       });
     }
-  };
-
-  const closeModal = () => {
-    setSelectedCourse(null);
+    navigate(`/courses/${course.slug}`);
   };
 
   return (
@@ -137,94 +132,6 @@ export const HomeCourses: FC = () => {
             viewAllLink="#new-releases"
             onCourseClick={handleCourseClick}
           />
-        </div>
-      )}
-
-      {/* Quick View / Enrollment Modal */}
-      {selectedCourse && (
-        <div
-          className="course-modal-backdrop"
-          onClick={closeModal}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="course-modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="course-modal-close-btn"
-              onClick={closeModal}
-              aria-label="Đóng"
-            >
-              &times;
-            </button>
-            <div className="course-modal-header">
-              <img
-                src={selectedCourse.thumbnailUrl}
-                alt={selectedCourse.title}
-                className="course-modal-thumb"
-              />
-              <div className="course-modal-info">
-                {selectedCourse.badge && (
-                  <span className="course-card-badge">
-                    {selectedCourse.badge}
-                  </span>
-                )}
-                <h3 className="course-modal-title">{selectedCourse.title}</h3>
-                <div className="course-modal-price">
-                  {typeof selectedCourse.price === 'number'
-                    ? `$${selectedCourse.price.toFixed(2)}`
-                    : selectedCourse.price}
-                </div>
-              </div>
-            </div>
-            <div className="course-modal-body">
-              <p className="course-modal-desc">
-                {selectedCourse.shortDescription}
-              </p>
-              <div className="course-modal-details-grid">
-                <div className="detail-item">
-                  <span className="detail-label">Thời lượng:</span>
-                  <span className="detail-val">
-                    {selectedCourse.durationText ||
-                      `${selectedCourse.durationHours || 20}h`}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Đánh giá:</span>
-                  <span className="detail-val">
-                    ⭐ {selectedCourse.averageRating || '4.8'}/5.0
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Học viên:</span>
-                  <span className="detail-val">
-                    {selectedCourse.totalStudents.toLocaleString()} học viên
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="course-modal-footer">
-              <button
-                className="btn-modal-action-primary"
-                onClick={() => {
-                  alert(
-                    `Bạn đã chọn khóa học "${selectedCourse.title}". Tính năng thanh toán sẽ ra mắt ở module tiếp theo!`,
-                  );
-                  closeModal();
-                }}
-              >
-                Đăng ký học ngay
-              </button>
-              <button
-                className="btn-modal-action-secondary"
-                onClick={closeModal}
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

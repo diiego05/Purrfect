@@ -599,3 +599,232 @@ export const IconlyHeart: React.FC<IconProps> = ({
     />
   </svg>
 );
+
+export const IconlyShield: React.FC<IconProps> = ({
+  size = 20,
+  color = 'currentColor',
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`iconly-icon ${className}`}
+  >
+    <path
+      d="M12 21.8C12 21.8 19.5 17.65 19.5 11.45V5.55C19.5 4.9 19.05 4.33 18.42 4.18L12.42 2.24C12.15 2.15 11.85 2.15 11.58 2.24L5.58 4.18C4.95 4.33 4.5 4.9 4.5 5.55V11.45C4.5 17.65 12 21.8 12 21.8Z"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9.5 11.8L11.2 13.5L14.8 9.9"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity="0.45"
+    />
+  </svg>
+);
+
+export const IconlyTimeCircle: React.FC<IconProps> = ({
+  size = 20,
+  color = 'currentColor',
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`iconly-icon ${className}`}
+  >
+    <circle
+      cx="12"
+      cy="12"
+      r="9.5"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12 7.5V12.2L15.3 14.2"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const IconlyFolder: React.FC<IconProps> = ({
+  size = 20,
+  color = 'currentColor',
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`iconly-icon ${className}`}
+  >
+    <path
+      d="M21 17.5C21 19.43 19.43 21 17.5 21H6.5C4.57 21 3 19.43 3 17.5V6.5C3 4.57 4.57 3 6.5 3H9.2C10.22 3 11.18 3.47 11.8 4.28L12.7 5.46C13.12 6.01 13.76 6.32 14.44 6.32H17.5C19.43 6.32 21 7.89 21 9.82V17.5Z"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M7.5 14H16.5"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      opacity="0.45"
+    />
+  </svg>
+);
+
+export const IconlyDevice: React.FC<IconProps> = ({
+  size = 20,
+  color = 'currentColor',
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`iconly-icon ${className}`}
+  >
+    <rect
+      x="3"
+      y="4"
+      width="18"
+      height="12"
+      rx="2.5"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M7 20H17"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12 16V20"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity="0.45"
+    />
+  </svg>
+);
+
+export const IconlyStar: React.FC<IconProps> = ({
+  size = 20,
+  color = 'currentColor',
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`iconly-icon ${className}`}
+  >
+    <path
+      d="M11.238 2.50299C11.547 1.83199 12.453 1.83199 12.762 2.50299L15.039 7.44799C15.165 7.72099 15.423 7.91099 15.72 7.94099L21.036 8.48399C21.758 8.55799 22.049 9.47299 21.503 9.95499L17.513 13.483C17.288 13.682 17.189 13.993 17.251 14.288L18.371 19.516C18.523 20.226 17.76 20.792 17.135 20.422L12.533 17.697C12.274 17.544 11.726 17.544 11.467 17.697L6.865 20.422C6.24 20.792 5.477 20.226 5.629 19.516L6.749 14.288C6.811 13.993 6.712 13.682 6.487 13.483L2.497 9.95499C1.951 9.47299 2.242 8.55799 2.964 8.48399L8.28 7.94099C8.577 7.91099 8.835 7.72099 8.961 7.44799L11.238 2.50299Z"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const IconlyUserGroup: React.FC<IconProps> = ({
+  size = 20,
+  color = 'currentColor',
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`iconly-icon ${className}`}
+  >
+    <path
+      d="M17.5 19V17.5C17.5 15.29 15.71 13.5 13.5 13.5H7.5C5.29 13.5 3.5 15.29 3.5 17.5V19"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle
+      cx="10.5"
+      cy="7.5"
+      r="4"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M20.5 18.5V17.5C20.5 15.79 19.34 14.34 17.75 13.84"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity="0.45"
+    />
+    <path
+      d="M15.5 4.14C16.69 4.67 17.5 5.86 17.5 7.25C17.5 8.64 16.69 9.83 15.5 10.36"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity="0.45"
+    />
+  </svg>
+);
+
+export const IconlyPlay: React.FC<IconProps> = ({
+  size = 20,
+  color = 'currentColor',
+  className = '',
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`iconly-icon ${className}`}
+  >
+    <path
+      d="M18.89 10.35L7.99 4.05C6.67 3.29 5 4.24 5 5.76V18.24C5 19.76 6.67 20.71 7.99 19.95L18.89 13.65C20.21 12.89 20.21 11.11 18.89 10.35Z"
+      stroke={color}
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);

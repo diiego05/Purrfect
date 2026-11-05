@@ -5,6 +5,7 @@ import { HomeCourses } from './components/Courses/HomeCourses';
 import { Footer } from './components/Footer';
 import { AuthCard } from './components/Auth/AuthCard';
 import { OnboardingFlow } from './components/Onboarding/OnboardingFlow';
+import { CourseDetailPage } from './components/CourseDetail/CourseDetailPage';
 import { NotFound } from './components/NotFound/NotFound';
 import './App.css';
 
@@ -16,6 +17,21 @@ function MainRouter() {
 
   if (normalizedPath === '/onboarding') {
     return <OnboardingFlow />;
+  }
+
+  // Handle course detail page: /courses/:slug or /course/:slug
+  const courseMatch = normalizedPath.match(/^\/(?:courses|course)\/([^/]+)$/);
+  if (courseMatch) {
+    const slug = decodeURIComponent(courseMatch[1]);
+    return (
+      <div className="app-layout">
+        <Header />
+        <main className="main-content">
+          <CourseDetailPage key={slug} slug={slug} />
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   if (normalizedPath === '/login' || normalizedPath === '/register') {

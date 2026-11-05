@@ -65,8 +65,8 @@ export const initialCourses = [
       'Master cutting-edge techniques in this comprehensive course.',
     thumbnailUrl: '/assets/advanced_digital_skills.jpg',
     badge: 'NEW',
-    price: 199.99,
-    discountPrice: 159.99,
+    price: 2000000,
+    discountPrice: 1600000,
     durationHours: 20,
     durationText: '20h',
     status: 'PUBLISHED',
@@ -83,8 +83,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80',
     badge: 'NEW',
-    price: 149.99,
-    discountPrice: 119.99,
+    price: 1500000,
+    discountPrice: 1200000,
     durationHours: 35,
     durationText: '35h',
     status: 'PUBLISHED',
@@ -101,8 +101,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=800&auto=format&fit=crop&q=80',
     badge: 'HOT',
-    price: 129.99,
-    discountPrice: 99.99,
+    price: 1300000,
+    discountPrice: 1000000,
     durationHours: 18,
     durationText: '18h',
     status: 'PUBLISHED',
@@ -119,8 +119,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
     badge: 'NEW',
-    price: 249.99,
-    discountPrice: 199.99,
+    price: 2500000,
+    discountPrice: 2000000,
     durationHours: 24,
     durationText: '24h',
     status: 'PUBLISHED',
@@ -139,8 +139,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=80',
     badge: 'BESTSELLER',
-    price: 189.99,
-    discountPrice: 139.99,
+    price: 1900000,
+    discountPrice: 1400000,
     durationHours: 42,
     durationText: '42h',
     status: 'PUBLISHED',
@@ -157,8 +157,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80',
     badge: 'BESTSELLER',
-    price: 159.99,
-    discountPrice: 109.99,
+    price: 1600000,
+    discountPrice: 1100000,
     durationHours: 28,
     durationText: '28h',
     status: 'PUBLISHED',
@@ -175,8 +175,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&auto=format&fit=crop&q=80',
     badge: 'HOT',
-    price: 169.99,
-    discountPrice: 129.99,
+    price: 1700000,
+    discountPrice: 1300000,
     durationHours: 26,
     durationText: '26h',
     status: 'PUBLISHED',
@@ -193,8 +193,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80',
     badge: 'BESTSELLER',
-    price: 179.99,
-    discountPrice: 139.99,
+    price: 1800000,
+    discountPrice: 1400000,
     durationHours: 50,
     durationText: '50h',
     status: 'PUBLISHED',
@@ -213,8 +213,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80',
     badge: 'NEW',
-    price: 219.99,
-    discountPrice: 179.99,
+    price: 2200000,
+    discountPrice: 1800000,
     durationHours: 32,
     durationText: '32h',
     status: 'PUBLISHED',
@@ -231,8 +231,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=800&auto=format&fit=crop&q=80',
     badge: 'NEW',
-    price: 139.99,
-    discountPrice: 99.99,
+    price: 1400000,
+    discountPrice: 1000000,
     durationHours: 16,
     durationText: '16h',
     status: 'PUBLISHED',
@@ -249,8 +249,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80',
     badge: 'NEW',
-    price: 199.99,
-    discountPrice: 149.99,
+    price: 2000000,
+    discountPrice: 1500000,
     durationHours: 30,
     durationText: '30h',
     status: 'PUBLISHED',
@@ -267,8 +267,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&auto=format&fit=crop&q=80',
     badge: 'NEW',
-    price: 149.99,
-    discountPrice: 119.99,
+    price: 1500000,
+    discountPrice: 1200000,
     durationHours: 15,
     durationText: '15h',
     status: 'PUBLISHED',
@@ -286,8 +286,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&auto=format&fit=crop&q=80',
     badge: 'HOT',
-    price: 129.99,
-    discountPrice: 89.99,
+    price: 1300000,
+    discountPrice: 900000,
     durationHours: 25,
     durationText: '25h',
     status: 'PUBLISHED',
@@ -304,8 +304,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&auto=format&fit=crop&q=80',
     badge: 'NEW',
-    price: 179.99,
-    discountPrice: 139.99,
+    price: 1800000,
+    discountPrice: 1400000,
     durationHours: 40,
     durationText: '40h',
     status: 'PUBLISHED',
@@ -322,8 +322,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=80',
     badge: 'NEW',
-    price: 119.99,
-    discountPrice: 79.99,
+    price: 1200000,
+    discountPrice: 800000,
     durationHours: 20,
     durationText: '20h',
     status: 'PUBLISHED',
@@ -340,8 +340,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&auto=format&fit=crop&q=80',
     badge: 'HOT',
-    price: 99.99,
-    discountPrice: 69.99,
+    price: 1000000,
+    discountPrice: 700000,
     durationHours: 16,
     durationText: '16h',
     status: 'PUBLISHED',
@@ -358,8 +358,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop&q=80',
     badge: 'NEW',
-    price: 159.99,
-    discountPrice: 129.99,
+    price: 1600000,
+    discountPrice: 1300000,
     durationHours: 30,
     durationText: '30h',
     status: 'PUBLISHED',
@@ -376,8 +376,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop&q=80',
     badge: 'HOT',
-    price: 89.99,
-    discountPrice: 59.99,
+    price: 900000,
+    discountPrice: 600000,
     durationHours: 14,
     durationText: '14h',
     status: 'PUBLISHED',
@@ -394,8 +394,8 @@ export const initialCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&auto=format&fit=crop&q=80',
     badge: 'NEW',
-    price: 79.99,
-    discountPrice: 49.99,
+    price: 800000,
+    discountPrice: 500000,
     durationHours: 12,
     durationText: '12h',
     status: 'PUBLISHED',
@@ -652,10 +652,10 @@ export const getCourseBySlug = async (
 ): Promise<void> => {
   try {
     const { slug } = req.params;
-    const course = await Course.findOne({ slug, isDeleted: false }).populate(
-      'categoryId',
-      'name slug',
-    );
+    const course = await Course.findOne({ slug, isDeleted: false })
+      .populate('categoryId', 'name slug description')
+      .populate('skillIds', 'name slug')
+      .populate('instructorId', 'name email avatar headline bio');
 
     if (!course) {
       res.status(404).json({
@@ -670,7 +670,7 @@ export const getCourseBySlug = async (
       data: course,
     });
   } catch (error) {
-    console.error('[CourseController] Lỗi khi lấy chi tiết khóa học:', error);
+    console.error('[CourseController] getCourseBySlug error:', error);
     res.status(500).json({
       success: false,
       message: 'Lỗi máy chủ',
