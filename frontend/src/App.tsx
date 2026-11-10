@@ -2,6 +2,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { HomeCourses } from './components/Courses/HomeCourses';
+import { CourseDetail } from './components/Courses/CourseDetail';
 import { Footer } from './components/Footer';
 import { AuthCard } from './components/Auth/AuthCard';
 import { OnboardingFlow } from './components/Onboarding/OnboardingFlow';
@@ -11,6 +12,7 @@ import { CategoryManagement } from './components/Admin/CategoryManagement/Catego
 import SystemConfigManagement from './components/Admin/SystemConfig/SystemConfigManagement';
 import CouponManagement from './components/Admin/CouponManagement/CouponManagement';
 import { BannerCarousel } from './components/Banner/BannerCarousel';
+import { ChatbotWidget } from './components/Chatbot/ChatbotWidget';
 import './App.css';
 
 function MainRouter() {
@@ -83,7 +85,21 @@ function MainRouter() {
     );
   }
 
-  // 4. Trang chủ chính (Homepage)
+  // 4. Chi tiết khóa học (Course Detail)
+  if (normalizedPath.startsWith('/courses/')) {
+    const slug = normalizedPath.replace(/^\/courses\//, '');
+    return (
+      <div className="app-layout">
+        <Header />
+        <main className="main-content">
+          <CourseDetail slug={slug} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // 5. Trang chủ chính (Homepage)
   if (normalizedPath === '/') {
     return (
       <div className="app-layout">
@@ -106,6 +122,7 @@ function App() {
   return (
     <AuthProvider>
       <MainRouter />
+      <ChatbotWidget />
     </AuthProvider>
   );
 }

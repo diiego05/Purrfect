@@ -1,15 +1,20 @@
 """
 FastAPI Microservice for AI Course Recommendation (Content-Based + SVD Collaborative)
+and RAG Chatbot Service (LangChain + ChromaDB Architecture)
+Khớp chính xác với Lược đồ tuần tự 3.2.21:
+AiChatController -> FastApiRAGService: POST /ai/v1/rag/query (courseId, userPrompt)
 """
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.content_based import ContentBasedRecommender
 from app.svd_recommender import SVDCollaborativeRecommender
 from app.next_sequence import NextSequenceEngine
+from app.rag_service import RAGChatbotEngine
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,8 +23,8 @@ logging.basicConfig(
 logger = logging.getLogger("purrfect.ai.main")
 
 app = FastAPI(
-    title="Purrfect AI Recommendation Engine",
-    version="1.2.0"
+    title="Purrfect AI Recommendation & RAG Engine",
+    version="1.3.1"
 )
 
 app.add_middleware(
@@ -38,6 +43,7 @@ svd_engine = SVDCollaborativeRecommender(
     min_courses=5
 )
 seq_engine = NextSequenceEngine()
+rag_engine = RAGChatbotEngine()
 
 
 class CourseInput(BaseModel):
@@ -92,11 +98,35 @@ class RecommendationResponse(BaseModel):
     strategy_used: str
 
 
+# Chatbot RAG Schemas
+class ChatMessageRequest(BaseModel):
+    message: Optional[str] = None
+    userPrompt: Optional[str] = None
+    courseId: Optional[str] = None
+    courses: Optional[List[Dict[str, Any]]] = []
+
+
+class ChatMessageResponse(BaseModel):
+    success: bool
+    answer: str
+    suggested_courses: List[Dict[str, Any]]
+    is_out_of_scope: bool
+    relevant_context_chunks: Optional[List[str]] = []
+
+
+# Schema chuẩn theo Lược đồ tuần tự 3.2.21
+class RAGQueryRequest(BaseModel):
+    courseId: Optional[str] = None
+    course_id: Optional[str] = None
+    userPrompt: Optional[str] = None
+    message: Optional[str] = None
+
+
 @app.get("/health")
 def healthcheck():
     return {
         "status": "healthy",
-        "service": "Purrfect AI Recommendation Engine",
+        "service": "Purrfect AI Recommendation & RAG Engine",
         "svd_trained": svd_engine.is_trained
     }
 
@@ -185,4 +215,68 @@ def get_recommendations(req: RecommendationRequest):
         next_sequence_course_ids=list(next_sequence_ids),
         course_scores=final_scores,
         strategy_used=strategy
+    )
+
+
+# ────────────────────────────────────────────────────────────
+# RAG Chatbot AI Endpoints (LangChain + ChromaDB Vector Store)
+# Khớp Lược đồ tuần tự 3.2.21
+# ────────────────────────────────────────────────────────────
+
+@app.post("/ai/v1/rag/query", response_model=ChatMessageResponse)
+def rag_query_endpoint(req: RAGQueryRequest):
+    """
+    Điểm cuối chuẩn theo Lược đồ tuần tự 3.2.21:
+    POST /ai/v1/rag/query (courseId, userPrompt)
+    """
+    prompt = req.userPrompt or req.message or ""
+    cid = req.courseId or req.course_id
+    result = rag_engine.query(prompt, course_id=cid)
+    return ChatMessageResponse(
+        success=True,
+        answer=result["answer"],
+        suggested_courses=result.get("suggested_courses", []),
+        is_out_of_scope=result.get("is_out_of_scope", False),
+        relevant_context_chunks=result.get("relevant_sources", [])
+    )
+
+
+@app.post("/api/v1/chat", response_model=ChatMessageResponse)
+def chat_endpoint(req: ChatMessageRequest):
+    """
+    Điểm cuối RAG Chatbot: Truy vấn dữ liệu mô tả khóa học và chính sách hệ thống.
+    """
+    if req.courses:
+        rag_engine.update_course_knowledge(req.courses)
+
+    prompt = req.userPrompt or req.message or ""
+    result = rag_engine.query(prompt, course_id=req.courseId)
+    return ChatMessageResponse(
+        success=True,
+        answer=result["answer"],
+        suggested_courses=result.get("suggested_courses", []),
+        is_out_of_scope=result.get("is_out_of_scope", False),
+        relevant_context_chunks=result.get("relevant_sources", [])
+    )
+
+
+@app.post("/api/v1/chat/stream")
+def chat_stream_endpoint(req: ChatMessageRequest):
+    """
+    Điểm cuối Server-Sent Events (SSE) Token Streaming:
+    Phản hồi token chuỗi ký tự nối tiếp cho giao diện chat (< 3s).
+    """
+    if req.courses:
+        rag_engine.update_course_knowledge(req.courses)
+
+    prompt = req.userPrompt or req.message or ""
+
+    def event_generator():
+        for token in rag_engine.stream_query(prompt, course_id=req.courseId):
+            yield f"data: {token}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream"
     )

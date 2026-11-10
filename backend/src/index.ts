@@ -10,6 +10,7 @@ import categoryRoutes from './routes/categoryRoutes';
 import systemConfigRoutes from './routes/systemConfigRoutes';
 import bannerRoutes from './routes/bannerRoutes';
 import couponRoutes from './routes/couponRoutes';
+import aiChatRoutes from './routes/aiChatRoutes';
 import { seedDefaultConfigs } from './controllers/systemConfigController';
 import { verifyMailerConnection } from './utils/mailer';
 
@@ -40,6 +41,8 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/system-configs', systemConfigRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/ai', aiChatRoutes);
+app.use('/api/v1/ai', aiChatRoutes);
 
 // Health check
 app.get('/api/health', (_req, expressRes) => {
@@ -57,6 +60,7 @@ app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`System config routes available at http://localhost:${PORT}/api/system-configs`);
   console.log(`Banner routes available at http://localhost:${PORT}/api/banners`);
   console.log(`Coupon routes available at http://localhost:${PORT}/api/coupons`);
+  console.log(`AI Chat routes available at http://localhost:${PORT}/api/ai`);
   // Seed default system configs (only sets missing keys)
   seedDefaultConfigs().catch(console.error);
   // Kiểm tra kết nối SMTP ngay khi server khởi động
