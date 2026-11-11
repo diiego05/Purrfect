@@ -40,8 +40,7 @@ const BannerSchema = new Schema<IBanner>(
   {
     timestamps: true,
     collection: 'banners',
-  }
+  },
 );
 
 export default mongoose.model<IBanner>('Banner', BannerSchema);
-

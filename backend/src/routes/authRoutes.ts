@@ -14,6 +14,7 @@ import {
   refreshTokenHandler,
   logout,
   getMe,
+  updateProfile,
   getGoogleAuthUrl,
   handleGoogleCallback,
 } from '../controllers/authController';
@@ -47,9 +48,11 @@ router.post('/verify-otp', verifyOtp);
 router.post('/reset-password', resetPassword);
 router.post('/set-google-password', setGooglePassword);
 
-// Đăng xuất và lấy thông tin phiên
+// Đăng xuất, lấy thông tin và cập nhật hồ sơ cá nhân
 router.post('/logout', logout);
 router.get('/me', authenticateToken, getMe);
+router.put('/profile', authenticateToken, updateProfile);
+router.patch('/profile', authenticateToken, updateProfile);
 
 // Khảo sát định hướng Onboarding
 router.post('/onboarding', authenticateToken, saveOnboardingSurvey);

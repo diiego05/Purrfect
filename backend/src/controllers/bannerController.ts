@@ -5,9 +5,14 @@ import { recordAuditLog } from '../utils/auditLogger';
 type AuthRequest = Request & { user?: { id: string } };
 
 // GET /api/banners - public active banners sorted by orderIndex
-export const getActiveBanners = async (_req: Request, res: Response): Promise<void> => {
+export const getActiveBanners = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
   try {
-    const banners = await Banner.find({ isActive: true }).sort({ orderIndex: 1 });
+    const banners = await Banner.find({ isActive: true }).sort({
+      orderIndex: 1,
+    });
     res.json({ banners });
   } catch {
     res.status(500).json({ message: 'Lỗi server khi lấy danh sách banner.' });
@@ -15,7 +20,10 @@ export const getActiveBanners = async (_req: Request, res: Response): Promise<vo
 };
 
 // GET /api/banners/all - [Admin] all banners
-export const getAllBanners = async (_req: Request, res: Response): Promise<void> => {
+export const getAllBanners = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const banners = await Banner.find().sort({ orderIndex: 1 });
     res.json({ banners });
@@ -25,7 +33,10 @@ export const getAllBanners = async (_req: Request, res: Response): Promise<void>
 };
 
 // POST /api/banners - [Admin] create banner
-export const createBanner = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createBanner = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { imageUrl, title, linkUrl, orderIndex, isActive } = req.body as {
       imageUrl: string;
@@ -73,7 +84,10 @@ export const createBanner = async (req: AuthRequest, res: Response): Promise<voi
 };
 
 // PUT /api/banners/:id - [Admin] update banner
-export const updateBanner = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateBanner = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { id } = req.params;
     const { imageUrl, title, linkUrl, orderIndex, isActive } = req.body as {
@@ -114,7 +128,10 @@ export const updateBanner = async (req: AuthRequest, res: Response): Promise<voi
 };
 
 // DELETE /api/banners/:id - [Admin] delete banner
-export const deleteBanner = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteBanner = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { id } = req.params;
     const banner = await Banner.findByIdAndDelete(id);
@@ -139,7 +156,10 @@ export const deleteBanner = async (req: AuthRequest, res: Response): Promise<voi
 };
 
 // PATCH /api/banners/:id/toggle - [Admin] toggle isActive
-export const toggleBanner = async (req: AuthRequest, res: Response): Promise<void> => {
+export const toggleBanner = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { id } = req.params;
     const banner = await Banner.findById(id);
@@ -165,14 +185,21 @@ export const toggleBanner = async (req: AuthRequest, res: Response): Promise<voi
       banner,
     });
   } catch {
-    res.status(500).json({ message: 'Lỗi server khi thay đổi trạng thái banner.' });
+    res
+      .status(500)
+      .json({ message: 'Lỗi server khi thay đổi trạng thái banner.' });
   }
 };
 
 // PATCH /api/banners/reorder - [Admin] reorder banners
-export const reorderBanners = async (req: AuthRequest, res: Response): Promise<void> => {
+export const reorderBanners = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
-    const { orders } = req.body as { orders: Array<{ id: string; orderIndex: number }> };
+    const { orders } = req.body as {
+      orders: Array<{ id: string; orderIndex: number }>;
+    };
 
     if (!Array.isArray(orders) || orders.length === 0) {
       res.status(400).json({ message: 'Dữ liệu sắp xếp không hợp lệ.' });

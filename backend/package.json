@@ -12,11 +12,11 @@
   },
   "lint-staged": {
     "*.ts": [
-      "prettier --write",
+      "prettier --no-error-on-unmatched-pattern --write",
       "eslint --fix"
     ],
     "*.{json,md}": [
-      "prettier --write"
+      "prettier --no-error-on-unmatched-pattern --write"
     ]
   },
   "keywords": [

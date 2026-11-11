@@ -1,6 +1,25 @@
 import { useState, useEffect } from 'react';
 import { couponApi } from '../../../services/couponApi';
-import type { Coupon, CouponFormData, DiscountType } from '../../../types/coupon';
+import type {
+  Coupon,
+  CouponFormData,
+  DiscountType,
+} from '../../../types/coupon';
+import {
+  IconlyDiscount,
+  IconlyUserGroup,
+  IconlySearch,
+  IconlyEdit,
+  IconlyDelete,
+  IconlyPlus,
+  IconlyGraph,
+  IconlyBuy,
+  IconlyTimeCircle,
+  IconlyTick,
+  IconlyClose,
+  IconlyDocument,
+  IconlySetting,
+} from '../../Onboarding/IconlyIcons';
 import './CouponManagement.css';
 
 interface Toast {
@@ -43,7 +62,9 @@ export default function CouponManagement() {
   // Filters
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<'ALL' | DiscountType>('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<
+    'ALL' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED'
+  >('ALL');
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -86,7 +107,12 @@ export default function CouponManagement() {
       });
       setCoupons(data);
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Lỗi khi tải danh sách mã giảm giá.', 'error');
+      addToast(
+        err instanceof Error
+          ? err.message
+          : 'Lỗi khi tải danh sách mã giảm giá.',
+        'error',
+      );
     } finally {
       setLoading(false);
     }
@@ -107,7 +133,12 @@ export default function CouponManagement() {
         }
       } catch (err) {
         if (!ignore) {
-          addToast(err instanceof Error ? err.message : 'Lỗi khi tải danh sách mã giảm giá.', 'error');
+          addToast(
+            err instanceof Error
+              ? err.message
+              : 'Lỗi khi tải danh sách mã giảm giá.',
+            'error',
+          );
         }
       } finally {
         if (!ignore) {
@@ -131,7 +162,11 @@ export default function CouponManagement() {
   // Helper calculation for stats
   const now = new Date();
   const activeCoupons = coupons.filter(
-    (c) => c.isActive && new Date(c.validFrom) <= now && new Date(c.validTo) >= now && c.usedCount < c.totalUsageLimit
+    (c) =>
+      c.isActive &&
+      new Date(c.validFrom) <= now &&
+      new Date(c.validTo) >= now &&
+      c.usedCount < c.totalUsageLimit,
   );
   const expiredCoupons = coupons.filter((c) => new Date(c.validTo) < now);
   const totalUsed = coupons.reduce((sum, c) => sum + c.usedCount, 0);
@@ -143,7 +178,8 @@ export default function CouponManagement() {
     if (!formData.code.trim()) {
       errors.code = 'Mã giảm giá không được để trống.';
     } else if (!/^[A-Z0-9_-]{3,30}$/.test(formData.code.trim())) {
-      errors.code = 'Mã chỉ được chứa chữ hoa, số, dấu gạch ngang (3-30 ký tự).';
+      errors.code =
+        'Mã chỉ được chứa chữ hoa, số, dấu gạch ngang (3-30 ký tự).';
     }
 
     const val = Number(formData.discountValue);
@@ -164,7 +200,7 @@ export default function CouponManagement() {
       const start = new Date(formData.validFrom);
       const end = new Date(formData.validTo);
       if (end <= start) {
-        errors.validTo = 'Ngày hết hạn phải lớn hơn ngày bắt đầu hiệu lực (BR18.1).';
+        errors.validTo = 'Ngày hết hạn phải lớn hơn ngày bắt đầu hiệu lực.';
       }
     }
 
@@ -176,7 +212,11 @@ export default function CouponManagement() {
       errors.totalUsageLimit = 'Số lượt dùng tối đa phải từ 1 trở lên.';
     }
 
-    if (formData.discountType === 'PERCENT' && formData.maxDiscountAmount !== null && formData.maxDiscountAmount !== undefined) {
+    if (
+      formData.discountType === 'PERCENT' &&
+      formData.maxDiscountAmount !== null &&
+      formData.maxDiscountAmount !== undefined
+    ) {
       if (Number(formData.maxDiscountAmount) < 0) {
         errors.maxDiscountAmount = 'Mức giảm tối đa không thể âm.';
       }
@@ -220,7 +260,14 @@ export default function CouponManagement() {
 
   // Generate random code helper
   const generateRandomCode = () => {
-    const prefixes = ['SALE', 'LEARN', 'DISCOUNT', 'SUPER', 'VOUCHER', 'PURRFECT'];
+    const prefixes = [
+      'SALE',
+      'LEARN',
+      'DISCOUNT',
+      'SUPER',
+      'VOUCHER',
+      'PURRFECT',
+    ];
     const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
     const num = Math.floor(10 + Math.random() * 90);
     setFormData((f) => ({ ...f, code: `${prefix}${num}` }));
@@ -236,7 +283,9 @@ export default function CouponManagement() {
     try {
       if (editingCoupon) {
         const updated = await couponApi.update(editingCoupon._id, formData);
-        setCoupons((prev) => prev.map((c) => (c._id === updated._id ? updated : c)));
+        setCoupons((prev) =>
+          prev.map((c) => (c._id === updated._id ? updated : c)),
+        );
         addToast(`Cập nhật mã ${updated.code} thành công!`, 'success');
       } else {
         const created = await couponApi.create(formData);
@@ -245,7 +294,10 @@ export default function CouponManagement() {
       }
       setShowModal(false);
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Lỗi khi lưu mã giảm giá.', 'error');
+      addToast(
+        err instanceof Error ? err.message : 'Lỗi khi lưu mã giảm giá.',
+        'error',
+      );
     } finally {
       setSubmitting(false);
     }
@@ -255,10 +307,18 @@ export default function CouponManagement() {
   const handleToggle = async (coupon: Coupon) => {
     try {
       const updated = await couponApi.toggle(coupon._id);
-      setCoupons((prev) => prev.map((c) => (c._id === updated._id ? updated : c)));
-      addToast(`Mã ${coupon.code} đã được ${updated.isActive ? 'kích hoạt' : 'tạm dừng'}.`, 'success');
+      setCoupons((prev) =>
+        prev.map((c) => (c._id === updated._id ? updated : c)),
+      );
+      addToast(
+        `Mã ${coupon.code} đã được ${updated.isActive ? 'kích hoạt' : 'tạm dừng'}.`,
+        'success',
+      );
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Lỗi khi đổi trạng thái.', 'error');
+      addToast(
+        err instanceof Error ? err.message : 'Lỗi khi đổi trạng thái.',
+        'error',
+      );
     }
   };
 
@@ -319,8 +379,14 @@ export default function CouponManagement() {
       <div className="coupon-toasts">
         {toasts.map((t) => (
           <div key={t.id} className={`coupon-toast coupon-toast--${t.type}`}>
-            <span>{t.type === 'success' ? '✓' : '✕'}</span>
-            {t.message}
+            <span>
+              {t.type === 'success' ? (
+                <IconlyTick size={15} color="#10b981" />
+              ) : (
+                <IconlyClose size={15} color="#ef4444" />
+              )}
+            </span>
+            <span>{t.message}</span>
           </div>
         ))}
       </div>
@@ -328,9 +394,16 @@ export default function CouponManagement() {
       {/* Header */}
       <div className="coupon-header">
         <div>
-          <h1 className="coupon-title">🎟️ Quản lý mã giảm giá</h1>
+          <h1
+            className="coupon-title"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <IconlyDiscount size={26} color="#3b82f6" />
+            <span>Quản lý mã giảm giá</span>
+          </h1>
           <p className="coupon-subtitle">
-            Khởi tạo các mã coupon khuyến mãi, thiết lập tỷ lệ giảm, thời hạn hiệu lực và hạn mức sử dụng (Use Case UC18).
+            Khởi tạo các mã coupon khuyến mãi, thiết lập tỷ lệ giảm, thời hạn
+            hiệu lực và hạn mức sử dụng.
           </p>
         </div>
         <div className="coupon-header-actions">
@@ -339,14 +412,16 @@ export default function CouponManagement() {
             className="coupon-btn coupon-btn--outline"
             onClick={() => setShowTester(!showTester)}
           >
-            🧪 {showTester ? 'Đóng kiểm thử' : 'Thử nghiệm mã'}
+            {showTester ? 'Đóng kiểm thử' : 'Thử nghiệm mã'}
           </button>
           <button
             type="button"
             className="coupon-btn coupon-btn--primary"
             onClick={handleOpenCreate}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            + Tạo mã giảm giá mới
+            <IconlyPlus size={16} color="#ffffff" />
+            <span>Tạo mã giảm giá mới</span>
           </button>
         </div>
       </div>
@@ -354,28 +429,36 @@ export default function CouponManagement() {
       {/* Stats Cards */}
       <div className="coupon-stats">
         <div className="coupon-stat-card">
-          <span className="coupon-stat-icon">🏷️</span>
+          <span className="coupon-stat-icon">
+            <IconlyDiscount size={22} color="#3b82f6" />
+          </span>
           <div>
             <div className="coupon-stat-value">{coupons.length}</div>
             <div className="coupon-stat-label">Tổng số mã</div>
           </div>
         </div>
         <div className="coupon-stat-card">
-          <span className="coupon-stat-icon">🟢</span>
+          <span className="coupon-stat-icon">
+            <IconlyDiscount size={22} color="#10b981" />
+          </span>
           <div>
             <div className="coupon-stat-value">{activeCoupons.length}</div>
             <div className="coupon-stat-label">Đang có hiệu lực</div>
           </div>
         </div>
         <div className="coupon-stat-card">
-          <span className="coupon-stat-icon">⏳</span>
+          <span className="coupon-stat-icon">
+            <IconlyTimeCircle size={22} color="#f59e0b" />
+          </span>
           <div>
             <div className="coupon-stat-value">{expiredCoupons.length}</div>
             <div className="coupon-stat-label">Đã hết hạn</div>
           </div>
         </div>
         <div className="coupon-stat-card">
-          <span className="coupon-stat-icon">👥</span>
+          <span className="coupon-stat-icon">
+            <IconlyUserGroup size={22} color="#6366f1" />
+          </span>
           <div>
             <div className="coupon-stat-value">{totalUsed}</div>
             <div className="coupon-stat-label">Tổng lượt đã dùng</div>
@@ -387,8 +470,10 @@ export default function CouponManagement() {
       {showTester && (
         <div className="coupon-tester-card">
           <div className="coupon-tester-header">
-            <h3>🧪 Công cụ kiểm thử mã giảm giá (Simulator)</h3>
-            <span className="coupon-tester-hint">Thử nghiệm xác thực và tính toán số tiền giảm ngay lập tức</span>
+            <h3>Công cụ kiểm thử mã giảm giá (Simulator)</h3>
+            <span className="coupon-tester-hint">
+              Thử nghiệm xác thực và tính toán số tiền giảm ngay lập tức
+            </span>
           </div>
           <form className="coupon-tester-form" onSubmit={handleRunTest}>
             <div className="coupon-tester-inputs">
@@ -421,8 +506,12 @@ export default function CouponManagement() {
                   type="submit"
                   className="coupon-btn coupon-btn--primary"
                   disabled={testing}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  {testing ? 'Đang kiểm tra...' : '🔍 Kiểm tra áp dụng'}
+                  <IconlySearch size={15} color="#ffffff" />
+                  <span>
+                    {testing ? 'Đang kiểm tra...' : 'Kiểm tra áp dụng'}
+                  </span>
                 </button>
               </div>
             </div>
@@ -431,18 +520,55 @@ export default function CouponManagement() {
           {testResult && (
             <div
               className={`coupon-test-result ${
-                testResult.valid ? 'coupon-test-result--success' : 'coupon-test-result--error'
+                testResult.valid
+                  ? 'coupon-test-result--success'
+                  : 'coupon-test-result--error'
               }`}
             >
               <div className="coupon-test-result-header">
-                <strong>{testResult.valid ? '✅ Mã hợp lệ!' : '❌ Không thể áp dụng:'}</strong>{' '}
+                <strong>
+                  {testResult.valid ? (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <IconlyTick size={15} color="#10b981" /> Mã hợp lệ!
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <IconlyClose size={15} color="#ef4444" /> Không thể áp
+                      dụng:
+                    </span>
+                  )}
+                </strong>{' '}
                 {testResult.message}
               </div>
               {testResult.valid && (
                 <div className="coupon-test-result-details">
-                  <div>Tiền gốc: <span>{formatVND(Number(testAmount))}</span></div>
-                  <div>Giảm giá: <span className="text-discount">-{formatVND(testResult.discountAmount || 0)}</span></div>
-                  <div>Thành tiền: <span className="text-final">{formatVND(testResult.finalAmount || 0)}</span></div>
+                  <div>
+                    Tiền gốc: <span>{formatVND(Number(testAmount))}</span>
+                  </div>
+                  <div>
+                    Giảm giá:{' '}
+                    <span className="text-discount">
+                      -{formatVND(testResult.discountAmount || 0)}
+                    </span>
+                  </div>
+                  <div>
+                    Thành tiền:{' '}
+                    <span className="text-final">
+                      {formatVND(testResult.finalAmount || 0)}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -460,19 +586,32 @@ export default function CouponManagement() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button type="submit" className="coupon-btn coupon-btn--primary">
-            🔍 Tìm
+          <button
+            type="submit"
+            className="coupon-btn coupon-btn--primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <IconlySearch size={15} color="#ffffff" />
+            <span>Tìm</span>
           </button>
           {search && (
             <button
               type="button"
               className="coupon-btn coupon-btn--outline"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
               onClick={() => {
                 setSearch('');
-                couponApi.getAll({ discountType: typeFilter, status: statusFilter }).then(setCoupons);
+                couponApi
+                  .getAll({ discountType: typeFilter, status: statusFilter })
+                  .then(setCoupons);
               }}
             >
-              ✕ Xóa
+              <IconlyClose size={13} color="currentColor" />
+              <span>Xóa</span>
             </button>
           )}
         </form>
@@ -482,7 +621,9 @@ export default function CouponManagement() {
             <label>Loại:</label>
             <select
               value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as 'ALL' | DiscountType)}
+              onChange={(e) =>
+                setTypeFilter(e.target.value as 'ALL' | DiscountType)
+              }
               className="coupon-select"
             >
               <option value="ALL">Tất cả loại</option>
@@ -495,7 +636,11 @@ export default function CouponManagement() {
             <label>Trạng thái:</label>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED')}
+              onChange={(e) =>
+                setStatusFilter(
+                  e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED',
+                )
+              }
               className="coupon-select"
             >
               <option value="ALL">Tất cả trạng thái</option>
@@ -515,9 +660,17 @@ export default function CouponManagement() {
         </div>
       ) : coupons.length === 0 ? (
         <div className="coupon-empty">
-          <div className="coupon-empty-icon">🎟️</div>
+          <div
+            className="coupon-empty-icon"
+            style={{ display: 'flex', justifyContent: 'center' }}
+          >
+            <IconlyDiscount size={48} color="#94a3b8" />
+          </div>
           <h3>Không tìm thấy mã giảm giá nào</h3>
-          <p>Hãy nhấn nút &quot;Tạo mã giảm giá mới&quot; để thiết lập mã khuyến mãi đầu tiên.</p>
+          <p>
+            Hãy nhấn nút &quot;Tạo mã giảm giá mới&quot; để thiết lập mã khuyến
+            mãi đầu tiên.
+          </p>
         </div>
       ) : (
         <div className="coupon-table-wrapper">
@@ -537,11 +690,20 @@ export default function CouponManagement() {
               {coupons.map((coupon) => {
                 const isExpired = new Date(coupon.validTo) < now;
                 const isUpcoming = new Date(coupon.validFrom) > now;
-                const isLimitReached = coupon.usedCount >= coupon.totalUsageLimit;
-                const percentUsed = Math.min(100, Math.round((coupon.usedCount / coupon.totalUsageLimit) * 100));
+                const isLimitReached =
+                  coupon.usedCount >= coupon.totalUsageLimit;
+                const percentUsed = Math.min(
+                  100,
+                  Math.round((coupon.usedCount / coupon.totalUsageLimit) * 100),
+                );
 
                 return (
-                  <tr key={coupon._id} className={!coupon.isActive || isExpired ? 'row--disabled' : ''}>
+                  <tr
+                    key={coupon._id}
+                    className={
+                      !coupon.isActive || isExpired ? 'row--disabled' : ''
+                    }
+                  >
                     {/* Code & Description */}
                     <td>
                       <div className="coupon-code-cell">
@@ -552,10 +714,20 @@ export default function CouponManagement() {
                           onClick={() => copyToClipboard(coupon.code)}
                         >
                           <strong>{coupon.code}</strong>
-                          <span className="copy-icon">📋</span>
+                          <span
+                            className="copy-icon"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <IconlyDocument size={13} color="currentColor" />
+                          </span>
                         </button>
                         {coupon.description && (
-                          <div className="coupon-desc-text">{coupon.description}</div>
+                          <div className="coupon-desc-text">
+                            {coupon.description}
+                          </div>
                         )}
                       </div>
                     </td>
@@ -563,10 +735,15 @@ export default function CouponManagement() {
                     {/* Discount Value */}
                     <td>
                       <div className="coupon-discount-cell">
-                        <span className={`type-tag type-tag--${coupon.discountType.toLowerCase()}`}>
-                          {coupon.discountType === 'PERCENT' ? `${coupon.discountValue}%` : formatVND(coupon.discountValue)}
+                        <span
+                          className={`type-tag type-tag--${coupon.discountType.toLowerCase()}`}
+                        >
+                          {coupon.discountType === 'PERCENT'
+                            ? `${coupon.discountValue}%`
+                            : formatVND(coupon.discountValue)}
                         </span>
-                        {coupon.discountType === 'PERCENT' && coupon.maxDiscountAmount ? (
+                        {coupon.discountType === 'PERCENT' &&
+                        coupon.maxDiscountAmount ? (
                           <span className="coupon-sub-text">
                             Tối đa: {formatVND(coupon.maxDiscountAmount)}
                           </span>
@@ -577,7 +754,9 @@ export default function CouponManagement() {
                     {/* Min Order */}
                     <td>
                       {coupon.minOrderAmount > 0 ? (
-                        <span className="coupon-min-order">{formatVND(coupon.minOrderAmount)}</span>
+                        <span className="coupon-min-order">
+                          {formatVND(coupon.minOrderAmount)}
+                        </span>
                       ) : (
                         <span className="coupon-sub-text">Không giới hạn</span>
                       )}
@@ -587,7 +766,8 @@ export default function CouponManagement() {
                     <td>
                       <div className="coupon-usage-cell">
                         <div className="usage-text">
-                          <strong>{coupon.usedCount}</strong> / {coupon.totalUsageLimit} lượt
+                          <strong>{coupon.usedCount}</strong> /{' '}
+                          {coupon.totalUsageLimit} lượt
                         </div>
                         <div className="usage-progress-bar">
                           <div
@@ -602,17 +782,33 @@ export default function CouponManagement() {
                     <td>
                       <div className="coupon-date-cell">
                         <div>
-                          Từ: <span>{new Date(coupon.validFrom).toLocaleDateString('vi-VN')}</span>
+                          Từ:{' '}
+                          <span>
+                            {new Date(coupon.validFrom).toLocaleDateString(
+                              'vi-VN',
+                            )}
+                          </span>
                         </div>
                         <div>
-                          Đến: <span>{new Date(coupon.validTo).toLocaleDateString('vi-VN')}</span>
+                          Đến:{' '}
+                          <span>
+                            {new Date(coupon.validTo).toLocaleDateString(
+                              'vi-VN',
+                            )}
+                          </span>
                         </div>
                         {isExpired ? (
-                          <span className="badge-tag badge-tag--expired">Hết hạn</span>
+                          <span className="badge-tag badge-tag--expired">
+                            Hết hạn
+                          </span>
                         ) : isUpcoming ? (
-                          <span className="badge-tag badge-tag--upcoming">Chưa bắt đầu</span>
+                          <span className="badge-tag badge-tag--upcoming">
+                            Chưa bắt đầu
+                          </span>
                         ) : (
-                          <span className="badge-tag badge-tag--valid">Còn hạn</span>
+                          <span className="badge-tag badge-tag--valid">
+                            Còn hạn
+                          </span>
                         )}
                       </div>
                     </td>
@@ -620,7 +816,12 @@ export default function CouponManagement() {
                     {/* Status Toggle */}
                     <td>
                       <div className="coupon-status-cell">
-                        <label className="coupon-toggle" title={coupon.isActive ? 'Đang kích hoạt' : 'Đang tạm dừng'}>
+                        <label
+                          className="coupon-toggle"
+                          title={
+                            coupon.isActive ? 'Đang kích hoạt' : 'Đang tạm dừng'
+                          }
+                        >
                           <input
                             type="checkbox"
                             checked={coupon.isActive}
@@ -628,7 +829,9 @@ export default function CouponManagement() {
                           />
                           <span className="coupon-toggle-slider"></span>
                         </label>
-                        <span className={`status-label ${coupon.isActive ? 'status-label--active' : 'status-label--inactive'}`}>
+                        <span
+                          className={`status-label ${coupon.isActive ? 'status-label--active' : 'status-label--inactive'}`}
+                        >
                           {coupon.isActive ? 'Kích hoạt' : 'Tắt'}
                         </span>
                       </div>
@@ -642,8 +845,14 @@ export default function CouponManagement() {
                           className="coupon-btn-sm coupon-btn--outline"
                           onClick={() => handleOpenEdit(coupon)}
                           title="Chỉnh sửa mã"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
                         >
-                          ✏️ Sửa
+                          <IconlyEdit size={14} color="currentColor" />
+                          <span>Sửa</span>
                         </button>
                         <button
                           type="button"
@@ -655,15 +864,20 @@ export default function CouponManagement() {
                           }}
                           title="Thử áp dụng mã này"
                         >
-                          🧪 Thử
+                          Thử
                         </button>
                         <button
                           type="button"
                           className="coupon-btn-sm coupon-btn--danger"
                           onClick={() => setDeletingId(coupon._id)}
                           title="Xóa mã"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
                         >
-                          🗑️
+                          <IconlyDelete size={14} color="currentColor" />
                         </button>
                       </div>
                     </td>
@@ -677,16 +891,23 @@ export default function CouponManagement() {
 
       {/* ── Modal Thêm / Chỉnh sửa Coupon ──────────────────────────── */}
       {showModal && (
-        <div className="coupon-modal-overlay" onClick={() => setShowModal(false)}>
+        <div
+          className="coupon-modal-overlay"
+          onClick={() => setShowModal(false)}
+        >
           <div className="coupon-modal" onClick={(e) => e.stopPropagation()}>
             <div className="coupon-modal-header">
-              <h3>{editingCoupon ? 'Chỉnh sửa mã giảm giá' : 'Tạo mã giảm giá mới'}</h3>
+              <h3>
+                {editingCoupon
+                  ? 'Chỉnh sửa mã giảm giá'
+                  : 'Tạo mã giảm giá mới'}
+              </h3>
               <button
                 type="button"
                 className="coupon-modal-close"
                 onClick={() => setShowModal(false)}
               >
-                ✕
+                <IconlyClose size={16} color="currentColor" />
               </button>
             </div>
 
@@ -702,9 +923,15 @@ export default function CouponManagement() {
                       <button
                         type="button"
                         className="btn-link"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
                         onClick={generateRandomCode}
                       >
-                        🎲 Tạo mã ngẫu nhiên
+                        <IconlySetting size={13} color="#3b82f6" />
+                        <span>Tạo mã ngẫu nhiên</span>
                       </button>
                     )}
                   </div>
@@ -714,13 +941,20 @@ export default function CouponManagement() {
                     placeholder="VD: SUMMER2026, DISCOUNT50"
                     value={formData.code}
                     onChange={(e) => {
-                      setFormData({ ...formData, code: e.target.value.toUpperCase() });
+                      setFormData({
+                        ...formData,
+                        code: e.target.value.toUpperCase(),
+                      });
                       setFormErrors({ ...formErrors, code: '' });
                     }}
                     autoFocus
                   />
-                  {formErrors.code && <span className="coupon-error-msg">{formErrors.code}</span>}
-                  <span className="coupon-hint">Mã viết hoa không dấu, duy nhất toàn hệ thống (BR18.1).</span>
+                  {formErrors.code && (
+                    <span className="coupon-error-msg">{formErrors.code}</span>
+                  )}
+                  <span className="coupon-hint">
+                    Mã viết hoa không dấu, duy nhất toàn hệ thống.
+                  </span>
                 </div>
 
                 {/* Description */}
@@ -731,13 +965,17 @@ export default function CouponManagement() {
                     className="coupon-input"
                     placeholder="VD: Khuyến mãi mừng hè 2026 cho học viên mới"
                     value={formData.description || ''}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                   />
                 </div>
 
                 {/* Discount Type Selector */}
                 <div className="coupon-form-group">
-                  <label className="coupon-label">Loại giảm giá <span className="coupon-required">*</span></label>
+                  <label className="coupon-label">
+                    Loại giảm giá <span className="coupon-required">*</span>
+                  </label>
                   <div className="discount-type-selector">
                     <label
                       className={`type-option ${formData.discountType === 'PERCENT' ? 'type-option--selected' : ''}`}
@@ -747,9 +985,24 @@ export default function CouponManagement() {
                         name="discountType"
                         value="PERCENT"
                         checked={formData.discountType === 'PERCENT'}
-                        onChange={() => setFormData({ ...formData, discountType: 'PERCENT', discountValue: 10 })}
+                        onChange={() =>
+                          setFormData({
+                            ...formData,
+                            discountType: 'PERCENT',
+                            discountValue: 10,
+                          })
+                        }
                       />
-                      <span>📊 Theo phần trăm (%)</span>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <IconlyGraph size={16} color="currentColor" />
+                        <span>Theo phần trăm (%)</span>
+                      </span>
                     </label>
                     <label
                       className={`type-option ${formData.discountType === 'FIXED_AMOUNT' ? 'type-option--selected' : ''}`}
@@ -759,9 +1012,25 @@ export default function CouponManagement() {
                         name="discountType"
                         value="FIXED_AMOUNT"
                         checked={formData.discountType === 'FIXED_AMOUNT'}
-                        onChange={() => setFormData({ ...formData, discountType: 'FIXED_AMOUNT', discountValue: 50000, maxDiscountAmount: null })}
+                        onChange={() =>
+                          setFormData({
+                            ...formData,
+                            discountType: 'FIXED_AMOUNT',
+                            discountValue: 50000,
+                            maxDiscountAmount: null,
+                          })
+                        }
                       />
-                      <span>💵 Số tiền cố định (VND)</span>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <IconlyBuy size={16} color="currentColor" />
+                        <span>Số tiền cố định (VND)</span>
+                      </span>
                     </label>
                   </div>
                 </div>
@@ -770,27 +1039,40 @@ export default function CouponManagement() {
                 <div className="coupon-form-row">
                   <div className="coupon-form-group">
                     <label className="coupon-label">
-                      {formData.discountType === 'PERCENT' ? 'Phần trăm giảm (%)' : 'Số tiền giảm (VND)'}
+                      {formData.discountType === 'PERCENT'
+                        ? 'Phần trăm giảm (%)'
+                        : 'Số tiền giảm (VND)'}
                       <span className="coupon-required">*</span>
                     </label>
                     <input
                       type="number"
                       className={`coupon-input ${formErrors.discountValue ? 'coupon-input--error' : ''}`}
                       min={formData.discountType === 'PERCENT' ? 1 : 1000}
-                      max={formData.discountType === 'PERCENT' ? 100 : undefined}
+                      max={
+                        formData.discountType === 'PERCENT' ? 100 : undefined
+                      }
                       step={formData.discountType === 'PERCENT' ? 1 : 1000}
                       value={formData.discountValue}
                       onChange={(e) => {
-                        setFormData({ ...formData, discountValue: Number(e.target.value) });
+                        setFormData({
+                          ...formData,
+                          discountValue: Number(e.target.value),
+                        });
                         setFormErrors({ ...formErrors, discountValue: '' });
                       }}
                     />
-                    {formErrors.discountValue && <span className="coupon-error-msg">{formErrors.discountValue}</span>}
+                    {formErrors.discountValue && (
+                      <span className="coupon-error-msg">
+                        {formErrors.discountValue}
+                      </span>
+                    )}
                   </div>
 
                   {formData.discountType === 'PERCENT' && (
                     <div className="coupon-form-group">
-                      <label className="coupon-label">Mức giảm tối đa (VND)</label>
+                      <label className="coupon-label">
+                        Mức giảm tối đa (VND)
+                      </label>
                       <input
                         type="number"
                         className={`coupon-input ${formErrors.maxDiscountAmount ? 'coupon-input--error' : ''}`}
@@ -799,13 +1081,24 @@ export default function CouponManagement() {
                         step={1000}
                         value={formData.maxDiscountAmount ?? ''}
                         onChange={(e) => {
-                          const val = e.target.value ? Number(e.target.value) : null;
+                          const val = e.target.value
+                            ? Number(e.target.value)
+                            : null;
                           setFormData({ ...formData, maxDiscountAmount: val });
-                          setFormErrors({ ...formErrors, maxDiscountAmount: '' });
+                          setFormErrors({
+                            ...formErrors,
+                            maxDiscountAmount: '',
+                          });
                         }}
                       />
-                      {formErrors.maxDiscountAmount && <span className="coupon-error-msg">{formErrors.maxDiscountAmount}</span>}
-                      <span className="coupon-hint">Giới hạn số tiền giảm tối đa (BR18.2)</span>
+                      {formErrors.maxDiscountAmount && (
+                        <span className="coupon-error-msg">
+                          {formErrors.maxDiscountAmount}
+                        </span>
+                      )}
+                      <span className="coupon-hint">
+                        Giới hạn số tiền giảm tối đa.
+                      </span>
                     </div>
                   )}
                 </div>
@@ -813,7 +1106,9 @@ export default function CouponManagement() {
                 {/* Min Order & Total Usage Limit */}
                 <div className="coupon-form-row">
                   <div className="coupon-form-group">
-                    <label className="coupon-label">Đơn hàng tối thiểu (VND)</label>
+                    <label className="coupon-label">
+                      Đơn hàng tối thiểu (VND)
+                    </label>
                     <input
                       type="number"
                       className={`coupon-input ${formErrors.minOrderAmount ? 'coupon-input--error' : ''}`}
@@ -821,17 +1116,27 @@ export default function CouponManagement() {
                       step={10000}
                       value={formData.minOrderAmount}
                       onChange={(e) => {
-                        setFormData({ ...formData, minOrderAmount: Number(e.target.value) });
+                        setFormData({
+                          ...formData,
+                          minOrderAmount: Number(e.target.value),
+                        });
                         setFormErrors({ ...formErrors, minOrderAmount: '' });
                       }}
                     />
-                    {formErrors.minOrderAmount && <span className="coupon-error-msg">{formErrors.minOrderAmount}</span>}
-                    <span className="coupon-hint">0 = Không giới hạn đơn tối thiểu</span>
+                    {formErrors.minOrderAmount && (
+                      <span className="coupon-error-msg">
+                        {formErrors.minOrderAmount}
+                      </span>
+                    )}
+                    <span className="coupon-hint">
+                      0 = Không giới hạn đơn tối thiểu
+                    </span>
                   </div>
 
                   <div className="coupon-form-group">
                     <label className="coupon-label">
-                      Tổng số lượt dùng tối đa <span className="coupon-required">*</span>
+                      Tổng số lượt dùng tối đa{' '}
+                      <span className="coupon-required">*</span>
                     </label>
                     <input
                       type="number"
@@ -839,11 +1144,18 @@ export default function CouponManagement() {
                       min={1}
                       value={formData.totalUsageLimit}
                       onChange={(e) => {
-                        setFormData({ ...formData, totalUsageLimit: Number(e.target.value) });
+                        setFormData({
+                          ...formData,
+                          totalUsageLimit: Number(e.target.value),
+                        });
                         setFormErrors({ ...formErrors, totalUsageLimit: '' });
                       }}
                     />
-                    {formErrors.totalUsageLimit && <span className="coupon-error-msg">{formErrors.totalUsageLimit}</span>}
+                    {formErrors.totalUsageLimit && (
+                      <span className="coupon-error-msg">
+                        {formErrors.totalUsageLimit}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -851,7 +1163,8 @@ export default function CouponManagement() {
                 <div className="coupon-form-row">
                   <div className="coupon-form-group">
                     <label className="coupon-label">
-                      Ngày bắt đầu hiệu lực <span className="coupon-required">*</span>
+                      Ngày bắt đầu hiệu lực{' '}
+                      <span className="coupon-required">*</span>
                     </label>
                     <input
                       type="date"
@@ -862,7 +1175,11 @@ export default function CouponManagement() {
                         setFormErrors({ ...formErrors, validFrom: '' });
                       }}
                     />
-                    {formErrors.validFrom && <span className="coupon-error-msg">{formErrors.validFrom}</span>}
+                    {formErrors.validFrom && (
+                      <span className="coupon-error-msg">
+                        {formErrors.validFrom}
+                      </span>
+                    )}
                   </div>
 
                   <div className="coupon-form-group">
@@ -878,7 +1195,11 @@ export default function CouponManagement() {
                         setFormErrors({ ...formErrors, validTo: '' });
                       }}
                     />
-                    {formErrors.validTo && <span className="coupon-error-msg">{formErrors.validTo}</span>}
+                    {formErrors.validTo && (
+                      <span className="coupon-error-msg">
+                        {formErrors.validTo}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -888,7 +1209,9 @@ export default function CouponManagement() {
                     <input
                       type="checkbox"
                       checked={formData.isActive}
-                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, isActive: e.target.checked })
+                      }
                     />
                     <span>Kích hoạt mã giảm giá ngay sau khi lưu</span>
                   </label>
@@ -908,7 +1231,31 @@ export default function CouponManagement() {
                   className="coupon-btn coupon-btn--primary"
                   disabled={submitting}
                 >
-                  {submitting ? 'Đang lưu...' : editingCoupon ? '💾 Cập nhật mã' : '+ Kích hoạt mã'}
+                  {submitting ? (
+                    'Đang lưu...'
+                  ) : editingCoupon ? (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <IconlyTick size={15} color="#ffffff" />
+                      <span>Cập nhật mã</span>
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <IconlyPlus size={15} color="#ffffff" />
+                      <span>Kích hoạt mã</span>
+                    </span>
+                  )}
                 </button>
               </div>
             </form>
@@ -918,13 +1265,25 @@ export default function CouponManagement() {
 
       {/* ── Modal Xác nhận xóa ─────────────────────────────────────── */}
       {deletingId && (
-        <div className="coupon-modal-overlay" onClick={() => setDeletingId(null)}>
-          <div className="coupon-modal coupon-modal--sm" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="coupon-modal-overlay"
+          onClick={() => setDeletingId(null)}
+        >
+          <div
+            className="coupon-modal coupon-modal--sm"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="coupon-modal-header">
-              <h3>🗑️ Xác nhận xóa mã giảm giá</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IconlyDelete size={20} color="#ef4444" />
+                <span>Xác nhận xóa mã giảm giá</span>
+              </h3>
             </div>
             <div className="coupon-modal-body">
-              <p>Bạn có chắc chắn muốn xóa mã giảm giá này khỏi hệ thống không? Hành động này sẽ không thể khôi phục.</p>
+              <p>
+                Bạn có chắc chắn muốn xóa mã giảm giá này khỏi hệ thống không?
+                Hành động này sẽ không thể khôi phục.
+              </p>
             </div>
             <div className="coupon-modal-footer">
               <button

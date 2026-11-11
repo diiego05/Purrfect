@@ -1,0 +1,198 @@
+/* ==========================================================================
+   VNPay Return Result Page
+   ========================================================================== */
+.vnpay-return-container {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background-color: #f8fafc;
+}
+
+.vnpay-return-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  max-width: 580px;
+  width: 100%;
+  padding: 40px 32px;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.05),
+    0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  animation: cardFadeIn 0.3s ease-out forwards;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Status Icon Badges */
+.return-status-badge {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 auto 24px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.return-status-badge.success {
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 3px solid #a7f3d0;
+}
+
+.return-status-badge.failed {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 3px solid #fecaca;
+}
+
+.return-status-badge.loading {
+  background-color: #eff6ff;
+  color: #0056d2;
+  border: 3px solid #bfdbfe;
+}
+
+.return-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.return-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* Transaction Details Table */
+.return-details-table {
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 16px 20px;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.detail-row .label {
+  color: #64748b;
+}
+
+.detail-row .value {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.detail-row .value.highlight {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0056d2;
+}
+
+.detail-row .value.badge-status {
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.badge-status.paid {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-status.failed {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Action Buttons */
+.return-actions-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-primary-action {
+  background-color: #0056d2;
+  color: #ffffff;
+  padding: 13px 28px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+  box-shadow: 0 4px 12px rgba(0, 86, 210, 0.25);
+}
+
+.btn-primary-action:hover {
+  background-color: #0041a8;
+  transform: translateY(-1px);
+}
+
+.btn-secondary-action {
+  background-color: #ffffff;
+  color: #475569;
+  padding: 13px 24px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary-action:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Spinner */
+.spinner-anim {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #bfdbfe;
+  border-top-color: #0056d2;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

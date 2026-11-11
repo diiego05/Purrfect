@@ -5,7 +5,10 @@ import { recordAuditLog } from '../utils/auditLogger';
 type AuthRequest = Request & { user?: { id: string } };
 
 // GET /api/coupons - [Admin] get all coupons with optional filter
-export const getAllCoupons = async (req: Request, res: Response): Promise<void> => {
+export const getAllCoupons = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { search, discountType, status } = req.query as {
       search?: string;
@@ -20,7 +23,10 @@ export const getAllCoupons = async (req: Request, res: Response): Promise<void> 
       filter.$or = [{ code: regex }, { description: regex }];
     }
 
-    if (discountType && (discountType === 'PERCENT' || discountType === 'FIXED_AMOUNT')) {
+    if (
+      discountType &&
+      (discountType === 'PERCENT' || discountType === 'FIXED_AMOUNT')
+    ) {
       filter.discountType = discountType;
     }
 
@@ -39,12 +45,17 @@ export const getAllCoupons = async (req: Request, res: Response): Promise<void> 
 
     res.json({ coupons });
   } catch {
-    res.status(500).json({ message: 'Lỗi server khi lấy danh sách mã giảm giá.' });
+    res
+      .status(500)
+      .json({ message: 'Lỗi server khi lấy danh sách mã giảm giá.' });
   }
 };
 
 // GET /api/coupons/:id - [Admin] get coupon by id
-export const getCouponById = async (req: Request, res: Response): Promise<void> => {
+export const getCouponById = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { id } = req.params;
     const coupon = await Coupon.findById(id);
@@ -54,12 +65,17 @@ export const getCouponById = async (req: Request, res: Response): Promise<void> 
     }
     res.json({ coupon });
   } catch {
-    res.status(500).json({ message: 'Lỗi server khi lấy chi tiết mã giảm giá.' });
+    res
+      .status(500)
+      .json({ message: 'Lỗi server khi lấy chi tiết mã giảm giá.' });
   }
 };
 
 // POST /api/coupons - [Admin] create coupon
-export const createCoupon = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createCoupon = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const {
       code,
@@ -96,13 +112,17 @@ export const createCoupon = async (req: AuthRequest, res: Response): Promise<voi
     // Check duplicate code (BR18.1)
     const existing = await Coupon.findOne({ code: normalizedCode });
     if (existing) {
-      res.status(409).json({ message: 'Mã giảm giá này đã tồn tại. Vui lòng đặt mã khác.' });
+      res
+        .status(409)
+        .json({ message: 'Mã giảm giá này đã tồn tại. Vui lòng đặt mã khác.' });
       return;
     }
 
     // 2. Validate Discount Type & Value (BR18.2)
     if (!discountType || !['PERCENT', 'FIXED_AMOUNT'].includes(discountType)) {
-      res.status(400).json({ message: 'Loại giảm giá không hợp lệ (PERCENT hoặc FIXED_AMOUNT).' });
+      res.status(400).json({
+        message: 'Loại giảm giá không hợp lệ (PERCENT hoặc FIXED_AMOUNT).',
+      });
       return;
     }
 
@@ -113,13 +133,17 @@ export const createCoupon = async (req: AuthRequest, res: Response): Promise<voi
     }
 
     if (discountType === 'PERCENT' && numDiscountValue > 100) {
-      res.status(400).json({ message: 'Tỷ lệ phần trăm giảm giá không được vượt quá 100%.' });
+      res.status(400).json({
+        message: 'Tỷ lệ phần trăm giảm giá không được vượt quá 100%.',
+      });
       return;
     }
 
     // 3. Validate Date Range (BR18.1)
     if (!validFrom || !validTo) {
-      res.status(400).json({ message: 'Vui lòng chọn ngày bắt đầu và ngày kết thúc.' });
+      res
+        .status(400)
+        .json({ message: 'Vui lòng chọn ngày bắt đầu và ngày kết thúc.' });
       return;
     }
 
@@ -132,26 +156,33 @@ export const createCoupon = async (req: AuthRequest, res: Response): Promise<voi
     }
 
     if (endDate <= startDate) {
-      res.status(400).json({ message: 'Ngày kết thúc phải lớn hơn ngày bắt đầu có hiệu lực.' });
+      res.status(400).json({
+        message: 'Ngày kết thúc phải lớn hơn ngày bắt đầu có hiệu lực.',
+      });
       return;
     }
 
     // 4. Validate other constraints
     const numMinOrder = Number(minOrderAmount) || 0;
     if (numMinOrder < 0) {
-      res.status(400).json({ message: 'Giá trị đơn hàng tối thiểu không thể âm.' });
+      res
+        .status(400)
+        .json({ message: 'Giá trị đơn hàng tối thiểu không thể âm.' });
       return;
     }
 
     const numUsageLimit = Number(totalUsageLimit) || 100;
     if (numUsageLimit < 1) {
-      res.status(400).json({ message: 'Giới hạn số lượt dùng phải ít nhất là 1.' });
+      res
+        .status(400)
+        .json({ message: 'Giới hạn số lượt dùng phải ít nhất là 1.' });
       return;
     }
 
-    const numMaxDiscount = maxDiscountAmount !== undefined && maxDiscountAmount !== null
-      ? Number(maxDiscountAmount)
-      : null;
+    const numMaxDiscount =
+      maxDiscountAmount !== undefined && maxDiscountAmount !== null
+        ? Number(maxDiscountAmount)
+        : null;
 
     if (numMaxDiscount !== null && numMaxDiscount < 0) {
       res.status(400).json({ message: 'Mức giảm tối đa không thể âm.' });
@@ -179,7 +210,11 @@ export const createCoupon = async (req: AuthRequest, res: Response): Promise<voi
       action: 'CREATE_COUPON',
       targetType: 'Coupon',
       targetId: String(coupon._id),
-      details: { code: coupon.code, discountType: coupon.discountType, discountValue: coupon.discountValue },
+      details: {
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+      },
       ipAddress: req.ip || '',
     });
 
@@ -190,7 +225,10 @@ export const createCoupon = async (req: AuthRequest, res: Response): Promise<voi
 };
 
 // PUT /api/coupons/:id - [Admin] update coupon
-export const updateCoupon = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateCoupon = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { id } = req.params;
     const {
@@ -231,9 +269,14 @@ export const updateCoupon = async (req: AuthRequest, res: Response): Promise<voi
         return;
       }
       if (normalizedCode !== coupon.code) {
-        const existing = await Coupon.findOne({ code: normalizedCode, _id: { $ne: id } });
+        const existing = await Coupon.findOne({
+          code: normalizedCode,
+          _id: { $ne: id },
+        });
         if (existing) {
-          res.status(409).json({ message: 'Mã giảm giá này đã tồn tại. Vui lòng đặt mã khác.' });
+          res.status(409).json({
+            message: 'Mã giảm giá này đã tồn tại. Vui lòng đặt mã khác.',
+          });
           return;
         }
         coupon.code = normalizedCode;
@@ -244,7 +287,10 @@ export const updateCoupon = async (req: AuthRequest, res: Response): Promise<voi
 
     // Discount type & value
     const finalType = discountType || coupon.discountType;
-    const finalValue = discountValue !== undefined ? Number(discountValue) : coupon.discountValue;
+    const finalValue =
+      discountValue !== undefined
+        ? Number(discountValue)
+        : coupon.discountValue;
 
     if (isNaN(finalValue) || finalValue <= 0) {
       res.status(400).json({ message: 'Giá trị giảm giá phải lớn hơn 0.' });
@@ -252,7 +298,9 @@ export const updateCoupon = async (req: AuthRequest, res: Response): Promise<voi
     }
 
     if (finalType === 'PERCENT' && finalValue > 100) {
-      res.status(400).json({ message: 'Tỷ lệ phần trăm giảm giá không được vượt quá 100%.' });
+      res.status(400).json({
+        message: 'Tỷ lệ phần trăm giảm giá không được vượt quá 100%.',
+      });
       return;
     }
 
@@ -269,7 +317,9 @@ export const updateCoupon = async (req: AuthRequest, res: Response): Promise<voi
     }
 
     if (endDate <= startDate) {
-      res.status(400).json({ message: 'Ngày kết thúc phải lớn hơn ngày bắt đầu có hiệu lực.' });
+      res.status(400).json({
+        message: 'Ngày kết thúc phải lớn hơn ngày bắt đầu có hiệu lực.',
+      });
       return;
     }
 
@@ -279,7 +329,9 @@ export const updateCoupon = async (req: AuthRequest, res: Response): Promise<voi
     if (minOrderAmount !== undefined) {
       const numMinOrder = Number(minOrderAmount);
       if (numMinOrder < 0) {
-        res.status(400).json({ message: 'Giá trị đơn hàng tối thiểu không thể âm.' });
+        res
+          .status(400)
+          .json({ message: 'Giá trị đơn hàng tối thiểu không thể âm.' });
         return;
       }
       coupon.minOrderAmount = numMinOrder;
@@ -288,14 +340,17 @@ export const updateCoupon = async (req: AuthRequest, res: Response): Promise<voi
     if (totalUsageLimit !== undefined) {
       const numLimit = Number(totalUsageLimit);
       if (numLimit < coupon.usedCount) {
-        res.status(400).json({ message: `Giới hạn số lượt dùng không được nhỏ hơn số lượt đã dùng (${coupon.usedCount}).` });
+        res.status(400).json({
+          message: `Giới hạn số lượt dùng không được nhỏ hơn số lượt đã dùng (${coupon.usedCount}).`,
+        });
         return;
       }
       coupon.totalUsageLimit = numLimit;
     }
 
     if (maxDiscountAmount !== undefined) {
-      const numMax = maxDiscountAmount !== null ? Number(maxDiscountAmount) : null;
+      const numMax =
+        maxDiscountAmount !== null ? Number(maxDiscountAmount) : null;
       if (numMax !== null && numMax < 0) {
         res.status(400).json({ message: 'Mức giảm tối đa không thể âm.' });
         return;
@@ -314,7 +369,11 @@ export const updateCoupon = async (req: AuthRequest, res: Response): Promise<voi
       action: 'UPDATE_COUPON',
       targetType: 'Coupon',
       targetId: String(coupon._id),
-      details: { code: coupon.code, discountType: coupon.discountType, discountValue: coupon.discountValue },
+      details: {
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+      },
       ipAddress: req.ip || '',
     });
 
@@ -325,7 +384,10 @@ export const updateCoupon = async (req: AuthRequest, res: Response): Promise<voi
 };
 
 // DELETE /api/coupons/:id - [Admin] delete coupon
-export const deleteCoupon = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteCoupon = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { id } = req.params;
     const coupon = await Coupon.findByIdAndDelete(id);
@@ -350,7 +412,10 @@ export const deleteCoupon = async (req: AuthRequest, res: Response): Promise<voi
 };
 
 // PATCH /api/coupons/:id/toggle - [Admin] toggle active status
-export const toggleCouponStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+export const toggleCouponStatus = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { id } = req.params;
     const coupon = await Coupon.findById(id);
@@ -376,23 +441,35 @@ export const toggleCouponStatus = async (req: AuthRequest, res: Response): Promi
       coupon,
     });
   } catch {
-    res.status(500).json({ message: 'Lỗi server khi đổi trạng thái mã giảm giá.' });
+    res
+      .status(500)
+      .json({ message: 'Lỗi server khi đổi trạng thái mã giảm giá.' });
   }
 };
 
 // POST /api/coupons/validate - validate and calculate discount (BR18.3)
-export const validateCoupon = async (req: Request, res: Response): Promise<void> => {
+export const validateCoupon = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
-    const { code, orderAmount } = req.body as { code: string; orderAmount: number };
+    const { code, orderAmount } = req.body as {
+      code: string;
+      orderAmount: number;
+    };
 
     if (!code || !code.trim()) {
-      res.status(400).json({ valid: false, message: 'Vui lòng nhập mã giảm giá.' });
+      res
+        .status(400)
+        .json({ valid: false, message: 'Vui lòng nhập mã giảm giá.' });
       return;
     }
 
     const numOrderAmount = Number(orderAmount);
     if (isNaN(numOrderAmount) || numOrderAmount < 0) {
-      res.status(400).json({ valid: false, message: 'Giá trị đơn hàng không hợp lệ.' });
+      res
+        .status(400)
+        .json({ valid: false, message: 'Giá trị đơn hàng không hợp lệ.' });
       return;
     }
 
@@ -402,7 +479,8 @@ export const validateCoupon = async (req: Request, res: Response): Promise<void>
     if (!coupon) {
       res.status(404).json({
         valid: false,
-        message: 'Mã giảm giá không tồn tại, đã hết hạn hoặc không áp dụng cho đơn hàng này.',
+        message:
+          'Mã giảm giá không tồn tại, đã hết hạn hoặc không áp dụng cho đơn hàng này.',
       });
       return;
     }
@@ -485,6 +563,8 @@ export const validateCoupon = async (req: Request, res: Response): Promise<void>
       },
     });
   } catch {
-    res.status(500).json({ valid: false, message: 'Lỗi server khi kiểm tra mã giảm giá.' });
+    res
+      .status(500)
+      .json({ valid: false, message: 'Lỗi server khi kiểm tra mã giảm giá.' });
   }
 };

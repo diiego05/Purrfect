@@ -24,4 +24,3 @@ router.delete('/:id', authenticateToken, requireAdmin, deleteBanner);
 router.patch('/:id/toggle', authenticateToken, requireAdmin, toggleBanner);
 
 export default router;
-

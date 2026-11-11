@@ -11,11 +11,11 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "prettier --write",
+      "prettier --no-error-on-unmatched-pattern --write",
       "eslint --fix"
     ],
     "*.{json,css,scss,md}": [
-      "prettier --write"
+      "prettier --no-error-on-unmatched-pattern --write"
     ]
   },
   "dependencies": {

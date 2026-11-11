@@ -1,0 +1,407 @@
+/* ==========================================================================
+   Checkout Modal with VNPay Gateway
+   ========================================================================== */
+.checkout-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: modalFadeIn 0.2s ease-out forwards;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.checkout-modal-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalSlideUp {
+  from {
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modal Header */
+.checkout-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.checkout-modal-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.btn-close-modal:hover {
+  color: #0f172a;
+  background-color: #f1f5f9;
+}
+
+/* Modal Body */
+.checkout-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Course Mini Card */
+.checkout-course-preview {
+  display: flex;
+  gap: 16px;
+  background-color: #f8fafc;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  align-items: center;
+}
+
+.checkout-course-thumb {
+  width: 90px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.checkout-course-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.checkout-course-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.checkout-course-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.checkout-course-meta .meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Coupon Box */
+.checkout-coupon-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkout-coupon-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.checkout-coupon-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.checkout-coupon-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #0f172a;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.checkout-coupon-input:focus {
+  border-color: #0056d2;
+  box-shadow: 0 0 0 3px rgba(0, 86, 210, 0.12);
+}
+
+.btn-apply-coupon {
+  padding: 10px 18px;
+  background-color: #0f172a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-apply-coupon:hover:not(:disabled) {
+  background-color: #1e293b;
+}
+
+.btn-apply-coupon:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.coupon-feedback {
+  font-size: 0.825rem;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.coupon-feedback.success {
+  color: #059669;
+}
+
+.coupon-feedback.error {
+  color: #dc2626;
+}
+
+/* Price Breakdown */
+.checkout-pricing-summary {
+  background-color: #fafbfc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pricing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #475569;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  gap: 8px;
+}
+
+.pricing-row.discount-row {
+  color: #059669;
+  font-weight: 600;
+}
+
+.pricing-row.total-row {
+  padding-top: 10px;
+  border-top: 1px dashed #cbd5e1;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  gap: 8px;
+}
+
+.pricing-total-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0056d2;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Payment Gateway Selector */
+.checkout-gateway-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checkout-gateway-card {
+  border: 2px solid #0056d2;
+  background-color: #f0f7ff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.vnpay-badge-icon {
+  width: 44px;
+  height: 44px;
+  background: #ffffff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 11px;
+  color: #0056d2;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 2px 4px rgba(0, 86, 210, 0.08);
+  flex-shrink: 0;
+}
+
+.gateway-info {
+  flex: 1;
+}
+
+.gateway-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.gateway-desc {
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.bank-select-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bank-select-label {
+  font-size: 0.825rem;
+  color: #64748b;
+}
+
+.bank-select-dropdown {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  font-size: 0.875rem;
+  color: #0f172a;
+  outline: none;
+  cursor: pointer;
+}
+
+.bank-select-dropdown:focus {
+  border-color: #0056d2;
+}
+
+/* Sandbox Credentials Helper Hint */
+.sandbox-hint-box {
+  background-color: #fefce8;
+  border: 1px solid #fef08a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: #854d0e;
+  line-height: 1.45;
+}
+
+.sandbox-hint-box strong {
+  font-weight: 700;
+  color: #713f12;
+}
+
+/* Modal Footer */
+.checkout-modal-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-modal-cancel {
+  padding: 12px 20px;
+  background: none;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-modal-cancel:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.btn-modal-submit-vnpay {
+  padding: 12px 24px;
+  background-color: #0056d2;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
+  box-shadow: 0 4px 12px rgba(0, 86, 210, 0.25);
+}
+
+.btn-modal-submit-vnpay:hover:not(:disabled) {
+  background-color: #0041a8;
+  transform: translateY(-1px);
+}
+
+.btn-modal-submit-vnpay:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}

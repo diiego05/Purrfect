@@ -756,6 +756,35 @@ export const uploadAvatar = async (
       return;
     }
 
+    // BR04.2: Tệp ảnh đại diện tải lên phải có dung lượng không vượt quá 5MB và chỉ chấp nhận jpg, png hoặc webp
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const ext = req.file.originalname
+      ? req.file.originalname.split('.').pop()?.toLowerCase()
+      : '';
+    const allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+    const isMimeValid = allowedMimeTypes.includes(req.file.mimetype);
+    const isExtValid = ext ? allowedExts.includes(ext) : false;
+
+    if (!isMimeValid && !isExtValid) {
+      res.status(400).json({
+        success: false,
+        code: 'INVALID_IMAGE_FORMAT',
+        message:
+          'Tệp tin ảnh đại diện không hợp lệ (sai định dạng). Chỉ chấp nhận các định dạng .jpg, .png hoặc .webp.',
+      });
+      return;
+    }
+
+    if (req.file.size > 5 * 1024 * 1024) {
+      res.status(400).json({
+        success: false,
+        code: 'FILE_TOO_LARGE',
+        message:
+          'Tệp tin ảnh đại diện không hợp lệ (vượt quá dung lượng cho phép > 5MB).',
+      });
+      return;
+    }
+
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: 'purrfect/avatars',
@@ -785,6 +814,8 @@ export const uploadAvatar = async (
             fullName: req.user!.fullName,
             role: req.user!.role,
             avatarUrl: result.secure_url,
+            phoneNumber: req.user!.phoneNumber,
+            bio: req.user!.bio,
           },
         });
       },
@@ -796,6 +827,104 @@ export const uploadAvatar = async (
     res
       .status(500)
       .json({ success: false, message: 'Lỗi máy chủ khi tải ảnh lên' });
+  }
+};
+
+// 10. Cập nhật hồ sơ cá nhân (UC04)
+export const updateProfile = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: 'Bạn chưa đăng nhập' });
+      return;
+    }
+
+    const { fullName, phoneNumber, bio, avatarUrl } = req.body;
+
+    // BR04.1: Người dùng không được phép tự thay đổi địa chỉ thư điện tử đăng nhập và vai trò tài khoản
+    // (Bỏ qua hoàn toàn req.body.email và req.body.role nếu client gửi kèm)
+
+    // 1. Kiểm tra họ và tên
+    if (fullName !== undefined) {
+      const trimmedName = String(fullName).trim();
+      if (!trimmedName) {
+        res.status(400).json({
+          success: false,
+          message: 'Họ và tên không được để trống',
+        });
+        return;
+      }
+      if (trimmedName.length > 100) {
+        res.status(400).json({
+          success: false,
+          message: 'Họ và tên không được vượt quá 100 ký tự',
+        });
+        return;
+      }
+      req.user.fullName = trimmedName;
+    }
+
+    // 2. Kiểm tra số điện thoại (nếu có cung cấp)
+    if (phoneNumber !== undefined) {
+      const trimmedPhone = String(phoneNumber).trim();
+      if (trimmedPhone) {
+        const phoneRegex = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/;
+        if (!phoneRegex.test(trimmedPhone)) {
+          res.status(400).json({
+            success: false,
+            message:
+              'Số điện thoại không đúng định dạng Việt Nam (Ví dụ: 0912345678 hoặc +84912345678)',
+          });
+          return;
+        }
+      }
+      req.user.phoneNumber = trimmedPhone;
+    }
+
+    // BR04.3: Trường thông tin giới thiệu bản thân chỉ hiển thị và cho phép cập nhật đối với tài khoản có vai trò giảng viên
+    if (bio !== undefined) {
+      if (req.user.role === 'INSTRUCTOR') {
+        const trimmedBio = String(bio).trim();
+        if (trimmedBio.length > 500) {
+          res.status(400).json({
+            success: false,
+            message: 'Phần giới thiệu bản thân không được vượt quá 500 ký tự',
+          });
+          return;
+        }
+        req.user.bio = trimmedBio;
+      }
+    }
+
+    // 3. Cập nhật ảnh đại diện nếu có
+    if (avatarUrl !== undefined && typeof avatarUrl === 'string') {
+      req.user.avatarUrl = avatarUrl.trim();
+    }
+
+    await req.user.save();
+
+    res.json({
+      success: true,
+      message: 'Cập nhật thông tin hồ sơ cá nhân thành công!',
+      user: {
+        id: req.user._id,
+        email: req.user.email,
+        fullName: req.user.fullName,
+        role: req.user.role,
+        avatarUrl: req.user.avatarUrl,
+        phoneNumber: req.user.phoneNumber,
+        bio: req.user.bio,
+        onboardingCompleted: req.user.onboardingCompleted ?? false,
+      },
+    });
+  } catch (error) {
+    console.error('Lỗi cập nhật hồ sơ cá nhân:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi máy chủ khi cập nhật hồ sơ cá nhân',
+    });
   }
 };
 

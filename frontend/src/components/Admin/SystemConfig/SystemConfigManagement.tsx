@@ -2,6 +2,21 @@ import { useState, useEffect } from 'react';
 import { systemConfigApi, bannerApi } from '../../../services/systemConfigApi';
 import type { SystemConfig, Banner } from '../../../types/systemConfig';
 import { CONFIG_KEYS } from '../../../types/systemConfig';
+import {
+  IconlySetting,
+  IconlyImage,
+  IconlyEdit,
+  IconlyDelete,
+  IconlyPlus,
+  IconlyBuy,
+  IconlyDiscount,
+  IconlyHome,
+  IconlyTick,
+  IconlyClose,
+  IconlyChat,
+  IconlyDiscovery,
+  IconlySwap,
+} from '../../Onboarding/IconlyIcons';
 import './SystemConfigManagement.css';
 
 type TabId = 'finance' | 'banners' | 'ui';
@@ -57,7 +72,8 @@ export default function SystemConfigManagement() {
   // Banner modal
   const [showBannerModal, setShowBannerModal] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
-  const [bannerForm, setBannerForm] = useState<BannerFormData>(DEFAULT_BANNER_FORM);
+  const [bannerForm, setBannerForm] =
+    useState<BannerFormData>(DEFAULT_BANNER_FORM);
   const [bannerFormError, setBannerFormError] = useState('');
   const [bannerSaving, setBannerSaving] = useState(false);
 
@@ -77,7 +93,9 @@ export default function SystemConfigManagement() {
 
   const populateFormFromConfigs = (cfgs: SystemConfig[]) => {
     const map: Record<string, string> = {};
-    cfgs.forEach((c) => { map[c.keyName] = c.valueText; });
+    cfgs.forEach((c) => {
+      map[c.keyName] = c.valueText;
+    });
 
     setCommissionRate(map[CONFIG_KEYS.COMMISSION_RATE_PERCENT] ?? '15');
     setMinWithdrawal(map[CONFIG_KEYS.MIN_WITHDRAWAL_AMOUNT] ?? '200000');
@@ -112,7 +130,9 @@ export default function SystemConfigManagement() {
       }
     };
     fetchData();
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   // ─── Finance save ───────────────────────────────────────────────
@@ -140,14 +160,23 @@ export default function SystemConfigManagement() {
     setSaving(true);
     try {
       await systemConfigApi.update([
-        { keyName: CONFIG_KEYS.COMMISSION_RATE_PERCENT, valueText: commissionRate },
-        { keyName: CONFIG_KEYS.MIN_WITHDRAWAL_AMOUNT, valueText: minWithdrawal },
+        {
+          keyName: CONFIG_KEYS.COMMISSION_RATE_PERCENT,
+          valueText: commissionRate,
+        },
+        {
+          keyName: CONFIG_KEYS.MIN_WITHDRAWAL_AMOUNT,
+          valueText: minWithdrawal,
+        },
       ]);
       addToast('Lưu cấu hình tài chính thành công!', 'success');
       const cfgs = await systemConfigApi.getAll();
       setConfigs(cfgs);
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Lỗi khi lưu cấu hình.', 'error');
+      addToast(
+        err instanceof Error ? err.message : 'Lỗi khi lưu cấu hình.',
+        'error',
+      );
     } finally {
       setSaving(false);
     }
@@ -171,7 +200,10 @@ export default function SystemConfigManagement() {
       const cfgs = await systemConfigApi.getAll();
       setConfigs(cfgs);
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Lỗi khi lưu cấu hình.', 'error');
+      addToast(
+        err instanceof Error ? err.message : 'Lỗi khi lưu cấu hình.',
+        'error',
+      );
     } finally {
       setSaving(false);
     }
@@ -188,7 +220,10 @@ export default function SystemConfigManagement() {
       setConfigs(cfgs);
       populateFormFromConfigs(cfgs);
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Lỗi khi khôi phục cài đặt.', 'error');
+      addToast(
+        err instanceof Error ? err.message : 'Lỗi khi khôi phục cài đặt.',
+        'error',
+      );
     } finally {
       setSaving(false);
     }
@@ -224,16 +259,22 @@ export default function SystemConfigManagement() {
     try {
       if (editingBanner) {
         const updated = await bannerApi.update(editingBanner._id, bannerForm);
-        setBanners((prev) => prev.map((b) => (b._id === updated._id ? updated : b)));
+        setBanners((prev) =>
+          prev.map((b) => (b._id === updated._id ? updated : b)),
+        );
         addToast('Cập nhật banner thành công!', 'success');
       } else {
         const created = await bannerApi.create(bannerForm);
-        setBanners((prev) => [...prev, created].sort((a, b) => a.orderIndex - b.orderIndex));
+        setBanners((prev) =>
+          [...prev, created].sort((a, b) => a.orderIndex - b.orderIndex),
+        );
         addToast('Tạo banner thành công!', 'success');
       }
       setShowBannerModal(false);
     } catch (err) {
-      setBannerFormError(err instanceof Error ? err.message : 'Lỗi khi lưu banner.');
+      setBannerFormError(
+        err instanceof Error ? err.message : 'Lỗi khi lưu banner.',
+      );
     } finally {
       setBannerSaving(false);
     }
@@ -242,10 +283,18 @@ export default function SystemConfigManagement() {
   const handleToggleBanner = async (id: string) => {
     try {
       const updated = await bannerApi.toggle(id);
-      setBanners((prev) => prev.map((b) => (b._id === updated._id ? updated : b)));
-      addToast(`Banner đã được ${updated.isActive ? 'kích hoạt' : 'tắt'}.`, 'success');
+      setBanners((prev) =>
+        prev.map((b) => (b._id === updated._id ? updated : b)),
+      );
+      addToast(
+        `Banner đã được ${updated.isActive ? 'kích hoạt' : 'tắt'}.`,
+        'success',
+      );
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Lỗi khi thay đổi trạng thái.', 'error');
+      addToast(
+        err instanceof Error ? err.message : 'Lỗi khi thay đổi trạng thái.',
+        'error',
+      );
     }
   };
 
@@ -260,7 +309,10 @@ export default function SystemConfigManagement() {
       setBanners((prev) => prev.filter((b) => b._id !== deletingBannerId));
       addToast('Xóa banner thành công!', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Lỗi khi xóa banner.', 'error');
+      addToast(
+        err instanceof Error ? err.message : 'Lỗi khi xóa banner.',
+        'error',
+      );
     } finally {
       setDeletingBannerId(null);
     }
@@ -271,12 +323,17 @@ export default function SystemConfigManagement() {
     const swapIndex = direction === 'up' ? index - 1 : index + 1;
     if (swapIndex < 0 || swapIndex >= newBanners.length) return;
 
-    [newBanners[index], newBanners[swapIndex]] = [newBanners[swapIndex], newBanners[index]];
+    [newBanners[index], newBanners[swapIndex]] = [
+      newBanners[swapIndex],
+      newBanners[index],
+    ];
     const updated = newBanners.map((b, i) => ({ ...b, orderIndex: i }));
     setBanners(updated);
 
     try {
-      await bannerApi.reorder(updated.map((b) => ({ id: b._id, orderIndex: b.orderIndex })));
+      await bannerApi.reorder(
+        updated.map((b) => ({ id: b._id, orderIndex: b.orderIndex })),
+      );
     } catch {
       addToast('Lỗi khi sắp xếp banner.', 'error');
       // Reload
@@ -306,8 +363,14 @@ export default function SystemConfigManagement() {
       <div className="scm-toasts">
         {toasts.map((t) => (
           <div key={t.id} className={`scm-toast scm-toast--${t.type}`}>
-            <span>{t.type === 'success' ? '✓' : '✕'}</span>
-            {t.message}
+            <span>
+              {t.type === 'success' ? (
+                <IconlyTick size={15} color="#10b981" />
+              ) : (
+                <IconlyClose size={15} color="#ef4444" />
+              )}
+            </span>
+            <span>{t.message}</span>
           </div>
         ))}
       </div>
@@ -315,50 +378,75 @@ export default function SystemConfigManagement() {
       {/* Header */}
       <div className="scm-header">
         <div>
-          <h1 className="scm-title">⚙️ Cấu hình hệ thống</h1>
-          <p className="scm-subtitle">Quản lý cài đặt tài chính, banner quảng cáo và nội dung giao diện</p>
+          <h1
+            className="scm-title"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <IconlySetting size={26} color="#3b82f6" />
+            <span>Cấu hình hệ thống</span>
+          </h1>
+          <p className="scm-subtitle">
+            Quản lý cài đặt tài chính, banner quảng cáo và nội dung giao diện
+          </p>
         </div>
         <button
           className="scm-btn scm-btn--danger-outline"
           onClick={() => setShowResetConfirm(true)}
           disabled={saving}
         >
-          🔄 Khôi phục mặc định
+          Khôi phục mặc định
         </button>
       </div>
 
       {/* Stats bar */}
       <div className="scm-stats">
         <div className="scm-stat-card">
-          <span className="scm-stat-icon">💰</span>
+          <span className="scm-stat-icon">
+            <IconlyDiscount size={22} color="#10b981" />
+          </span>
           <div>
             <div className="scm-stat-value">{commissionRate}%</div>
             <div className="scm-stat-label">Hoa hồng</div>
           </div>
         </div>
         <div className="scm-stat-card">
-          <span className="scm-stat-icon">💵</span>
+          <span className="scm-stat-icon">
+            <IconlyBuy size={22} color="#3b82f6" />
+          </span>
           <div>
-            <div className="scm-stat-value">{formatCurrency(minWithdrawal)}</div>
+            <div className="scm-stat-value">
+              {formatCurrency(minWithdrawal)}
+            </div>
             <div className="scm-stat-label">Rút tối thiểu</div>
           </div>
         </div>
         <div className="scm-stat-card">
-          <span className="scm-stat-icon">🖼️</span>
+          <span className="scm-stat-icon">
+            <IconlyImage size={22} color="#a855f7" />
+          </span>
           <div>
             <div className="scm-stat-value">{banners.length}</div>
             <div className="scm-stat-label">Tổng banner</div>
           </div>
         </div>
         <div className="scm-stat-card">
-          <span className="scm-stat-icon">✅</span>
+          <span
+            className="scm-stat-icon"
+            style={{ color: '#10b981', fontWeight: 700 }}
+          >
+            ●
+          </span>
           <div>
-            <div className="scm-stat-value">{banners.filter((b) => b.isActive).length}</div>
+            <div className="scm-stat-value">
+              {banners.filter((b) => b.isActive).length}
+            </div>
             <div className="scm-stat-label">Banner đang hiện</div>
           </div>
         </div>
         <div className="scm-stat-card">
-          <span className="scm-stat-icon">🔧</span>
+          <span className="scm-stat-icon">
+            <IconlySetting size={22} color="#6366f1" />
+          </span>
           <div>
             <div className="scm-stat-value">{configs.length}</div>
             <div className="scm-stat-label">Tổng cài đặt</div>
@@ -371,20 +459,26 @@ export default function SystemConfigManagement() {
         <button
           className={`scm-tab ${activeTab === 'finance' ? 'scm-tab--active' : ''}`}
           onClick={() => setActiveTab('finance')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          💰 Tài chính
+          <IconlyBuy size={16} color="currentColor" />
+          <span>Tài chính</span>
         </button>
         <button
           className={`scm-tab ${activeTab === 'banners' ? 'scm-tab--active' : ''}`}
           onClick={() => setActiveTab('banners')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          🖼️ Banner quảng cáo
+          <IconlyImage size={16} color="currentColor" />
+          <span>Banner quảng cáo</span>
         </button>
         <button
           className={`scm-tab ${activeTab === 'ui' ? 'scm-tab--active' : ''}`}
           onClick={() => setActiveTab('ui')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          🎨 Nội dung giao diện
+          <IconlyEdit size={16} color="currentColor" />
+          <span>Nội dung giao diện</span>
         </button>
       </div>
 
@@ -392,7 +486,10 @@ export default function SystemConfigManagement() {
       {activeTab === 'finance' && (
         <div className="scm-panel">
           <h2 className="scm-panel-title">Cấu hình tài chính</h2>
-          <p className="scm-panel-desc">Thiết lập các thông số liên quan đến tài chính và thanh toán trên nền tảng.</p>
+          <p className="scm-panel-desc">
+            Thiết lập các thông số liên quan đến tài chính và thanh toán trên
+            nền tảng.
+          </p>
 
           <div className="scm-form-group">
             <label className="scm-label">
@@ -406,12 +503,18 @@ export default function SystemConfigManagement() {
               min={0}
               max={100}
               step={0.5}
-              onChange={(e) => { setCommissionRate(e.target.value); setCommissionError(''); }}
+              onChange={(e) => {
+                setCommissionRate(e.target.value);
+                setCommissionError('');
+              }}
               placeholder="Nhập tỷ lệ 0–100"
             />
-            {commissionError && <span className="scm-error-msg">{commissionError}</span>}
+            {commissionError && (
+              <span className="scm-error-msg">{commissionError}</span>
+            )}
             <span className="scm-hint">
-              Phần trăm hoa hồng nền tảng thu từ doanh thu của giảng viên. Giá trị từ 0 đến 100.
+              Phần trăm hoa hồng nền tảng thu từ doanh thu của giảng viên. Giá
+              trị từ 0 đến 100.
             </span>
           </div>
 
@@ -426,18 +529,41 @@ export default function SystemConfigManagement() {
               value={minWithdrawal}
               min={0}
               step={1000}
-              onChange={(e) => { setMinWithdrawal(e.target.value); setMinWithdrawalError(''); }}
+              onChange={(e) => {
+                setMinWithdrawal(e.target.value);
+                setMinWithdrawalError('');
+              }}
               placeholder="Nhập số tiền tối thiểu"
             />
-            {minWithdrawalError && <span className="scm-error-msg">{minWithdrawalError}</span>}
+            {minWithdrawalError && (
+              <span className="scm-error-msg">{minWithdrawalError}</span>
+            )}
             <span className="scm-hint">
-              Số tiền tối thiểu giảng viên cần đạt để thực hiện yêu cầu rút tiền. (VD: 200000 = 200.000 VND)
+              Số tiền tối thiểu giảng viên cần đạt để thực hiện yêu cầu rút
+              tiền. (VD: 200000 = 200.000 VND)
             </span>
           </div>
 
           <div className="scm-form-actions">
-            <button className="scm-btn scm-btn--primary" onClick={saveFinanceConfigs} disabled={saving}>
-              {saving ? 'Đang lưu...' : '💾 Lưu cấu hình'}
+            <button
+              className="scm-btn scm-btn--primary"
+              onClick={saveFinanceConfigs}
+              disabled={saving}
+            >
+              {saving ? (
+                'Đang lưu...'
+              ) : (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <IconlyTick size={15} color="#ffffff" />
+                  <span>Lưu cấu hình</span>
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -449,36 +575,61 @@ export default function SystemConfigManagement() {
           <div className="scm-panel-header">
             <div>
               <h2 className="scm-panel-title">Quản lý Banner quảng cáo</h2>
-              <p className="scm-panel-desc">Thêm, sửa, xóa và sắp xếp thứ tự banner hiển thị trên trang chủ.</p>
+              <p className="scm-panel-desc">
+                Thêm, sửa, xóa và sắp xếp thứ tự banner hiển thị trên trang chủ.
+              </p>
             </div>
-            <button className="scm-btn scm-btn--primary" onClick={openCreateBanner}>
-              + Thêm banner
+            <button
+              className="scm-btn scm-btn--primary"
+              onClick={openCreateBanner}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <IconlyPlus size={16} color="#ffffff" />
+              <span>Thêm banner</span>
             </button>
           </div>
 
           {banners.length === 0 ? (
             <div className="scm-empty">
-              <div className="scm-empty-icon">🖼️</div>
-              <p>Chưa có banner nào. Nhấn &quot;Thêm banner&quot; để bắt đầu.</p>
+              <div
+                className="scm-empty-icon"
+                style={{ display: 'flex', justifyContent: 'center' }}
+              >
+                <IconlyImage size={48} color="#94a3b8" />
+              </div>
+              <p>
+                Chưa có banner nào. Nhấn &quot;Thêm banner&quot; để bắt đầu.
+              </p>
             </div>
           ) : (
             <div className="scm-banner-list">
               {banners.map((banner, index) => (
-                <div key={banner._id} className={`scm-banner-row ${!banner.isActive ? 'scm-banner-row--inactive' : ''}`}>
+                <div
+                  key={banner._id}
+                  className={`scm-banner-row ${!banner.isActive ? 'scm-banner-row--inactive' : ''}`}
+                >
                   <div className="scm-banner-order">
                     <button
                       className="scm-order-btn"
                       onClick={() => moveBanner(index, 'up')}
                       disabled={index === 0}
                       title="Di chuyển lên"
-                    >▲</button>
+                    >
+                      ▲
+                    </button>
                     <span className="scm-order-num">{index + 1}</span>
                     <button
                       className="scm-order-btn"
                       onClick={() => moveBanner(index, 'down')}
                       disabled={index === banners.length - 1}
                       title="Di chuyển xuống"
-                    >▼</button>
+                    >
+                      ▼
+                    </button>
                   </div>
 
                   <div className="scm-banner-preview">
@@ -487,23 +638,38 @@ export default function SystemConfigManagement() {
                       alt={banner.title || 'Banner'}
                       className="scm-banner-img"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://placehold.co/120x60?text=No+Image';
+                        (e.target as HTMLImageElement).src =
+                          'https://placehold.co/120x60?text=No+Image';
                       }}
                     />
                   </div>
 
                   <div className="scm-banner-info">
-                    <div className="scm-banner-title">{banner.title || <em className="scm-no-value">Không có tiêu đề</em>}</div>
+                    <div className="scm-banner-title">
+                      {banner.title || (
+                        <em className="scm-no-value">Không có tiêu đề</em>
+                      )}
+                    </div>
                     {banner.linkUrl && (
-                      <a href={banner.linkUrl} target="_blank" rel="noreferrer" className="scm-banner-link">
+                      <a
+                        href={banner.linkUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="scm-banner-link"
+                      >
                         {banner.linkUrl}
                       </a>
                     )}
-                    <div className="scm-banner-meta">ID: {banner._id.slice(-6)}</div>
+                    <div className="scm-banner-meta">
+                      ID: {banner._id.slice(-6)}
+                    </div>
                   </div>
 
                   <div className="scm-banner-actions">
-                    <label className="scm-toggle" title={banner.isActive ? 'Đang hiển thị' : 'Đang ẩn'}>
+                    <label
+                      className="scm-toggle"
+                      title={banner.isActive ? 'Đang hiển thị' : 'Đang ẩn'}
+                    >
                       <input
                         type="checkbox"
                         checked={banner.isActive}
@@ -511,14 +677,34 @@ export default function SystemConfigManagement() {
                       />
                       <span className="scm-toggle-slider"></span>
                     </label>
-                    <span className={`scm-status-badge ${banner.isActive ? 'scm-status-badge--active' : 'scm-status-badge--inactive'}`}>
+                    <span
+                      className={`scm-status-badge ${banner.isActive ? 'scm-status-badge--active' : 'scm-status-badge--inactive'}`}
+                    >
                       {banner.isActive ? 'Hiển thị' : 'Ẩn'}
                     </span>
-                    <button className="scm-btn scm-btn--sm scm-btn--outline" onClick={() => openEditBanner(banner)}>
-                      ✏️ Sửa
+                    <button
+                      className="scm-btn scm-btn--sm scm-btn--outline"
+                      onClick={() => openEditBanner(banner)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <IconlyEdit size={14} color="currentColor" />
+                      <span>Sửa</span>
                     </button>
-                    <button className="scm-btn scm-btn--sm scm-btn--danger" onClick={() => confirmDeleteBanner(banner._id)}>
-                      🗑️ Xóa
+                    <button
+                      className="scm-btn scm-btn--sm scm-btn--danger"
+                      onClick={() => confirmDeleteBanner(banner._id)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <IconlyDelete size={14} color="currentColor" />
+                      <span>Xóa</span>
                     </button>
                   </div>
                 </div>
@@ -532,10 +718,18 @@ export default function SystemConfigManagement() {
       {activeTab === 'ui' && (
         <div className="scm-panel">
           <h2 className="scm-panel-title">Nội dung giao diện</h2>
-          <p className="scm-panel-desc">Cấu hình tiêu đề trang chủ và thông tin liên hệ hiển thị ở footer.</p>
+          <p className="scm-panel-desc">
+            Cấu hình tiêu đề trang chủ và thông tin liên hệ hiển thị ở footer.
+          </p>
 
           <div className="scm-section">
-            <h3 className="scm-section-title">🏠 Banner trang chủ</h3>
+            <h3
+              className="scm-section-title"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <IconlyHome size={18} color="#3b82f6" />
+              <span>Banner trang chủ</span>
+            </h3>
             <div className="scm-form-group">
               <label className="scm-label">Tiêu đề chính (Hero Title)</label>
               <input
@@ -559,7 +753,13 @@ export default function SystemConfigManagement() {
           </div>
 
           <div className="scm-section">
-            <h3 className="scm-section-title">📞 Thông tin liên hệ (Footer)</h3>
+            <h3
+              className="scm-section-title"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <IconlyChat size={18} color="#3b82f6" />
+              <span>Thông tin liên hệ (Footer)</span>
+            </h3>
             <div className="scm-form-row">
               <div className="scm-form-group">
                 <label className="scm-label">Email hỗ trợ</label>
@@ -595,7 +795,13 @@ export default function SystemConfigManagement() {
           </div>
 
           <div className="scm-section">
-            <h3 className="scm-section-title">🌐 Mạng xã hội</h3>
+            <h3
+              className="scm-section-title"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <IconlyDiscovery size={18} color="#3b82f6" />
+              <span>Mạng xã hội</span>
+            </h3>
             <div className="scm-form-group">
               <label className="scm-label">Facebook</label>
               <input
@@ -629,8 +835,25 @@ export default function SystemConfigManagement() {
           </div>
 
           <div className="scm-form-actions">
-            <button className="scm-btn scm-btn--primary" onClick={saveUiConfigs} disabled={saving}>
-              {saving ? 'Đang lưu...' : '💾 Lưu cấu hình'}
+            <button
+              className="scm-btn scm-btn--primary"
+              onClick={saveUiConfigs}
+              disabled={saving}
+            >
+              {saving ? (
+                'Đang lưu...'
+              ) : (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <IconlyTick size={15} color="#ffffff" />
+                  <span>Lưu cấu hình</span>
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -638,22 +861,39 @@ export default function SystemConfigManagement() {
 
       {/* ── Banner Modal ──────────────────────────────────────────── */}
       {showBannerModal && (
-        <div className="scm-modal-overlay" onClick={() => setShowBannerModal(false)}>
+        <div
+          className="scm-modal-overlay"
+          onClick={() => setShowBannerModal(false)}
+        >
           <div className="scm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="scm-modal-header">
               <h3>{editingBanner ? 'Chỉnh sửa banner' : 'Thêm banner mới'}</h3>
-              <button className="scm-modal-close" onClick={() => setShowBannerModal(false)}>✕</button>
+              <button
+                className="scm-modal-close"
+                onClick={() => setShowBannerModal(false)}
+              >
+                <IconlyClose size={16} color="currentColor" />
+              </button>
             </div>
             <div className="scm-modal-body">
-              {bannerFormError && <div className="scm-alert scm-alert--error">{bannerFormError}</div>}
+              {bannerFormError && (
+                <div className="scm-alert scm-alert--error">
+                  {bannerFormError}
+                </div>
+              )}
 
               <div className="scm-form-group">
-                <label className="scm-label">URL hình ảnh <span className="scm-required">*</span></label>
+                <label className="scm-label">
+                  URL hình ảnh <span className="scm-required">*</span>
+                </label>
                 <input
                   type="url"
                   className={`scm-input ${bannerFormError && !bannerForm.imageUrl.trim() ? 'scm-input--error' : ''}`}
                   value={bannerForm.imageUrl}
-                  onChange={(e) => { setBannerForm((f) => ({ ...f, imageUrl: e.target.value })); setBannerFormError(''); }}
+                  onChange={(e) => {
+                    setBannerForm((f) => ({ ...f, imageUrl: e.target.value }));
+                    setBannerFormError('');
+                  }}
                   placeholder="https://example.com/banner.jpg"
                   autoFocus
                 />
@@ -663,7 +903,10 @@ export default function SystemConfigManagement() {
                       src={bannerForm.imageUrl}
                       alt="Preview"
                       className="scm-banner-preview-img"
-                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/400x200?text=Invalid+URL'; }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://placehold.co/400x200?text=Invalid+URL';
+                      }}
                     />
                   </div>
                 )}
@@ -675,7 +918,9 @@ export default function SystemConfigManagement() {
                   type="text"
                   className="scm-input"
                   value={bannerForm.title}
-                  onChange={(e) => setBannerForm((f) => ({ ...f, title: e.target.value }))}
+                  onChange={(e) =>
+                    setBannerForm((f) => ({ ...f, title: e.target.value }))
+                  }
                   placeholder="Tiêu đề banner (tùy chọn)"
                 />
               </div>
@@ -686,7 +931,9 @@ export default function SystemConfigManagement() {
                   type="url"
                   className="scm-input"
                   value={bannerForm.linkUrl}
-                  onChange={(e) => setBannerForm((f) => ({ ...f, linkUrl: e.target.value }))}
+                  onChange={(e) =>
+                    setBannerForm((f) => ({ ...f, linkUrl: e.target.value }))
+                  }
                   placeholder="https://... (tùy chọn)"
                 />
               </div>
@@ -699,7 +946,12 @@ export default function SystemConfigManagement() {
                     className="scm-input"
                     value={bannerForm.orderIndex}
                     min={0}
-                    onChange={(e) => setBannerForm((f) => ({ ...f, orderIndex: parseInt(e.target.value) || 0 }))}
+                    onChange={(e) =>
+                      setBannerForm((f) => ({
+                        ...f,
+                        orderIndex: parseInt(e.target.value) || 0,
+                      }))
+                    }
                   />
                 </div>
                 <div className="scm-form-group scm-form-group--checkbox">
@@ -708,7 +960,12 @@ export default function SystemConfigManagement() {
                     <input
                       type="checkbox"
                       checked={bannerForm.isActive}
-                      onChange={(e) => setBannerForm((f) => ({ ...f, isActive: e.target.checked }))}
+                      onChange={(e) =>
+                        setBannerForm((f) => ({
+                          ...f,
+                          isActive: e.target.checked,
+                        }))
+                      }
                     />
                     <span>Hiển thị banner</span>
                   </label>
@@ -716,11 +973,42 @@ export default function SystemConfigManagement() {
               </div>
             </div>
             <div className="scm-modal-footer">
-              <button className="scm-btn scm-btn--outline" onClick={() => setShowBannerModal(false)}>
+              <button
+                className="scm-btn scm-btn--outline"
+                onClick={() => setShowBannerModal(false)}
+              >
                 Hủy
               </button>
-              <button className="scm-btn scm-btn--primary" onClick={saveBanner} disabled={bannerSaving}>
-                {bannerSaving ? 'Đang lưu...' : editingBanner ? '💾 Cập nhật' : '+ Tạo banner'}
+              <button
+                className="scm-btn scm-btn--primary"
+                onClick={saveBanner}
+                disabled={bannerSaving}
+              >
+                {bannerSaving ? (
+                  'Đang lưu...'
+                ) : editingBanner ? (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <IconlyTick size={15} color="#ffffff" />
+                    <span>Cập nhật</span>
+                  </span>
+                ) : (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <IconlyPlus size={15} color="#ffffff" />
+                    <span>Tạo banner</span>
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -729,17 +1017,39 @@ export default function SystemConfigManagement() {
 
       {/* ── Delete Confirm Modal ──────────────────────────────────── */}
       {deletingBannerId && (
-        <div className="scm-modal-overlay" onClick={() => setDeletingBannerId(null)}>
-          <div className="scm-modal scm-modal--sm" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="scm-modal-overlay"
+          onClick={() => setDeletingBannerId(null)}
+        >
+          <div
+            className="scm-modal scm-modal--sm"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="scm-modal-header">
-              <h3>🗑️ Xác nhận xóa banner</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IconlyDelete size={20} color="#ef4444" />
+                <span>Xác nhận xóa banner</span>
+              </h3>
             </div>
             <div className="scm-modal-body">
-              <p>Bạn có chắc chắn muốn xóa banner này không? Hành động này không thể hoàn tác.</p>
+              <p>
+                Bạn có chắc chắn muốn xóa banner này không? Hành động này không
+                thể hoàn tác.
+              </p>
             </div>
             <div className="scm-modal-footer">
-              <button className="scm-btn scm-btn--outline" onClick={() => setDeletingBannerId(null)}>Hủy</button>
-              <button className="scm-btn scm-btn--danger" onClick={handleDeleteBanner}>Xóa</button>
+              <button
+                className="scm-btn scm-btn--outline"
+                onClick={() => setDeletingBannerId(null)}
+              >
+                Hủy
+              </button>
+              <button
+                className="scm-btn scm-btn--danger"
+                onClick={handleDeleteBanner}
+              >
+                Xóa
+              </button>
             </div>
           </div>
         </div>
@@ -747,17 +1057,38 @@ export default function SystemConfigManagement() {
 
       {/* ── Reset Confirm Modal ───────────────────────────────────── */}
       {showResetConfirm && (
-        <div className="scm-modal-overlay" onClick={() => setShowResetConfirm(false)}>
-          <div className="scm-modal scm-modal--sm" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="scm-modal-overlay"
+          onClick={() => setShowResetConfirm(false)}
+        >
+          <div
+            className="scm-modal scm-modal--sm"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="scm-modal-header">
-              <h3>🔄 Khôi phục cài đặt mặc định</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IconlySwap size={18} color="#ef4444" />
+                <span>Khôi phục cài đặt mặc định</span>
+              </h3>
             </div>
             <div className="scm-modal-body">
-              <p>Toàn bộ cài đặt tài chính và giao diện sẽ được đặt lại về giá trị mặc định của hệ thống. Bạn có muốn tiếp tục không?</p>
+              <p>
+                Toàn bộ cài đặt tài chính và giao diện sẽ được đặt lại về giá
+                trị mặc định của hệ thống. Bạn có muốn tiếp tục không?
+              </p>
             </div>
             <div className="scm-modal-footer">
-              <button className="scm-btn scm-btn--outline" onClick={() => setShowResetConfirm(false)}>Hủy</button>
-              <button className="scm-btn scm-btn--danger" onClick={handleReset} disabled={saving}>
+              <button
+                className="scm-btn scm-btn--outline"
+                onClick={() => setShowResetConfirm(false)}
+              >
+                Hủy
+              </button>
+              <button
+                className="scm-btn scm-btn--danger"
+                onClick={handleReset}
+                disabled={saving}
+              >
                 {saving ? 'Đang khôi phục...' : 'Khôi phục'}
               </button>
             </div>
@@ -767,4 +1098,3 @@ export default function SystemConfigManagement() {
     </div>
   );
 }
-

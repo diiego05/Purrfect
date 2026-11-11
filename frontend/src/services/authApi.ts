@@ -3,6 +3,7 @@ import type {
   CheckEmailResponse,
   ForgotPasswordResponse,
 } from '../types/auth';
+import { parseJsonSafe } from '../utils/api';
 
 const API_BASE = '/api/auth';
 
@@ -31,7 +32,9 @@ export const authFetch = async (
 ): Promise<Response> => {
   const token = getAccessToken();
   const headers = new Headers(options.headers || {});
-  headers.set('Content-Type', 'application/json');
+  if (!(options.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
@@ -48,7 +51,10 @@ export const authFetch = async (
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ refreshToken }),
         });
-        const refreshData = await refreshRes.json();
+        const refreshData = await parseJsonSafe<{
+          success?: boolean;
+          accessToken?: string;
+        }>(refreshRes, 'Không thể làm mới phiên đăng nhập');
         if (refreshRes.ok && refreshData.success && refreshData.accessToken) {
           setTokens(refreshData.accessToken);
           // Retry original request with new token
@@ -74,7 +80,7 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
-    return res.json();
+    return parseJsonSafe<CheckEmailResponse>(res, 'Lỗi kiểm tra email');
   },
 
   // 2. Đăng nhập (nhận accessToken 7 ngày và refreshToken 30 ngày)
@@ -84,7 +90,7 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    return res.json();
+    return parseJsonSafe<AuthResponse>(res, 'Lỗi đăng nhập');
   },
 
   // 3. Đăng ký & Kích hoạt tài khoản bằng OTP
@@ -105,7 +111,7 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    return res.json();
+    return parseJsonSafe<AuthResponse>(res, 'Lỗi đăng ký tài khoản');
   },
 
   // 4. Gửi lại OTP khi đăng ký (giới hạn tối đa 3 lần)
@@ -117,7 +123,7 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
-    return res.json();
+    return parseJsonSafe(res, 'Không thể gửi lại mã OTP');
   },
 
   // 4b. Xác thực OTP đăng ký trước khi tạo mật khẩu
@@ -130,7 +136,7 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp }),
     });
-    return res.json();
+    return parseJsonSafe(res, 'Lỗi xác thực mã OTP');
   },
 
   // 5. Yêu cầu OTP Quên Mật Khẩu
@@ -140,7 +146,10 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
-    return res.json();
+    return parseJsonSafe<ForgotPasswordResponse>(
+      res,
+      'Không thể gửi yêu cầu khôi phục mật khẩu',
+    );
   },
 
   // 6. Xác thực OTP Quên Mật Khẩu
@@ -153,7 +162,7 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp }),
     });
-    return res.json();
+    return parseJsonSafe(res, 'Lỗi xác thực mã OTP');
   },
 
   // 7. Đặt lại Mật Khẩu Mới
@@ -167,7 +176,7 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp, newPassword }),
     });
-    return res.json();
+    return parseJsonSafe<AuthResponse>(res, 'Không thể đặt lại mật khẩu');
   },
 
   // 8. Đặt Mật Khẩu cho Tài khoản Google
@@ -179,7 +188,10 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    return res.json();
+    return parseJsonSafe<AuthResponse>(
+      res,
+      'Không thể thiết lập mật khẩu cho tài khoản Google',
+    );
   },
 
   // 9. Lấy URL Đăng nhập Google
@@ -189,13 +201,16 @@ export const authApi = {
     message?: string;
   }> {
     const res = await fetch(`${API_BASE}/google/url`);
-    return res.json();
+    return parseJsonSafe(res, 'Không thể lấy liên kết đăng nhập Google');
   },
 
   // 10. Lấy thông tin tài khoản hiện tại (Me)
   async getMe(): Promise<AuthResponse> {
     const res = await authFetch(`${API_BASE}/me`);
-    return res.json();
+    return parseJsonSafe<AuthResponse>(
+      res,
+      'Không thể tải thông tin tài khoản',
+    );
   },
 
   // 11. Đăng xuất (xóa token cả client & server)
@@ -213,20 +228,27 @@ export const authApi = {
 
   // 12. Upload Avatar lên Cloudinary
   async uploadAvatar(file: File): Promise<AuthResponse> {
-    const token = getAccessToken();
     const formData = new FormData();
     formData.append('avatar', file);
 
-    const headers = new Headers();
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
-    }
-
-    const res = await fetch(`${API_BASE}/avatar`, {
+    const res = await authFetch(`${API_BASE}/avatar`, {
       method: 'POST',
-      headers,
       body: formData,
     });
-    return res.json();
+    return parseJsonSafe<AuthResponse>(res, 'Lỗi khi tải ảnh đại diện lên');
+  },
+
+  // 13. Cập nhật hồ sơ cá nhân (UC04)
+  async updateProfile(data: {
+    fullName?: string;
+    phoneNumber?: string;
+    bio?: string;
+    avatarUrl?: string;
+  }): Promise<AuthResponse> {
+    const res = await authFetch(`${API_BASE}/profile`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return parseJsonSafe<AuthResponse>(res, 'Lỗi khi cập nhật hồ sơ cá nhân');
   },
 };

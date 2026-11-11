@@ -49,7 +49,7 @@ const otpSchema = new Schema<IOtp>(
   {
     timestamps: { createdAt: true, updatedAt: false },
     collection: 'otps',
-  }
+  },
 );
 
 export const Otp = mongoose.model<IOtp>('Otp', otpSchema);

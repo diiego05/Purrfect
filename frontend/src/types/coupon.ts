@@ -45,4 +45,3 @@ export interface CouponValidateResult {
     description?: string;
   };
 }
-

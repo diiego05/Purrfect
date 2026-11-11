@@ -1,0 +1,866 @@
+/* ==========================================================================
+   Playlist Detail Page Styles (Trang chi tiết Playlist - UC29)
+   ========================================================================== */
+
+.playlist-detail-page {
+  background-color: #f8fafc;
+  min-height: calc(100vh - 80px);
+  padding: 32px 24px 80px;
+}
+
+.playlist-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   1. BREADCRUMBS & TOP NAV
+   ========================================================================== */
+.playlist-detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.playlist-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.playlist-back-btn:hover {
+  background: #f1f5f9;
+  color: #0056d2;
+  border-color: #cbd5e1;
+}
+
+.playlist-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: #64748b;
+}
+
+.playlist-breadcrumbs span.clickable {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.playlist-breadcrumbs span.clickable:hover {
+  color: #0056d2;
+}
+
+.playlist-breadcrumbs .crumb-separator {
+  color: #cbd5e1;
+}
+
+.playlist-breadcrumbs .crumb-current {
+  color: #0f172a;
+  font-weight: 600;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   2. HERO BANNER CARD
+   ========================================================================== */
+.playlist-hero-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.06);
+  padding: 32px;
+  margin-bottom: 32px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 32px;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 868px) {
+  .playlist-hero-card {
+    grid-template-columns: 1fr;
+    padding: 24px;
+    gap: 24px;
+  }
+}
+
+/* Mosaic Cover */
+.playlist-hero-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.12);
+}
+
+.playlist-hero-mosaic {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+  background-color: #0f172a;
+}
+
+.playlist-hero-mosaic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.playlist-hero-cover-single {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.playlist-hero-cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(15, 23, 42, 0.6) 0%,
+    transparent 60%
+  );
+  display: flex;
+  align-items: flex-end;
+  padding: 12px 14px;
+}
+
+.playlist-hero-cover-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+/* Hero Content Details */
+.playlist-hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.playlist-hero-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.playlist-pill-visibility {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.playlist-pill-visibility.public {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.playlist-pill-visibility.private {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.playlist-pill-owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid #bfdbfe;
+}
+
+.playlist-hero-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.3;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.playlist-hero-desc {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #475569;
+  margin: 0;
+}
+
+/* Author Row */
+.playlist-hero-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
+  width: fit-content;
+}
+
+.playlist-hero-author-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.playlist-hero-author-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.playlist-hero-author-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.playlist-hero-author-role {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Key Stats Bar */
+.playlist-hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13.5px;
+  color: #64748b;
+}
+
+.playlist-hero-stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.playlist-hero-stat-item strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* Action Toolbar */
+.playlist-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-playlist-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #0056d2;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 86, 210, 0.2);
+}
+
+.btn-playlist-primary:hover {
+  background: #00419e;
+}
+
+.btn-playlist-follow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #eff6ff;
+  color: #0056d2;
+  border: 1px solid #bfdbfe;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-playlist-follow:hover {
+  background: #dbeafe;
+}
+
+.btn-playlist-follow.following {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.btn-playlist-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-playlist-secondary:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.btn-playlist-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-playlist-danger:hover {
+  background: #ffe4e6;
+  border-color: #fda4af;
+}
+
+/* ==========================================================================
+   3. COURSES SECTION
+   ========================================================================== */
+.playlist-content-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.06);
+  padding: 32px;
+}
+
+.playlist-content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.playlist-content-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.playlist-content-count-pill {
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+
+.playlist-role-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.playlist-role-notice.info {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.playlist-role-notice.owner {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+/* Course Rows */
+.playlist-courses-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.playlist-course-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.playlist-course-card:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.playlist-course-index {
+  font-size: 16px;
+  font-weight: 800;
+  color: #94a3b8;
+  min-width: 28px;
+  text-align: center;
+}
+
+.playlist-course-thumb-box {
+  width: 140px;
+  height: 84px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  background: #0f172a;
+}
+
+.playlist-course-thumb-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.playlist-course-thumb-box:hover img {
+  transform: scale(1.05);
+}
+
+.playlist-course-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.playlist-course-heading {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  line-height: 1.35;
+}
+
+.playlist-course-heading:hover {
+  color: #0056d2;
+}
+
+.playlist-course-meta-tags {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.playlist-course-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.playlist-course-price-tag {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0056d2;
+}
+
+/* Actions on each course item */
+.playlist-course-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-course-enroll {
+  background: #0056d2;
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-course-enroll:hover {
+  background: #00419e;
+}
+
+.btn-reorder-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-reorder-icon:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.btn-reorder-icon:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-remove-course-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fef2f2;
+  border: 1px solid #fecdd3;
+  border-radius: 6px;
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-remove-course-icon:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .playlist-course-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .playlist-course-thumb-box {
+    width: 100%;
+    height: 160px;
+  }
+
+  .playlist-course-action-group {
+    width: 100%;
+    justify-content: space-between;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 10px;
+  }
+}
+
+/* ==========================================================================
+   4. EMPTY STATE & SPINNER
+   ========================================================================== */
+.playlist-detail-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  color: #64748b;
+  font-size: 15px;
+}
+
+.playlist-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3.5px solid #e2e8f0;
+  border-top-color: #0056d2;
+  border-radius: 50%;
+  animation: playlist-spin 0.8s linear infinite;
+}
+
+@keyframes playlist-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.playlist-empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  gap: 16px;
+}
+
+.playlist-empty-box p {
+  color: #64748b;
+  font-size: 15px;
+  max-width: 420px;
+  margin: 0;
+}
+
+/* ==========================================================================
+   5. TOAST FEEDBACK
+   ========================================================================== */
+.playlist-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: #0f172a;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: playlistToastFade 0.3s ease;
+}
+
+@keyframes playlistToastFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   6. MODAL DIALOGS (Chỉnh sửa thông tin / Xóa playlist)
+   ========================================================================== */
+.playlist-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.playlist-modal-dialog {
+  background-color: #ffffff;
+  border-radius: 16px;
+  max-width: 540px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
+  border: 1px solid #e2e8f0;
+  animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalScaleIn {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.playlist-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #ffffff;
+}
+
+.playlist-modal-header-info {
+  min-width: 0;
+}
+
+.playlist-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.playlist-modal-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.playlist-modal-close-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.playlist-modal-close-btn:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.playlist-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  background-color: #ffffff;
+}
+
+.playlist-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+}
+
+/* Form controls in modal */
+.playlist-form-group {
+  margin-bottom: 20px;
+}
+
+.playlist-form-label {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.playlist-input,
+.playlist-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0f172a;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.playlist-input:focus,
+.playlist-textarea:focus {
+  outline: none;
+  border-color: #0056d2;
+  box-shadow: 0 0 0 3px rgba(0, 86, 210, 0.12);
+}
+
+.playlist-textarea {
+  resize: vertical;
+  min-height: 95px;
+}
+
+.playlist-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #334155;
+  user-select: none;
+  padding: 12px 14px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.playlist-checkbox-label input {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}

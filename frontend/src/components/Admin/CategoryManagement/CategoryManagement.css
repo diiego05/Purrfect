@@ -90,7 +90,9 @@
   display: flex;
   align-items: center;
   gap: 1.15rem;
-  transition: transform 0.2s, border-color 0.2s;
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
 }
 
 .cat-stat-card:hover {
@@ -699,4 +701,3 @@
   border: 1px solid #dc2626;
   color: #fecaca;
 }
-
