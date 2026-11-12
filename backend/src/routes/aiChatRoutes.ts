@@ -21,7 +21,7 @@ router.post('/chat/stream', optionalAuthenticateToken, sendChatMessageStream);
 // Lịch sử tin nhắn ChatMessage
 router.get('/messages', authenticateToken, getChatMessages);
 
-// Quota - hỗ trợ cả Guest và người đã đăng nhập (50 lượt)
+// Quota - không giới hạn lượt hỏi (giữ endpoint tương thích ngược)
 router.get('/quota', optionalAuthenticateToken, getAiQuota);
 router.post('/quota/reset', optionalAuthenticateToken, resetAiQuota);
 

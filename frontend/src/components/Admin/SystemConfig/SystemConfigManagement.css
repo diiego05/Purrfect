@@ -27,7 +27,9 @@
 }
 
 @keyframes scm-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Header ──────────────────────────────────────────────────────── */
@@ -109,7 +111,9 @@
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   border-radius: 6px 6px 0 0;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .scm-tab:hover {
@@ -204,7 +208,9 @@
   border-radius: 8px;
   font-size: 14px;
   color: #1a202c;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   box-sizing: border-box;
   background: #fff;
 }
@@ -256,7 +262,7 @@
   padding: 10px 0;
 }
 
-.scm-checkbox-label input[type="checkbox"] {
+.scm-checkbox-label input[type='checkbox'] {
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -279,7 +285,10 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    opacity 0.15s,
+    transform 0.1s;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -671,8 +680,14 @@
 }
 
 @keyframes scm-slide-in {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* ── Responsive ──────────────────────────────────────────────────── */
@@ -703,4 +718,3 @@
     white-space: nowrap;
   }
 }
-

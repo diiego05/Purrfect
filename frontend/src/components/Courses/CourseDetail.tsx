@@ -106,7 +106,8 @@ export const CourseDetail: FC<CourseDetailProps> = ({ slug }) => {
 
   const priceVal = course.price;
   const discountVal = course.discountPrice;
-  const hasDiscount = discountVal !== undefined && discountVal > 0 && discountVal < priceVal;
+  const hasDiscount =
+    discountVal !== undefined && discountVal > 0 && discountVal < priceVal;
 
   return (
     <div className="course-detail-page">
@@ -146,18 +147,27 @@ export const CourseDetail: FC<CourseDetailProps> = ({ slug }) => {
 
           <p className="course-hero-desc">
             {course.shortDescription ||
-              'Chương trình học toàn diện với lộ trình chuẩn mực, bài giảng thực chiến và sự đồng hành 24/7 của Trợ lý AI Learnova.'}
+              'Chương trình học toàn diện với lộ trình chuẩn mực, bài giảng thực chiến và sự đồng hành 24/7 của Trợ lý AI Purrfect.'}
           </p>
 
           <div className="course-hero-meta">
             <div className="hero-meta-item">
               <span className="meta-icon">⭐</span>
-              <strong>{course.averageRating ? Number(course.averageRating).toFixed(1) : '4.8'}</strong>
-              <span className="meta-sub">({course.totalStudents.toLocaleString()} học viên)</span>
+              <strong>
+                {course.averageRating
+                  ? Number(course.averageRating).toFixed(1)
+                  : '4.8'}
+              </strong>
+              <span className="meta-sub">
+                ({course.totalStudents.toLocaleString()} học viên)
+              </span>
             </div>
             <div className="hero-meta-item">
               <span className="meta-icon">⏱️</span>
-              <span>{course.durationText || `${course.durationHours || 20}h bài giảng`}</span>
+              <span>
+                {course.durationText ||
+                  `${course.durationHours || 20}h bài giảng`}
+              </span>
             </div>
             <div className="hero-meta-item">
               <span className="meta-icon">🌐</span>
@@ -181,19 +191,31 @@ export const CourseDetail: FC<CourseDetailProps> = ({ slug }) => {
             <div className="learning-outcomes-grid">
               <div className="outcome-item">
                 <span className="outcome-check">✓</span>
-                <span>Nắm vững tư duy cốt lõi và các nguyên lý ứng dụng thực tế theo quy chuẩn ngành.</span>
+                <span>
+                  Nắm vững tư duy cốt lõi và các nguyên lý ứng dụng thực tế theo
+                  quy chuẩn ngành.
+                </span>
               </div>
               <div className="outcome-item">
                 <span className="outcome-check">✓</span>
-                <span>Thực chiến qua các dự án mô phỏng thực tế với tài liệu và mã nguồn hoàn chỉnh.</span>
+                <span>
+                  Thực chiến qua các dự án mô phỏng thực tế với tài liệu và mã
+                  nguồn hoàn chỉnh.
+                </span>
               </div>
               <div className="outcome-item">
                 <span className="outcome-check">✓</span>
-                <span>Được Trợ lý AI tư vấn và giải đáp mọi thắc mắc ngay trong suốt quá trình học.</span>
+                <span>
+                  Được Trợ lý AI tư vấn và giải đáp mọi thắc mắc ngay trong suốt
+                  quá trình học.
+                </span>
               </div>
               <div className="outcome-item">
                 <span className="outcome-check">✓</span>
-                <span>Nhận chứng chỉ điện tử có giá trị định danh khi hoàn thành 100% nội dung bài giảng.</span>
+                <span>
+                  Nhận chứng chỉ điện tử có giá trị định danh khi hoàn thành
+                  100% nội dung bài giảng.
+                </span>
               </div>
             </div>
           </section>
@@ -203,37 +225,51 @@ export const CourseDetail: FC<CourseDetailProps> = ({ slug }) => {
             <h2 className="box-title">📖 Mô tả khóa học</h2>
             <div className="course-full-description">
               <p>
-                Khóa học <strong>{course.title}</strong> được biên soạn kỹ lưỡng bởi đội ngũ chuyên gia hàng đầu. Khóa học được tối ưu hóa cho học viên từ cơ bản đến nâng cao, kết hợp giữa lý thuyết nền tảng và bài tập thực hành ứng dụng.
+                Khóa học <strong>{course.title}</strong> được biên soạn kỹ lưỡng
+                bởi đội ngũ chuyên gia hàng đầu. Khóa học được tối ưu hóa cho
+                học viên từ cơ bản đến nâng cao, kết hợp giữa lý thuyết nền tảng
+                và bài tập thực hành ứng dụng.
               </p>
               <p>
-                Người học sẽ được tiếp cận với hệ thống bài giảng video chất lượng cao, bài kiểm tra đánh giá năng lực tự động và đặc biệt là hệ thống Trợ lý ảo AI (RAG) hỗ trợ giải đáp 24/7.
+                Người học sẽ được tiếp cận với hệ thống bài giảng video chất
+                lượng cao, bài kiểm tra đánh giá năng lực tự động và đặc biệt là
+                hệ thống Trợ lý ảo AI (RAG) hỗ trợ giải đáp 24/7.
               </p>
             </div>
           </section>
 
           {/* Platform Policies (BR21.1) */}
           <section className="course-card-box course-policy-box">
-            <h2 className="box-title">🛡️ Cam kết & Chính sách từ Learnova</h2>
+            <h2 className="box-title">🛡️ Cam kết & Chính sách từ Purrfect</h2>
             <div className="policy-list">
               <div className="policy-item">
                 <span className="policy-icon">💵</span>
                 <div>
                   <strong>Chính sách hoàn tiền trong 7 ngày</strong>
-                  <p>Học viên được yêu cầu hoàn tiền trong vòng 7 ngày kể từ khi đăng ký nếu chưa học quá 30% nội dung khóa học.</p>
+                  <p>
+                    Học viên được yêu cầu hoàn tiền trong vòng 7 ngày kể từ khi
+                    đăng ký nếu chưa học quá 30% nội dung khóa học.
+                  </p>
                 </div>
               </div>
               <div className="policy-item">
                 <span className="policy-icon">📜</span>
                 <div>
                   <strong>Chứng chỉ chứng nhận năng lực</strong>
-                  <p>Cấp chứng chỉ điện tử chính thức từ Learnova sau khi bạn vượt qua tất cả bài kiểm tra trắc nghiệm.</p>
+                  <p>
+                    Cấp chứng chỉ điện tử chính thức từ Purrfect sau khi bạn
+                    vượt qua tất cả bài kiểm tra trắc nghiệm.
+                  </p>
                 </div>
               </div>
               <div className="policy-item">
                 <span className="policy-icon">🏷️</span>
                 <div>
                   <strong>Hỗ trợ áp dụng mã giảm giá</strong>
-                  <p>Học viên có thể nhập mã giảm giá (coupon) tại bước thanh toán để nhận thêm ưu đãi đặc biệt.</p>
+                  <p>
+                    Học viên có thể nhập mã giảm giá (coupon) tại bước thanh
+                    toán để nhận thêm ưu đãi đặc biệt.
+                  </p>
                 </div>
               </div>
             </div>
@@ -245,7 +281,9 @@ export const CourseDetail: FC<CourseDetailProps> = ({ slug }) => {
           <div className="course-pricing-card">
             <div className="pricing-card-thumb-wrapper">
               <img
-                src={course.thumbnailUrl || '/assets/advanced_digital_skills.jpg'}
+                src={
+                  course.thumbnailUrl || '/assets/advanced_digital_skills.jpg'
+                }
                 alt={course.title}
                 className="pricing-card-thumb"
               />
@@ -254,13 +292,18 @@ export const CourseDetail: FC<CourseDetailProps> = ({ slug }) => {
             <div className="pricing-card-content">
               <div className="pricing-card-price-row">
                 <span className="current-price">
-                  {hasDiscount ? `${discountVal.toLocaleString('vi-VN')}đ` : `${priceVal.toLocaleString('vi-VN')}đ`}
+                  {hasDiscount
+                    ? `${discountVal.toLocaleString('vi-VN')}đ`
+                    : `${priceVal.toLocaleString('vi-VN')}đ`}
                 </span>
                 {hasDiscount && (
                   <>
-                    <span className="original-price">{priceVal.toLocaleString('vi-VN')}đ</span>
+                    <span className="original-price">
+                      {priceVal.toLocaleString('vi-VN')}đ
+                    </span>
                     <span className="discount-tag">
-                      -{Math.round(((priceVal - discountVal) / priceVal) * 100)}%
+                      -{Math.round(((priceVal - discountVal) / priceVal) * 100)}
+                      %
                     </span>
                   </>
                 )}
@@ -272,7 +315,9 @@ export const CourseDetail: FC<CourseDetailProps> = ({ slug }) => {
                   className="btn-enroll-primary"
                   onClick={handleEnrollClick}
                 >
-                  {isAuthenticated ? 'Đăng ký học ngay' : 'Đăng nhập để đăng ký'}
+                  {isAuthenticated
+                    ? 'Đăng ký học ngay'
+                    : 'Đăng nhập để đăng ký'}
                 </button>
 
                 <button
@@ -287,7 +332,10 @@ export const CourseDetail: FC<CourseDetailProps> = ({ slug }) => {
               <div className="course-features-summary">
                 <div className="features-title">Khóa học này bao gồm:</div>
                 <ul className="features-list">
-                  <li>🎥 {course.durationText || `${course.durationHours || 20}h`} video chất lượng cao</li>
+                  <li>
+                    🎥 {course.durationText || `${course.durationHours || 20}h`}{' '}
+                    video chất lượng cao
+                  </li>
                   <li>📱 Xem được trên máy tính, điện thoại, tablet</li>
                   <li>♾️ Quyền truy cập học tập trọn đời</li>
                   <li>🤖 Trợ lý AI tư vấn và giải đáp thắc mắc 24/7</li>
@@ -301,4 +349,3 @@ export const CourseDetail: FC<CourseDetailProps> = ({ slug }) => {
     </div>
   );
 };
-

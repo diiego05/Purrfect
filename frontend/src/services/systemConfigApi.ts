@@ -1,5 +1,6 @@
 import { authFetch } from './authApi';
 import type { SystemConfig, Banner } from '../types/systemConfig';
+import { parseApiJson } from '../utils/api';
 
 const BASE = '/api';
 
@@ -9,33 +10,32 @@ export const systemConfigApi = {
   /** Get all configs (admin) */
   getAll: async (): Promise<SystemConfig[]> => {
     const res = await authFetch(`${BASE}/system-configs`);
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string };
-      throw new Error(data.message || 'Lỗi khi lấy danh sách cấu hình.');
-    }
-    const data = (await res.json()) as { configs: SystemConfig[] };
+    const data = await parseApiJson<{
+      configs: SystemConfig[];
+      message?: string;
+    }>(res, 'Lỗi khi lấy danh sách cấu hình.');
     return data.configs;
   },
 
   /** Get public UI configs */
   getPublic: async (): Promise<Record<string, string>> => {
     const res = await fetch(`${BASE}/system-configs/public`);
-    if (!res.ok) throw new Error('Lỗi khi lấy cấu hình công khai.');
-    const data = (await res.json()) as { configs: Record<string, string> };
+    const data = await parseApiJson<{
+      configs: Record<string, string>;
+      message?: string;
+    }>(res, 'Lỗi khi lấy cấu hình công khai.');
     return data.configs;
   },
 
   /** Batch update configs (admin) */
-  update: async (updates: Array<{ keyName: string; valueText: string }>): Promise<void> => {
+  update: async (
+    updates: Array<{ keyName: string; valueText: string }>,
+  ): Promise<void> => {
     const res = await authFetch(`${BASE}/system-configs`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates }),
     });
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string };
-      throw new Error(data.message || 'Lỗi khi lưu cấu hình.');
-    }
+    await parseApiJson<{ message?: string }>(res, 'Lỗi khi lưu cấu hình.');
   },
 
   /** Reset configs to defaults (admin) */
@@ -43,10 +43,10 @@ export const systemConfigApi = {
     const res = await authFetch(`${BASE}/system-configs/reset`, {
       method: 'POST',
     });
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string };
-      throw new Error(data.message || 'Lỗi khi khôi phục cài đặt mặc định.');
-    }
+    await parseApiJson<{ message?: string }>(
+      res,
+      'Lỗi khi khôi phục cài đặt mặc định.',
+    );
   },
 };
 
@@ -56,19 +56,20 @@ export const bannerApi = {
   /** Get all banners (admin) */
   getAll: async (): Promise<Banner[]> => {
     const res = await authFetch(`${BASE}/banners/all`);
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string };
-      throw new Error(data.message || 'Lỗi khi lấy danh sách banner.');
-    }
-    const data = (await res.json()) as { banners: Banner[] };
+    const data = await parseApiJson<{ banners: Banner[]; message?: string }>(
+      res,
+      'Lỗi khi lấy danh sách banner.',
+    );
     return data.banners;
   },
 
   /** Get active banners (public) */
   getActive: async (): Promise<Banner[]> => {
     const res = await fetch(`${BASE}/banners`);
-    if (!res.ok) throw new Error('Lỗi khi lấy danh sách banner.');
-    const data = (await res.json()) as { banners: Banner[] };
+    const data = await parseApiJson<{ banners: Banner[]; message?: string }>(
+      res,
+      'Lỗi khi lấy danh sách banner.',
+    );
     return data.banners;
   },
 
@@ -82,66 +83,63 @@ export const bannerApi = {
   }): Promise<Banner> => {
     const res = await authFetch(`${BASE}/banners`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string };
-      throw new Error(data.message || 'Lỗi khi tạo banner.');
-    }
-    const data = (await res.json()) as { banner: Banner };
+    const data = await parseApiJson<{ banner: Banner; message?: string }>(
+      res,
+      'Lỗi khi tạo banner.',
+    );
     return data.banner;
   },
 
   /** Update banner (admin) */
   update: async (
     id: string,
-    payload: Partial<{ imageUrl: string; title: string; linkUrl: string; orderIndex: number; isActive: boolean }>
+    payload: Partial<{
+      imageUrl: string;
+      title: string;
+      linkUrl: string;
+      orderIndex: number;
+      isActive: boolean;
+    }>,
   ): Promise<Banner> => {
     const res = await authFetch(`${BASE}/banners/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string };
-      throw new Error(data.message || 'Lỗi khi cập nhật banner.');
-    }
-    const data = (await res.json()) as { banner: Banner };
+    const data = await parseApiJson<{ banner: Banner; message?: string }>(
+      res,
+      'Lỗi khi cập nhật banner.',
+    );
     return data.banner;
   },
 
   /** Delete banner (admin) */
   delete: async (id: string): Promise<void> => {
     const res = await authFetch(`${BASE}/banners/${id}`, { method: 'DELETE' });
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string };
-      throw new Error(data.message || 'Lỗi khi xóa banner.');
-    }
+    await parseApiJson<{ message?: string }>(res, 'Lỗi khi xóa banner.');
   },
 
   /** Toggle banner active state (admin) */
   toggle: async (id: string): Promise<Banner> => {
-    const res = await authFetch(`${BASE}/banners/${id}/toggle`, { method: 'PATCH' });
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string };
-      throw new Error(data.message || 'Lỗi khi thay đổi trạng thái banner.');
-    }
-    const data = (await res.json()) as { banner: Banner };
+    const res = await authFetch(`${BASE}/banners/${id}/toggle`, {
+      method: 'PATCH',
+    });
+    const data = await parseApiJson<{ banner: Banner; message?: string }>(
+      res,
+      'Lỗi khi thay đổi trạng thái banner.',
+    );
     return data.banner;
   },
 
   /** Reorder banners (admin) */
-  reorder: async (orders: Array<{ id: string; orderIndex: number }>): Promise<void> => {
+  reorder: async (
+    orders: Array<{ id: string; orderIndex: number }>,
+  ): Promise<void> => {
     const res = await authFetch(`${BASE}/banners/reorder`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orders }),
     });
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string };
-      throw new Error(data.message || 'Lỗi khi sắp xếp banner.');
-    }
+    await parseApiJson<{ message?: string }>(res, 'Lỗi khi sắp xếp banner.');
   },
 };
-

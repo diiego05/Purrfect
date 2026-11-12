@@ -5,6 +5,28 @@ export type CourseStatus =
 
 export type CourseLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 
+export interface ILecture {
+  _id?: mongoose.Types.ObjectId;
+  title: string;
+  type: 'VIDEO' | 'DOCUMENT';
+  contentUrl?: string;
+  fileName?: string;
+  fileSize?: number; // bytes (<= 2GB - BR06.2)
+  durationMinutes: number;
+  isPreview: boolean;
+  order: number;
+  compressionStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; // BR06.5
+  transcript?: string; // BR06.5 trích xuất phụ đề cho RAG Chatbot
+  transcriptStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+}
+
+export interface ISection {
+  _id?: mongoose.Types.ObjectId;
+  title: string;
+  order: number;
+  lectures: ILecture[];
+}
+
 export interface ICourse extends Document {
   _id: mongoose.Types.ObjectId;
   instructorId?: mongoose.Types.ObjectId | null;
@@ -29,11 +51,48 @@ export interface ICourse extends Document {
   totalStudents: number;
   isForYou: boolean;
   prerequisiteCourseIds?: mongoose.Types.ObjectId[];
+  sections: ISection[];
+  rejectionReason?: string;
+  publishedAt?: Date;
   isDeleted: boolean;
   deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const lectureSchema = new Schema<ILecture>(
+  {
+    title: { type: String, required: true, trim: true },
+    type: { type: String, enum: ['VIDEO', 'DOCUMENT'], default: 'VIDEO' },
+    contentUrl: { type: String, default: '' },
+    fileName: { type: String, default: '' },
+    fileSize: { type: Number, default: 0 },
+    durationMinutes: { type: Number, default: 10 },
+    isPreview: { type: Boolean, default: false },
+    order: { type: Number, default: 0 },
+    compressionStatus: {
+      type: String,
+      enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'],
+      default: 'COMPLETED',
+    },
+    transcript: { type: String, default: '' },
+    transcriptStatus: {
+      type: String,
+      enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'],
+      default: 'COMPLETED',
+    },
+  },
+  { _id: true },
+);
+
+const sectionSchema = new Schema<ISection>(
+  {
+    title: { type: String, required: true, trim: true },
+    order: { type: Number, default: 0 },
+    lectures: [lectureSchema],
+  },
+  { _id: true },
+);
 
 const courseSchema = new Schema<ICourse>(
   {
@@ -146,6 +205,17 @@ const courseSchema = new Schema<ICourse>(
         ref: 'Course',
       },
     ],
+    sections: {
+      type: [sectionSchema],
+      default: [],
+    },
+    rejectionReason: {
+      type: String,
+      default: '',
+    },
+    publishedAt: {
+      type: Date,
+    },
     isDeleted: {
       type: Boolean,
       default: false,

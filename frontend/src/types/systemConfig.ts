@@ -38,4 +38,3 @@ export const CONFIG_KEYS = {
   FOOTER_ZALO: 'FOOTER_ZALO',
   PLATFORM_NAME: 'PLATFORM_NAME',
 } as const;
-

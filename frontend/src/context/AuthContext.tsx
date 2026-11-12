@@ -21,6 +21,8 @@ interface AuthContextType {
     redirectTo?: string,
   ) => void;
   logout: () => Promise<void>;
+  updateUser: (updatedData: Partial<User>) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -112,6 +114,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const updateUser = (updatedData: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...updatedData } : null));
+  };
+
+  const refreshUser = async () => {
+    try {
+      const res = await authApi.getMe();
+      if (res.success && res.user) {
+        setUser(res.user);
+      }
+    } catch (e) {
+      console.warn('Failed to refresh user:', e);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -123,6 +140,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         navigate,
         loginSuccess,
         logout,
+        updateUser,
+        refreshUser,
       }}
     >
       {children}

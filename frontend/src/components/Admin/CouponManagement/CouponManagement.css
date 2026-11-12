@@ -27,7 +27,9 @@
 }
 
 @keyframes coupon-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Header ──────────────────────────────────────────────────────── */
@@ -362,6 +364,7 @@
   font-weight: 600;
   color: #334155;
   font-size: 13px;
+  white-space: nowrap;
 }
 
 /* ── Usage Progress ──────────────────────────────────────────────── */
@@ -507,7 +510,10 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    opacity 0.15s,
+    transform 0.1s;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -692,7 +698,9 @@
   border-radius: 8px;
   font-size: 14px;
   color: #1a202c;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   box-sizing: border-box;
   background: #fff;
 }
@@ -754,7 +762,7 @@
   font-weight: 600;
 }
 
-.type-option input[type="radio"] {
+.type-option input[type='radio'] {
   accent-color: #6366f1;
 }
 
@@ -768,7 +776,7 @@
   color: #374151;
 }
 
-.coupon-checkbox-label input[type="checkbox"] {
+.coupon-checkbox-label input[type='checkbox'] {
   width: 16px;
   height: 16px;
   accent-color: #6366f1;
@@ -828,8 +836,14 @@
 }
 
 @keyframes coupon-slide-in {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* ── Responsive ──────────────────────────────────────────────────── */
@@ -851,4 +865,3 @@
     align-items: stretch;
   }
 }
-

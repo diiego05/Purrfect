@@ -20,4 +20,3 @@ router.put('/:id', authenticateToken, requireAdmin, updateCategory);
 router.delete('/:id', authenticateToken, requireAdmin, deleteCategory);
 
 export default router;
-

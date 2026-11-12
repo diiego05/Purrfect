@@ -21,7 +21,11 @@ router.post('/', authenticateToken, requireAdmin, createCoupon);
 router.get('/:id', authenticateToken, requireAdmin, getCouponById);
 router.put('/:id', authenticateToken, requireAdmin, updateCoupon);
 router.delete('/:id', authenticateToken, requireAdmin, deleteCoupon);
-router.patch('/:id/toggle', authenticateToken, requireAdmin, toggleCouponStatus);
+router.patch(
+  '/:id/toggle',
+  authenticateToken,
+  requireAdmin,
+  toggleCouponStatus,
+);
 
 export default router;
-

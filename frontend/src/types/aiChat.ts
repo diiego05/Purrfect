@@ -19,8 +19,9 @@ export interface ChatSuggestedCourse {
 
 export interface AiQuotaInfo {
   used: number;
-  limit: number;
-  remaining: number;
+  limit: number | null;
+  remaining: number | null;
+  unlimited?: boolean;
   monthYear?: string;
 }
 
@@ -30,13 +31,12 @@ export interface AiChatApiResponse {
   data?: {
     message: string;
     suggestedCourses: ChatSuggestedCourse[];
-    quota: AiQuotaInfo;
+    quota?: AiQuotaInfo | null;
   };
   fallback?: {
     faqUrl: string;
     coursesUrl: string;
     supportEmail: string;
   };
-  quota?: AiQuotaInfo;
+  quota?: AiQuotaInfo | null;
 }
-

@@ -38,8 +38,10 @@ const SystemConfigSchema = new Schema<ISystemConfig>(
   {
     timestamps: true,
     collection: 'system_configs',
-  }
+  },
 );
 
-export default mongoose.model<ISystemConfig>('SystemConfig', SystemConfigSchema);
-
+export default mongoose.model<ISystemConfig>(
+  'SystemConfig',
+  SystemConfigSchema,
+);

@@ -6,6 +6,7 @@ import type {
   UpdateCategoryPayload,
   CategoryApiResponse,
 } from '../types/category';
+import { parseJsonSafe } from '../utils/api';
 
 const API_BASE = '/api/categories';
 
@@ -15,7 +16,10 @@ export const categoryApi = {
    */
   async getCategories(): Promise<CategoryApiResponse<CategoryItem[]>> {
     const res = await fetch(`${API_BASE}`);
-    return res.json();
+    return parseJsonSafe<CategoryApiResponse<CategoryItem[]>>(
+      res,
+      'Không thể tải danh sách danh mục',
+    );
   },
 
   /**
@@ -23,7 +27,10 @@ export const categoryApi = {
    */
   async getCategoryTree(): Promise<CategoryApiResponse<CategoryTreeNode[]>> {
     const res = await fetch(`${API_BASE}?tree=true`);
-    return res.json();
+    return parseJsonSafe<CategoryApiResponse<CategoryTreeNode[]>>(
+      res,
+      'Không thể tải cấu trúc danh mục',
+    );
   },
 
   /**
@@ -33,7 +40,10 @@ export const categoryApi = {
     identifier: string,
   ): Promise<CategoryApiResponse<CategoryItem>> {
     const res = await fetch(`${API_BASE}/${identifier}`);
-    return res.json();
+    return parseJsonSafe<CategoryApiResponse<CategoryItem>>(
+      res,
+      'Không thể tải chi tiết danh mục',
+    );
   },
 
   /**
@@ -46,7 +56,10 @@ export const categoryApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    return res.json();
+    return parseJsonSafe<CategoryApiResponse<CategoryItem>>(
+      res,
+      'Lỗi khi tạo danh mục mới',
+    );
   },
 
   /**
@@ -60,19 +73,24 @@ export const categoryApi = {
       method: 'PUT',
       body: JSON.stringify(payload),
     });
-    return res.json();
+    return parseJsonSafe<CategoryApiResponse<CategoryItem>>(
+      res,
+      'Lỗi khi cập nhật danh mục',
+    );
   },
 
   /**
    * [Admin] Xóa danh mục (hệ thống sẽ chặn nếu có khóa học hoạt động)
    */
-  async deleteCategory(
-    id: string,
-  ): Promise<CategoryApiResponse<{ activeCourseCount?: number; subCategoryCount?: number }>> {
+  async deleteCategory(id: string): Promise<
+    CategoryApiResponse<{
+      activeCourseCount?: number;
+      subCategoryCount?: number;
+    }>
+  > {
     const res = await authFetch(`${API_BASE}/${id}`, {
       method: 'DELETE',
     });
-    return res.json();
+    return parseJsonSafe(res, 'Lỗi khi xóa danh mục');
   },
 };
-

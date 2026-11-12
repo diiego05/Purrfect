@@ -4,6 +4,7 @@ import type {
   OnboardingSaveResponse,
 } from '../types/onboarding';
 import { getAccessToken } from './authApi';
+import { parseApiJson, parseJsonSafe } from '../utils/api';
 
 const COURSE_API_BASE = '/api/courses';
 const AUTH_API_BASE = '/api/auth';
@@ -16,7 +17,10 @@ export const fetchOnboardingData =
     try {
       const res = await fetch(`${COURSE_API_BASE}/onboarding-data`);
       if (!res.ok) throw new Error('Không thể tải dữ liệu định hướng');
-      const data = await res.json();
+      const data = await parseJsonSafe<OnboardingDataResponse>(
+        res,
+        'Không thể tải dữ liệu định hướng',
+      );
       return data;
     } catch (error) {
       console.warn(
@@ -146,11 +150,10 @@ export const saveOnboardingSurvey = async (
     body: JSON.stringify(payload),
   });
 
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || 'Lỗi khi lưu kết quả khảo sát');
-  }
-  return data;
+  return parseApiJson<OnboardingSaveResponse & { message?: string }>(
+    res,
+    'Lỗi khi lưu kết quả khảo sát',
+  );
 };
 
 /**
@@ -165,6 +168,10 @@ export const getUserOnboardingSurvey = async () => {
     },
   });
   if (!res.ok) return null;
-  const data = await res.json();
-  return data.survey || null;
+  try {
+    const data = await parseJsonSafe<{ survey?: unknown }>(res);
+    return data.survey || null;
+  } catch {
+    return null;
+  }
 };

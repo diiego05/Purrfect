@@ -1,4 +1,5 @@
 import { authFetch, getAccessToken } from './authApi';
+import { parseJsonSafe } from '../utils/api';
 import type {
   AiChatApiResponse,
   AiQuotaInfo,
@@ -14,7 +15,10 @@ export const aiChatApi = {
       method: 'POST',
       body: JSON.stringify({ message }),
     });
-    return res.json();
+    return parseJsonSafe<AiChatApiResponse>(
+      res,
+      'Không thể kết nối đến Trợ lý AI',
+    );
   },
 
   // 2. Gửi tin nhắn dạng Server-Sent Events (SSE) Token Streaming (< 3s)
@@ -24,7 +28,7 @@ export const aiChatApi = {
       onToken: (token: string) => void;
       onDone: (data: {
         suggestedCourses: ChatSuggestedCourse[];
-        quota?: AiQuotaInfo;
+        quota?: AiQuotaInfo | null;
       }) => void;
       onError: (errorMessage: string) => void;
     },
@@ -102,18 +106,32 @@ export const aiChatApi = {
 
   async getQuota(): Promise<{ success: boolean; data?: AiQuotaInfo }> {
     const res = await authFetch(`${API_BASE}/quota`);
-    return res.json();
+    return parseJsonSafe<{ success: boolean; data?: AiQuotaInfo }>(
+      res,
+      'Không thể tải hạn mức sử dụng AI',
+    );
   },
 
-  async resetQuota(): Promise<{ success: boolean; data?: AiQuotaInfo; message?: string }> {
+  async resetQuota(): Promise<{
+    success: boolean;
+    data?: AiQuotaInfo;
+    message?: string;
+  }> {
     const res = await authFetch(`${API_BASE}/quota/reset`, {
       method: 'POST',
     });
-    return res.json();
+    return parseJsonSafe<{
+      success: boolean;
+      data?: AiQuotaInfo;
+      message?: string;
+    }>(res, 'Không thể đặt lại hạn mức sử dụng AI');
   },
 
   async getSuggestions(): Promise<{ success: boolean; data?: string[] }> {
     const res = await fetch(`${API_BASE}/suggestions`);
-    return res.json();
+    return parseJsonSafe<{ success: boolean; data?: string[] }>(
+      res,
+      'Không thể tải gợi ý câu hỏi',
+    );
   },
 };

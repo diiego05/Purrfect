@@ -328,7 +328,8 @@ export const updateCategory = async (
     }
 
     if (description !== undefined) {
-      category.description = typeof description === 'string' ? description.trim() : '';
+      category.description =
+        typeof description === 'string' ? description.trim() : '';
     }
 
     if (icon !== undefined) {
@@ -352,7 +353,8 @@ export const updateCategory = async (
         if (parentIdStr === category._id.toString()) {
           res.status(400).json({
             success: false,
-            message: 'Không thể chọn chính danh mục này làm danh mục cha của nó',
+            message:
+              'Không thể chọn chính danh mục này làm danh mục cha của nó',
           });
           return;
         }

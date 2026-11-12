@@ -53,16 +53,18 @@ export async function buildKnowledgeBase(): Promise<string> {
   }
 
   // 3. Chính sách hệ thống từ SystemConfig
-  const configs = await SystemConfig.find({}).select('keyName valueText').lean();
+  const configs = await SystemConfig.find({})
+    .select('keyName valueText')
+    .lean();
   const configMap = new Map<string, string>();
   configs.forEach((cfg: { keyName: string; valueText: string }) =>
     configMap.set(cfg.keyName, cfg.valueText),
   );
 
-  sections.push(`## CHÍNH SÁCH VÀ QUY ĐỊNH CỦA NỀN TẢNG LEARNOVA
+  sections.push(`## CHÍNH SÁCH VÀ QUY ĐỊNH CỦA NỀN TẢNG PURRFECT
 
 ### Giới thiệu
-Learnova (Purrfect) là nền tảng học trực tuyến (e-learning) cung cấp các khóa học đa dạng từ lập trình, thiết kế đến kinh doanh và phát triển bản thân.
+Purrfect là nền tảng học trực tuyến (e-learning) cung cấp các khóa học đa dạng từ lập trình, thiết kế đến kinh doanh và phát triển bản thân.
 
 ### Chính sách chung
 - Người dùng cần đăng ký tài khoản để mua và theo dõi tiến độ khóa học.
@@ -80,7 +82,7 @@ Learnova (Purrfect) là nền tảng học trực tuyến (e-learning) cung cấ
 - Chứng chỉ được cấp dạng điện tử, có thể tải về và chia sẻ.
 
 ### Hỗ trợ
-- Email hỗ trợ: support@learnova.com
+- Email hỗ trợ: support@purrfect.com
 - Thời gian hỗ trợ: 8:00 - 22:00 hàng ngày (GMT+7)
 - Hotline: 1900-xxxx
 
@@ -94,15 +96,15 @@ ${configMap.get('support_phone') ? `Điện thoại hỗ trợ: ${configMap.get(
 
 // ────────────── Gọi AI (Google Generative AI / Gemini) ──────────────
 
-const SYSTEM_PROMPT = `Bạn là Trợ lý AI tư vấn của nền tảng học trực tuyến Learnova.
+const SYSTEM_PROMPT = `Bạn là Trợ lý AI tư vấn của nền tảng học trực tuyến Purrfect.
 
 QUY TẮC BẮT BUỘC:
 1. CHỈ trả lời dựa trên thông tin trong phần "CƠ SỞ TRI THỨC" được cung cấp bên dưới. KHÔNG được tự suy diễn hoặc bịa đặt thông tin không có trong dữ liệu.
-2. Nếu câu hỏi nằm NGOÀI phạm vi dữ liệu hệ thống (ví dụ: câu hỏi về thời sự, kiến thức tổng quát, vấn đề cá nhân...), hãy trả lời: "Xin lỗi, tôi chưa có dữ liệu chính xác cho thắc mắc này. Bạn có thể liên hệ bộ phận Chăm sóc khách hàng qua email support@learnova.com hoặc hotline 1900-xxxx để được hỗ trợ thêm nhé!"
+2. Nếu câu hỏi nằm NGOÀI phạm vi dữ liệu hệ thống (ví dụ: câu hỏi về thời sự, kiến thức tổng quát, vấn đề cá nhân...), hãy trả lời: "Xin lỗi, tôi chưa có dữ liệu chính xác cho thắc mắc này. Bạn có thể liên hệ bộ phận Chăm sóc khách hàng qua email support@purrfect.com hoặc hotline 1900-xxxx để được hỗ trợ thêm nhé!"
 3. Luôn trả lời bằng tiếng Việt, thân thiện, ngắn gọn và dễ hiểu.
 4. Khi gợi ý khóa học, hãy liệt kê rõ tên khóa học, giá, trình độ và đường dẫn.
 5. Nếu người dùng hỏi về lộ trình học tập, hãy gợi ý thứ tự khóa học phù hợp dựa trên trình độ (Beginner → Intermediate → Advanced).
-6. KHÔNG bao giờ trả lời về nội dung nhạy cảm, chính trị, tôn giáo hoặc bất kỳ chủ đề nào không liên quan đến giáo dục và nền tảng Learnova.
+6. KHÔNG bao giờ trả lời về nội dung nhạy cảm, chính trị, tôn giáo hoặc bất kỳ chủ đề nào không liên quan đến giáo dục và nền tảng Purrfect.
 
 ĐỊNH DẠNG:
 - Trả lời ngắn gọn, tối đa 500 từ.
@@ -190,7 +192,11 @@ export async function chat(
 
   // Nếu có API key, dùng Gemini
   if (apiKey) {
-    return callGeminiApi(apiKey, knowledgeBase, userMessage);
+    try {
+      return await callGeminiApi(apiKey, knowledgeBase, userMessage);
+    } catch (error) {
+      console.error('Gemini API fallback error:', error);
+    }
   }
 
   // Fallback: trả lời bằng rule-based khi chưa cấu hình API key
@@ -228,6 +234,22 @@ export async function* streamChat(
   };
 }
 
+interface GenerativeModel {
+  generateContent(
+    prompt: string,
+  ): Promise<{ response?: { text?: () => string } }>;
+}
+
+interface GoogleGenerativeAIConstructor {
+  new (apiKey: string): {
+    getGenerativeModel(options: { model: string }): GenerativeModel;
+  };
+}
+
+interface GenerativeAIModule {
+  GoogleGenerativeAI?: GoogleGenerativeAIConstructor;
+}
+
 /**
  * Gọi Google Generative AI (Gemini) API
  */
@@ -236,16 +258,51 @@ async function callGeminiApi(
   knowledgeBase: string,
   userMessage: string,
 ): Promise<AiChatResponse> {
-  // Dynamic import để không crash nếu package chưa cài
-  const { GoogleGenerativeAI } = await import('@google/generative-ai');
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
   const prompt = `${SYSTEM_PROMPT}\n\n--- CƠ SỞ TRI THỨC ---\n${knowledgeBase}\n--- HẾT CƠ SỞ TRI THỨC ---\n\nCâu hỏi của người dùng: "${userMessage}"\n\nHãy trả lời theo đúng quy tắc:`;
 
-  const result = await model.generateContent(prompt);
-  const responseText =
-    result.response?.text?.() || 'Xin lỗi, tôi không thể xử lý yêu cầu này.';
+  let responseText: string | undefined;
+
+  // Dynamic import để không crash nếu package chưa cài
+  try {
+    const packageName = '@google/generative-ai';
+    const mod = (await import(packageName)) as GenerativeAIModule;
+    if (mod.GoogleGenerativeAI) {
+      const genAI = new mod.GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const result = await model.generateContent(prompt);
+      responseText =
+        result.response?.text?.() ||
+        'Xin lỗi, tôi không thể xử lý yêu cầu này.';
+    }
+  } catch {
+    // Fallback sang Gemini REST API khi chưa cài package @google/generative-ai
+  }
+
+  if (responseText === undefined) {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Gemini REST API returned status ${res.status}`);
+    }
+
+    const data = (await res.json()) as {
+      candidates?: Array<{
+        content?: { parts?: Array<{ text?: string }> };
+      }>;
+    };
+    responseText =
+      data.candidates?.[0]?.content?.parts
+        ?.map((part) => part.text || '')
+        .join('')
+        .trim() || 'Xin lỗi, tôi không thể xử lý yêu cầu này.';
+  }
 
   // Trích xuất khóa học được đề cập trong câu trả lời
   const suggestedCourses = await extractMentionedCourses(responseText);
@@ -331,7 +388,7 @@ async function ruleBasedResponse(
         '**Mã giảm giá:**\n- Bạn có thể sử dụng mã giảm giá (coupon) khi thanh toán khóa học.\n- Mỗi mã giảm giá có điều kiện sử dụng riêng (thời hạn, giá trị đơn tối thiểu, số lần sử dụng).';
     } else {
       relevantPolicy =
-        'Bạn có thể liên hệ bộ phận hỗ trợ qua email **support@learnova.com** hoặc hotline **1900-xxxx** trong khung giờ 8:00 - 22:00 hàng ngày.';
+        'Bạn có thể liên hệ bộ phận hỗ trợ qua email **support@purrfect.com** hoặc hotline **1900-xxxx** trong khung giờ 8:00 - 22:00 hàng ngày.';
     }
     return {
       message: `Chào bạn! Dưới đây là thông tin bạn cần:\n\n${relevantPolicy}\n\nNếu cần thêm thông tin, đừng ngại hỏi tôi nhé! 😊`,
@@ -376,14 +433,16 @@ async function ruleBasedResponse(
         status: 'PUBLISHED',
         isDeleted: false,
       })
-        .select('title slug price discountPrice thumbnailUrl averageRating level')
+        .select(
+          'title slug price discountPrice thumbnailUrl averageRating level',
+        )
         .sort({ discountPrice: 1, price: 1 })
         .limit(3)
         .lean();
 
       return {
         message:
-          'Chào bạn! Hiện tại hệ thống chưa có khóa học miễn phí 100%. Tuy nhiên, Learnova đang áp dụng các chương trình **trợ giá và mã giảm giá (coupon)** cho học viên mới. Dưới đây là các khóa học có mức học phí tối ưu nhất:\n\n' +
+          'Chào bạn! Hiện tại hệ thống chưa có khóa học miễn phí 100%. Tuy nhiên, Purrfect đang áp dụng các chương trình **trợ giá và mã giảm giá (coupon)** cho học viên mới. Dưới đây là các khóa học có mức học phí tối ưu nhất:\n\n' +
           budgetCourses
             .map(
               (c) =>
@@ -424,7 +483,7 @@ async function ruleBasedResponse(
     if (beginnerCourses.length > 0) {
       return {
         message:
-          'Chào bạn! Đối với người mới bắt đầu, Learnova đề xuất các khóa học nền tảng sau để bạn làm quen dễ dàng nhất:\n\n' +
+          'Chào bạn! Đối với người mới bắt đầu, Purrfect đề xuất các khóa học nền tảng sau để bạn làm quen dễ dàng nhất:\n\n' +
           beginnerCourses
             .map(
               (c) =>
@@ -463,7 +522,7 @@ async function ruleBasedResponse(
 
     return {
       message:
-        'Chào bạn! Dưới đây là gợi ý lộ trình học tập tiêu chuẩn tại Learnova theo 3 giai đoạn:\n\n' +
+        'Chào bạn! Dưới đây là gợi ý lộ trình học tập tiêu chuẩn tại Purrfect theo 3 giai đoạn:\n\n' +
         '1️⃣ **Giai đoạn 1 (Cơ bản - Beginner):** Nắm vững kiến thức nền tảng, cú pháp và tư duy cốt lõi.\n' +
         '2️⃣ **Giai đoạn 2 (Thực hành - Intermediate):** Thực hiện dự án thực tế, áp dụng quy chuẩn ngành.\n' +
         '3️⃣ **Giai đoạn 3 (Chuyên sâu - Advanced):** Tối ưu hóa hiệu năng, kiến trúc hệ thống và triển khai thực tế.\n\n' +
@@ -638,7 +697,7 @@ async function ruleBasedResponse(
   if (isGreeting) {
     return {
       message:
-        'Xin chào! 👋 Tôi là Trợ lý AI của Learnova. Tôi có thể giúp bạn:\n\n- 🎓 Tìm khóa học phù hợp theo nhu cầu\n- 🗺️ Tư vấn lộ trình học tập từ cơ bản đến nâng cao\n- 📋 Giải đáp chính sách hoàn tiền, chứng chỉ, thanh toán\n- 🏷️ Thông tin về mã giảm giá\n\nBạn muốn tôi hỗ trợ gì nhé?',
+        'Xin chào! 👋 Tôi là Trợ lý AI của Purrfect. Tôi có thể giúp bạn:\n\n- 🎓 Tìm khóa học phù hợp theo nhu cầu\n- 🗺️ Tư vấn lộ trình học tập từ cơ bản đến nâng cao\n- 📋 Giải đáp chính sách hoàn tiền, chứng chỉ, thanh toán\n- 🏷️ Thông tin về mã giảm giá\n\nBạn muốn tôi hỗ trợ gì nhé?',
       suggestedCourses: [],
     };
   }
@@ -646,7 +705,7 @@ async function ruleBasedResponse(
   // Ngoài phạm vi dữ liệu hệ thống (BR21.2)
   return {
     message:
-      'Xin lỗi, tôi chưa có dữ liệu chính xác cho thắc mắc này. Bạn có thể liên hệ bộ phận Chăm sóc khách hàng qua email **support@learnova.com** hoặc hotline **1900-xxxx** để được hỗ trợ thêm nhé! 🙏',
+      'Xin lỗi, tôi chưa có dữ liệu chính xác cho thắc mắc này. Bạn có thể liên hệ bộ phận Chăm sóc khách hàng qua email **support@purrfect.com** hoặc hotline **1900-xxxx** để được hỗ trợ thêm nhé! 🙏',
     suggestedCourses: [],
   };
 }
@@ -657,18 +716,18 @@ async function ruleBasedResponse(
 async function extractMentionedCourses(
   responseText: string,
 ): Promise<AiChatResponse['suggestedCourses']> {
-  const slugMatches = responseText.match(/\/courses\/([a-z0-9-]+)/g);
+  const slugMatches = responseText.match(/\/courses\/([a-zA-Z0-9_-]+)/g);
   if (!slugMatches || slugMatches.length === 0) return [];
 
-  const slugs = slugMatches.map((m) => m.replace('/courses/', ''));
+  const slugs = slugMatches.map((m) =>
+    m.replace('/courses/', '').toLowerCase(),
+  );
   const courses = await Course.find({
     slug: { $in: slugs },
     status: 'PUBLISHED',
     isDeleted: false,
   })
-    .select(
-      'title slug price discountPrice thumbnailUrl averageRating level',
-    )
+    .select('title slug price discountPrice thumbnailUrl averageRating level')
     .lean();
 
   return courses.map((c) => ({

@@ -145,7 +145,7 @@ const renderLevelIcon = (id: string, isSelected: boolean) => {
 };
 
 export const OnboardingFlow: React.FC = () => {
-  const { navigate } = useAuth();
+  const { navigate, updateUser, refreshUser } = useAuth();
 
   // Dữ liệu từ API
   const [categories, setCategories] = useState<OnboardingCategory[]>([]);
@@ -264,6 +264,12 @@ export const OnboardingFlow: React.FC = () => {
         interestedSkillIds: selectedSkillIds,
         skillLevel: selectedLevel,
       });
+      updateUser({ onboardingCompleted: true });
+      try {
+        await refreshUser();
+      } catch {
+        // Ignored
+      }
       setIsCompleted(true);
     } catch (err) {
       console.error('Lỗi khi lưu khảo sát:', err);

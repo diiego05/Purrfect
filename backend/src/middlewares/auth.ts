@@ -84,6 +84,35 @@ export const requireAdmin = (
 };
 
 /**
+ * Middleware xác thực quyền Giảng viên (Instructor hoặc Admin)
+ * Yêu cầu phải chạy sau middleware authenticateToken
+ */
+export const requireInstructor = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): void => {
+  if (!req.user) {
+    res.status(401).json({
+      success: false,
+      message: 'Bạn chưa đăng nhập hoặc phiên làm việc đã hết hạn',
+    });
+    return;
+  }
+
+  if (req.user.role !== 'INSTRUCTOR' && req.user.role !== 'ADMIN') {
+    res.status(403).json({
+      success: false,
+      message:
+        'Từ chối truy cập: Chức năng chỉ dành cho Giảng viên (Instructor)',
+    });
+    return;
+  }
+
+  next();
+};
+
+/**
  * Middleware xác thực tùy chọn:
  * Nếu có token hợp lệ -> gắn req.user
  * Nếu không có token hoặc token hết hạn -> vẫn cho đi tiếp dưới dạng khách (req.user = undefined)

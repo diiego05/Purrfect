@@ -82,7 +82,7 @@ export const BannerCarousel = () => {
                     className="banner-slide-image"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
-                        'https://placehold.co/1200x320?text=Learnova+Promotion';
+                        'https://placehold.co/1200x320?text=Purrfect+Promotion';
                     }}
                   />
                   {banner.title && (
@@ -99,7 +99,7 @@ export const BannerCarousel = () => {
                     className="banner-slide-image"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
-                        'https://placehold.co/1200x320?text=Learnova+Promotion';
+                        'https://placehold.co/1200x320?text=Purrfect+Promotion';
                     }}
                   />
                   {banner.title && (

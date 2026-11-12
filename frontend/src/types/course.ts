@@ -6,6 +6,42 @@ export interface Category {
   courseCount?: number;
 }
 
+export interface Instructor {
+  _id?: string;
+  name?: string;
+  fullName?: string;
+  email?: string;
+  avatar?: string;
+  avatarUrl?: string;
+  headline?: string;
+  bio?: string;
+}
+
+export interface SkillItem {
+  _id?: string;
+  name: string;
+  slug?: string;
+}
+
+export interface CourseLecture {
+  _id?: string;
+  title: string;
+  type?: string;
+  contentUrl?: string;
+  fileName?: string;
+  durationMinutes?: number;
+  isPreview?: boolean;
+  transcript?: string;
+  order?: number;
+}
+
+export interface CourseSection {
+  _id?: string;
+  title: string;
+  order?: number;
+  lectures?: CourseLecture[];
+}
+
 export interface Course {
   _id: string;
   id?: string;
@@ -15,8 +51,9 @@ export interface Course {
   shortDescription: string;
   shortDescriptionEn?: string;
   description?: string;
+  descriptionEn?: string;
   thumbnailUrl: string;
-  badge?: string; // 'NEW', 'BESTSELLER', 'HOT', etc.
+  badge?: string;
   price: number;
   discountPrice?: number;
   durationHours?: number;
@@ -25,9 +62,11 @@ export interface Course {
   averageRating: number;
   totalStudents: number;
   level?: 'Beginner' | 'Intermediate' | 'Advanced';
-  skillIds?: string[];
+  skillIds?: SkillItem[] | string[];
   isForYou?: boolean;
   categoryId?: Category | string;
+  instructorId?: Instructor | string;
+  sections?: CourseSection[];
   createdAt?: string;
 }
 

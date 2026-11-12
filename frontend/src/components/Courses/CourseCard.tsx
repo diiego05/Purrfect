@@ -1,5 +1,9 @@
 import { useState, type FC } from 'react';
 import type { Course } from '../../types/course';
+import { formatVND } from '../../utils/format';
+import { useCartWishlist } from '../../context/CartWishlistContext';
+import { useAuth } from '../../context/AuthContext';
+import { IconlyHeart, IconlyBuy } from '../Onboarding/IconlyIcons';
 
 interface CourseCardProps {
   course: Course;
@@ -22,9 +26,20 @@ export const CourseCard: FC<CourseCardProps> = ({ course, onClick }) => {
     thumbnailUrl || '/assets/advanced_digital_skills.jpg',
   );
 
-  // Format display price (e.g. $199.99)
-  const displayPrice =
-    typeof price === 'number' ? `$${price.toFixed(2)}` : price;
+  const { navigate } = useAuth();
+  const { toggleWishlist, isInWishlist, addToCart, isInCart } =
+    useCartWishlist();
+  const courseId = course._id || course.id || '';
+  const isFavorited = isInWishlist(courseId);
+  const inCart = isInCart(courseId);
+
+  const hasDiscount = Boolean(
+    course.discountPrice &&
+    course.discountPrice > 0 &&
+    course.discountPrice < price,
+  );
+  const displayPrice = formatVND(hasDiscount ? course.discountPrice : price);
+  const displayOriginalPrice = hasDiscount ? formatVND(price) : null;
 
   // Format duration (e.g. "20h")
   const displayDuration =
@@ -59,6 +74,39 @@ export const CourseCard: FC<CourseCardProps> = ({ course, onClick }) => {
             setImgSrc('/assets/advanced_digital_skills.jpg');
           }}
         />
+        <div className="course-card-actions-overlay">
+          <button
+            type="button"
+            className={`course-card-fav-btn ${isFavorited ? 'active' : ''}`}
+            aria-label={isFavorited ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+            title={isFavorited ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleWishlist(course);
+            }}
+          >
+            <IconlyHeart
+              size={16}
+              color={isFavorited ? '#e11d48' : '#ffffff'}
+            />
+          </button>
+          <button
+            type="button"
+            className={`course-card-cart-btn ${inCart ? 'active' : ''}`}
+            aria-label={inCart ? 'Xem giỏ hàng' : 'Thêm vào giỏ hàng'}
+            title={inCart ? 'Xem giỏ hàng' : 'Thêm vào giỏ hàng'}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (inCart) {
+                navigate('/cart');
+              } else {
+                addToCart(course, e);
+              }
+            }}
+          >
+            <IconlyBuy size={16} color={inCart ? '#2563eb' : '#ffffff'} />
+          </button>
+        </div>
       </div>
 
       {/* Card Body */}
@@ -72,7 +120,14 @@ export const CourseCard: FC<CourseCardProps> = ({ course, onClick }) => {
           ) : (
             <span className="course-card-badge-placeholder" />
           )}
-          <div className="course-card-price">{displayPrice}</div>
+          <div className="course-card-price-group">
+            {displayOriginalPrice && (
+              <span className="course-card-original-price">
+                {displayOriginalPrice}
+              </span>
+            )}
+            <span className="course-card-price">{displayPrice}</span>
+          </div>
         </div>
 
         {/* Title */}

@@ -81,8 +81,7 @@ const CouponSchema = new Schema<ICoupon>(
   {
     timestamps: true,
     collection: 'coupons',
-  }
+  },
 );
 
 export default mongoose.model<ICoupon>('Coupon', CouponSchema);
-

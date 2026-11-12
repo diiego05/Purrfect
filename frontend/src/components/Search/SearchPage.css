@@ -1,0 +1,356 @@
+/* Course Search Page Styles */
+.search-page-root {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding-bottom: 5rem;
+  color: #1e293b;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
+/* 1. Header Hero Banner */
+.search-header-hero {
+  background: linear-gradient(135deg, #0b1329 0%, #172554 50%, #1e3a8a 100%);
+  color: #ffffff;
+  padding: 3rem 1.5rem 3.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.search-header-hero::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(59, 130, 246, 0.22) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.search-header-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+/* Breadcrumb */
+.search-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: #94a3b8;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.search-bread-link {
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  text-decoration: none;
+}
+
+.search-bread-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.search-bread-sep {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.search-bread-current {
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.search-hero-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #ffffff;
+  margin: 0 0 0.75rem 0;
+  letter-spacing: -0.02em;
+}
+
+.search-hero-subtitle {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin: 0 0 2rem 0;
+  max-width: 700px;
+}
+
+/* Big Search Input in Hero */
+.search-hero-input-box {
+  max-width: 720px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-icon {
+  position: absolute;
+  left: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.search-main-input {
+  width: 100%;
+  padding: 0.95rem 3rem 0.95rem 3.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 1.05rem;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.search-main-input:focus {
+  border-color: #0056d2;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.search-clear-btn:hover {
+  color: #0f172a;
+}
+
+/* 2. Main Content Area */
+.search-main-container {
+  max-width: 1280px;
+  margin: 2rem auto 0;
+  padding: 0 1.5rem;
+  position: relative;
+  z-index: 10;
+}
+
+/* Filter Toolbar */
+.search-filter-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0.85rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.search-filter-groups {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.search-filter-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-select-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.filter-select {
+  padding: 0.55rem 1.15rem 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.filter-select:focus {
+  border-color: #0056d2;
+}
+
+.search-reset-filter-btn {
+  padding: 0.5rem 0.9rem;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.search-reset-filter-btn:hover {
+  background: #fca5a5;
+  color: #991b1b;
+}
+
+/* Results Count Line */
+.search-results-meta-line {
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+.search-results-count strong {
+  color: #0f172a;
+}
+
+/* 3. Course Grid */
+.search-courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.75rem;
+}
+
+/* Loading Skeletons */
+.search-card-skeleton {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.search-card-skeleton .skeleton-img {
+  width: 100%;
+  height: 160px;
+  background: #e2e8f0;
+}
+
+.search-card-skeleton .skeleton-body {
+  padding: 1rem;
+}
+
+/* Empty State */
+.search-empty-state {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px dashed #cbd5e1;
+  padding: 4rem 2rem;
+  text-align: center;
+  max-width: 650px;
+  margin: 2rem auto;
+}
+
+.search-empty-icon-wrap {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1.25rem;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-empty-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.75rem;
+}
+
+.search-empty-desc {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 1.75rem;
+}
+
+.search-empty-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.search-empty-btn {
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.search-empty-btn.primary {
+  background: #0056d2;
+  color: #ffffff;
+}
+
+.search-empty-btn.primary:hover {
+  background: #0044a8;
+}
+
+.search-empty-btn.secondary {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.search-empty-btn.secondary:hover {
+  background: #e2e8f0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .search-hero-title {
+    font-size: 1.75rem;
+  }
+  .search-filter-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-filter-groups {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .search-filter-select-wrap {
+    justify-content: space-between;
+  }
+}

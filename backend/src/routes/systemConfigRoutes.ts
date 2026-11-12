@@ -18,4 +18,3 @@ router.put('/', authenticateToken, requireAdmin, updateConfigs);
 router.post('/reset', authenticateToken, requireAdmin, resetToDefaults);
 
 export default router;
-

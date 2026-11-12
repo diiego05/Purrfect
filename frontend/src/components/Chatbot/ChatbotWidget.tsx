@@ -1,7 +1,21 @@
 import { useState, useEffect, useRef, Fragment, type MouseEvent } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { aiChatApi } from '../../services/aiChatApi';
-import type { ChatMessage, ChatSuggestedCourse, AiQuotaInfo } from '../../types/aiChat';
+import type { ChatMessage, ChatSuggestedCourse } from '../../types/aiChat';
+import {
+  IconlyArrowRight,
+  IconlyAward,
+  IconlyBot,
+  IconlyBulb,
+  IconlyChevronDown,
+  IconlyChevronUp,
+  IconlyClose,
+  IconlyDocument,
+  IconlyInfoCircle,
+  IconlyRefresh,
+  IconlySend,
+  IconlySparkles,
+} from '../Onboarding/IconlyIcons';
 import './ChatbotWidget.css';
 
 let msgSeq = 0;
@@ -11,7 +25,7 @@ const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
   id: 'welcome',
   role: 'assistant',
   content:
-    'Xin chào! 👋 Tôi là **Trợ lý AI của Learnova**.\n\nTôi có thể giúp bạn:\n- 🎓 Gợi ý khóa học phù hợp với nhu cầu và trình độ\n- 🗺️ Tư vấn lộ trình học tập từ cơ bản đến nâng cao\n- 📋 Giải đáp chính sách hoàn tiền, chứng chỉ, thanh toán\n\nBạn cần hỗ trợ gì hôm nay?',
+    'Xin chào! Tôi là **Trợ lý AI của Purrfect**.\n\nTôi có thể giúp bạn:\n- Gợi ý khóa học phù hợp với nhu cầu và trình độ\n- Tư vấn lộ trình học tập từ cơ bản đến nâng cao\n- Giải đáp chính sách hoàn tiền, chứng chỉ, thanh toán\n\nBạn cần hỗ trợ gì hôm nay?',
   timestamp: new Date(),
 };
 
@@ -24,13 +38,16 @@ const DEFAULT_QUICK_SUGGESTIONS = [
 ];
 
 export const ChatbotWidget = () => {
-  const { user, navigate, currentPath } = useAuth();
+  const { navigate, currentPath } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([DEFAULT_WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    DEFAULT_WELCOME_MESSAGE,
+  ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [quota, setQuota] = useState<AiQuotaInfo | null>(null);
-  const [suggestions, setSuggestions] = useState<string[]>(DEFAULT_QUICK_SUGGESTIONS);
+  const [suggestions, setSuggestions] = useState<string[]>(
+    DEFAULT_QUICK_SUGGESTIONS,
+  );
   const [isMinimized, setIsMinimized] = useState(false);
   const [fallbackInfo, setFallbackInfo] = useState<{
     message: string;
@@ -54,36 +71,32 @@ export const ChatbotWidget = () => {
     }
   }, [isOpen, isMinimized]);
 
-  // Tải danh sách gợi ý và quota (hỗ trợ cả khách vãng lai và học viên)
+  // Tải danh sách câu hỏi gợi ý nhanh
   useEffect(() => {
     let cancelled = false;
 
-    const fetchInitialData = async () => {
+    const fetchSuggestions = async () => {
       try {
         const suggRes = await aiChatApi.getSuggestions();
-        if (!cancelled && suggRes.success && suggRes.data && suggRes.data.length > 0) {
+        if (
+          !cancelled &&
+          suggRes.success &&
+          suggRes.data &&
+          suggRes.data.length > 0
+        ) {
           setSuggestions(suggRes.data);
         }
       } catch {
         // Sử dụng mặc định nếu lỗi
       }
-
-      try {
-        const quotaRes = await aiChatApi.getQuota();
-        if (!cancelled && quotaRes.success && quotaRes.data) {
-          setQuota(quotaRes.data);
-        }
-      } catch {
-        // Bỏ qua lỗi quota
-      }
     };
 
-    fetchInitialData();
+    fetchSuggestions();
 
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, []);
 
   // Xử lý gửi tin nhắn dạng Server-Sent Events (SSE) Token Streaming (< 3s)
   const handleSendMessage = async (textToSend?: string) => {
@@ -121,15 +134,12 @@ export const ChatbotWidget = () => {
           ),
         );
       },
-      onDone: ({ suggestedCourses, quota: newQuota }) => {
+      onDone: ({ suggestedCourses }) => {
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === assistantMsgId ? { ...msg, suggestedCourses } : msg,
           ),
         );
-        if (newQuota) {
-          setQuota(newQuota);
-        }
         setIsLoading(false);
       },
       onError: (errorMessage) => {
@@ -147,7 +157,7 @@ export const ChatbotWidget = () => {
         );
         setFallbackInfo({
           message: errorMessage || 'Dịch vụ AI đang gặp gián đoạn tạm thời.',
-          supportEmail: 'support@learnova.com',
+          supportEmail: 'support@purrfect.com',
         });
         setIsLoading(false);
       },
@@ -162,31 +172,31 @@ export const ChatbotWidget = () => {
     }
   };
 
-  // Xóa lịch sử chat và đặt lại hạn mức về 50 lượt phục vụ kiểm thử
-  const handleResetChat = async () => {
+  // Xóa lịch sử chat để bắt đầu cuộc trò chuyện mới
+  const handleResetChat = () => {
     setMessages([DEFAULT_WELCOME_MESSAGE]);
     setFallbackInfo(null);
-    try {
-      const resetRes = await aiChatApi.resetQuota();
-      if (resetRes.success && resetRes.data) {
-        setQuota(resetRes.data);
-      }
-    } catch {
-      // Bỏ qua lỗi reset
-    }
   };
 
   const handleLinkClick = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (href.startsWith('/') || href.includes('localhost:5173/courses/')) {
+    if (
+      href.startsWith('/') ||
+      href.startsWith(window.location.origin) ||
+      /^(?:https?:\/\/[^/]+)?\/courses\/[^/\s]+/.test(href)
+    ) {
       e.preventDefault();
       const internalPath = href.replace(/^https?:\/\/[^/]+/, '');
-      navigate(internalPath);
+      navigate(
+        internalPath.startsWith('/') ? internalPath : `/${internalPath}`,
+      );
+      setIsMinimized(true);
     }
   };
 
   // Định dạng nội dung tin nhắn dạng Markdown cơ bản (đậm, link markdown, link thô)
   const renderFormattedLine = (line: string, lineKey: number) => {
-    const tokenRegex = /(\[[^\]]+\]\([^)]+\)|\*\*.*?\*\*|https?:\/\/[^\s<)]+|\/courses\/[a-zA-Z0-9_-]+)/g;
+    const tokenRegex =
+      /(\[[^\]]+\]\([^)]+\)|\*\*.*?\*\*|https?:\/\/[^\s<)]+|\/courses\/[a-zA-Z0-9_-]+)/g;
     const parts = line.split(tokenRegex);
 
     return (
@@ -209,7 +219,11 @@ export const ChatbotWidget = () => {
             );
           }
 
-          if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+          if (
+            part.startsWith('**') &&
+            part.endsWith('**') &&
+            part.length >= 4
+          ) {
             return <strong key={pIdx}>{part.slice(2, -2)}</strong>;
           }
 
@@ -252,7 +266,10 @@ export const ChatbotWidget = () => {
   }
 
   return (
-    <aside className="chatbot-widget-container" aria-label="Khung Trợ lý AI tư vấn">
+    <aside
+      className="chatbot-widget-container"
+      aria-label="Khung Trợ lý AI tư vấn"
+    >
       {/* Nút bấm nổi mở widget (FAB) */}
       {!isOpen && (
         <button
@@ -264,7 +281,9 @@ export const ChatbotWidget = () => {
           }}
           aria-label="Mở cửa sổ Trợ lý AI tư vấn"
         >
-          <span className="chatbot-fab-icon" aria-hidden="true">✨</span>
+          <span className="chatbot-fab-icon" aria-hidden="true">
+            <IconlySparkles size={19} color="currentColor" />
+          </span>
           <span className="chatbot-fab-text">Trợ lý AI</span>
           <span className="chatbot-fab-pulse" aria-hidden="true"></span>
         </button>
@@ -281,12 +300,15 @@ export const ChatbotWidget = () => {
           <div className="chatbot-header">
             <div className="chatbot-header-info">
               <div className="chatbot-avatar-badge" aria-hidden="true">
-                <span>🤖</span>
-                <span className="chatbot-status-dot" title="Sẵn sàng hỗ trợ"></span>
+                <IconlyBot size={20} color="#ffffff" />
+                <span
+                  className="chatbot-status-dot"
+                  title="Sẵn sàng hỗ trợ"
+                ></span>
               </div>
               <div>
                 <h3 id="chatbot-header-title" className="chatbot-title">
-                  Trợ lý AI Learnova
+                  Trợ lý AI Purrfect
                 </h3>
                 <span className="chatbot-subtitle">
                   Tư vấn RAG & Lộ trình học tập
@@ -295,16 +317,6 @@ export const ChatbotWidget = () => {
             </div>
 
             <div className="chatbot-header-actions">
-              {/* Quota tag */}
-              {quota && (
-                <span
-                  className="chatbot-quota-badge"
-                  title={`Hạn mức: ${quota.used}/${quota.limit} lượt`}
-                >
-                  ⚡ {quota.remaining} lượt
-                </span>
-              )}
-
               {/* Nút Reset */}
               <button
                 type="button"
@@ -313,7 +325,7 @@ export const ChatbotWidget = () => {
                 title="Làm mới cuộc trò chuyện"
                 aria-label="Làm mới cuộc trò chuyện"
               >
-                🔄
+                <IconlyRefresh size={16} color="currentColor" />
               </button>
 
               {/* Nút Thu nhỏ / Phóng to */}
@@ -322,9 +334,15 @@ export const ChatbotWidget = () => {
                 className="chatbot-header-btn"
                 onClick={() => setIsMinimized((prev) => !prev)}
                 title={isMinimized ? 'Mở rộng' : 'Thu nhỏ'}
-                aria-label={isMinimized ? 'Mở rộng cửa sổ chat' : 'Thu nhỏ cửa sổ chat'}
+                aria-label={
+                  isMinimized ? 'Mở rộng cửa sổ chat' : 'Thu nhỏ cửa sổ chat'
+                }
               >
-                {isMinimized ? '🔼' : '🔽'}
+                {isMinimized ? (
+                  <IconlyChevronUp size={16} color="currentColor" />
+                ) : (
+                  <IconlyChevronDown size={16} color="currentColor" />
+                )}
               </button>
 
               {/* Nút Đóng */}
@@ -335,7 +353,7 @@ export const ChatbotWidget = () => {
                 title="Đóng cửa sổ"
                 aria-label="Đóng cửa sổ chat"
               >
-                ✕
+                <IconlyClose size={16} color="currentColor" />
               </button>
             </div>
           </div>
@@ -350,17 +368,25 @@ export const ChatbotWidget = () => {
                     className={`chatbot-message-row chatbot-message-row--${msg.role}`}
                   >
                     {msg.role === 'assistant' && (
-                      <div className="chatbot-msg-avatar" aria-hidden="true">🤖</div>
+                      <div className="chatbot-msg-avatar" aria-hidden="true">
+                        <IconlyBot size={18} color="#4f46e5" />
+                      </div>
                     )}
 
                     <div className="chatbot-msg-content-wrapper">
-                      <div className={`chatbot-bubble chatbot-bubble--${msg.role}`}>
+                      <div
+                        className={`chatbot-bubble chatbot-bubble--${msg.role}`}
+                      >
                         {msg.content ? (
                           <>
                             {renderFormattedText(msg.content)}
-                            {isLoading && msg.role === 'assistant' && msg.id === messages[messages.length - 1]?.id && (
-                              <span className="chatbot-streaming-cursor">▍</span>
-                            )}
+                            {isLoading &&
+                              msg.role === 'assistant' &&
+                              msg.id === messages[messages.length - 1]?.id && (
+                                <span className="chatbot-streaming-cursor">
+                                  ▍
+                                </span>
+                              )}
                           </>
                         ) : (
                           <div className="chatbot-bubble--loading">
@@ -372,56 +398,84 @@ export const ChatbotWidget = () => {
                       </div>
 
                       {/* Danh sách thẻ khóa học gợi ý */}
-                      {msg.suggestedCourses && msg.suggestedCourses.length > 0 && (
-                        <div className="chatbot-courses-container">
-                          <span className="chatbot-courses-label">
-                            🎓 Khóa học phù hợp gợi ý cho bạn:
-                          </span>
-                          <div className="chatbot-courses-list">
-                            {msg.suggestedCourses.map((c: ChatSuggestedCourse) => (
-                              <div key={c._id} className="chatbot-course-card">
-                                {c.thumbnailUrl ? (
-                                  <img
-                                    src={c.thumbnailUrl}
-                                    alt={c.title}
-                                    className="chatbot-course-thumb"
-                                  />
-                                ) : (
-                                  <div className="chatbot-course-thumb-placeholder">
-                                    📘
-                                  </div>
-                                )}
-                                <div className="chatbot-course-info">
-                                  <div className="chatbot-course-title" title={c.title}>
-                                    {c.title}
-                                  </div>
-                                  <div className="chatbot-course-meta">
-                                    {c.level && (
-                                      <span className="chatbot-course-level">
-                                        {c.level}
-                                      </span>
-                                    )}
-                                    <span className="chatbot-course-price">
-                                      {c.price === 0
-                                        ? 'Miễn phí'
-                                        : `${(c.discountPrice || c.price).toLocaleString('vi-VN')}đ`}
-                                    </span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    className="chatbot-course-btn"
-                                    onClick={() => {
-                                      navigate(`/courses/${c.slug}`);
-                                    }}
+                      {msg.suggestedCourses &&
+                        msg.suggestedCourses.length > 0 && (
+                          <div className="chatbot-courses-container">
+                            <span className="chatbot-courses-label">
+                              <IconlyAward size={15} color="#4f46e5" />
+                              <span>Khóa học phù hợp gợi ý cho bạn:</span>
+                            </span>
+                            <div className="chatbot-courses-list">
+                              {msg.suggestedCourses.map(
+                                (c: ChatSuggestedCourse) => (
+                                  <div
+                                    key={c._id}
+                                    className="chatbot-course-card"
                                   >
-                                    Xem chi tiết →
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                                    {c.thumbnailUrl ? (
+                                      <img
+                                        src={c.thumbnailUrl}
+                                        alt={c.title}
+                                        className="chatbot-course-thumb"
+                                      />
+                                    ) : (
+                                      <div className="chatbot-course-thumb-placeholder">
+                                        <IconlyDocument
+                                          size={22}
+                                          color="#4f46e5"
+                                        />
+                                      </div>
+                                    )}
+                                    <div className="chatbot-course-info">
+                                      <div
+                                        className="chatbot-course-title"
+                                        title={c.title}
+                                      >
+                                        {c.title}
+                                      </div>
+                                      <div className="chatbot-course-meta">
+                                        {c.level && (
+                                          <span className="chatbot-course-level">
+                                            {c.level}
+                                          </span>
+                                        )}
+                                        <span className="chatbot-course-price">
+                                          {c.price === 0
+                                            ? 'Miễn phí'
+                                            : `${(c.discountPrice || c.price || 0).toLocaleString('vi-VN')}đ`}
+                                        </span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        className="chatbot-course-btn"
+                                        onClick={() => {
+                                          const target = (
+                                            c.slug ||
+                                            c._id ||
+                                            ''
+                                          ).replace(/^\/+/, '');
+                                          if (!target) return;
+                                          navigate(
+                                            target.startsWith('courses/')
+                                              ? `/${target}`
+                                              : `/courses/${encodeURIComponent(target)}`,
+                                          );
+                                          setIsMinimized(true);
+                                        }}
+                                      >
+                                        <span>Xem chi tiết</span>
+                                        <IconlyArrowRight
+                                          size={13}
+                                          color="currentColor"
+                                        />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ),
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       <span className="chatbot-msg-time">
                         {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -437,12 +491,16 @@ export const ChatbotWidget = () => {
                 {fallbackInfo && (
                   <div className="chatbot-fallback-box">
                     <div className="chatbot-fallback-title">
-                      ℹ️ Cần thêm hỗ trợ trực tiếp?
+                      <IconlyInfoCircle size={15} color="currentColor" />
+                      <span>Cần thêm hỗ trợ trực tiếp?</span>
                     </div>
                     <p className="chatbot-fallback-desc">
                       Bạn có thể gửi câu hỏi tới email{' '}
-                      <strong>{fallbackInfo.supportEmail || 'support@learnova.com'}</strong>{' '}
-                      hoặc hotline <strong>1900-xxxx</strong> (8:00 - 22:00) để được đội ngũ CSKH phản hồi trực tiếp.
+                      <strong>
+                        {fallbackInfo.supportEmail || 'support@purrfect.com'}
+                      </strong>{' '}
+                      hoặc hotline <strong>1900-xxxx</strong> (8:00 - 22:00) để
+                      được đội ngũ CSKH phản hồi trực tiếp.
                     </p>
                     <button
                       type="button"
@@ -460,7 +518,10 @@ export const ChatbotWidget = () => {
               {/* Gợi ý câu hỏi nhanh (Alternative Flow 2a) */}
               {suggestions.length > 0 && (
                 <div className="chatbot-suggestions">
-                  <span className="chatbot-suggestions-title">💡 Gợi ý nhanh:</span>
+                  <span className="chatbot-suggestions-title">
+                    <IconlyBulb size={14} color="#64748b" />
+                    <span>Gợi ý nhanh:</span>
+                  </span>
                   <div className="chatbot-suggestions-scroll">
                     {suggestions.map((sug, idx) => (
                       <button
@@ -488,7 +549,6 @@ export const ChatbotWidget = () => {
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={handleKeyDown}
                   disabled={isLoading}
-                  maxLength={1000}
                   aria-label="Nội dung câu hỏi tư vấn"
                 />
                 <button
@@ -498,12 +558,8 @@ export const ChatbotWidget = () => {
                   disabled={!inputText.trim() || isLoading}
                   aria-label="Gửi tin nhắn"
                 >
-                  ➤
+                  <IconlySend size={17} color="currentColor" />
                 </button>
-              </div>
-
-              <div className="chatbot-footer-note">
-                <span>RAG Kiến trúc LangChain & ChromaDB • Server-Sent Events Token Streaming</span>
               </div>
             </>
           )}

@@ -8,7 +8,11 @@ import {
   recordCourseInteraction,
 } from '../controllers/courseController';
 import { getOnboardingData } from '../controllers/onboardingController';
-import { optionalAuthenticateToken } from '../middlewares/auth';
+import {
+  authenticateToken,
+  optionalAuthenticateToken,
+  requireAdmin,
+} from '../middlewares/auth';
 
 const router = Router();
 
@@ -31,8 +35,8 @@ router.post(
 // Lấy danh sách khóa học có bộ lọc
 router.get('/', getCourses);
 
-// Seed lại dữ liệu nếu cần
-router.post('/seed', resetAndSeedCourses);
+// Seed lại dữ liệu nếu cần (Yêu cầu quyền Admin)
+router.post('/seed', authenticateToken, requireAdmin, resetAndSeedCourses);
 
 // Lấy chi tiết khóa học theo slug
 router.get('/:slug', getCourseBySlug);

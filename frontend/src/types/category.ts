@@ -35,4 +35,3 @@ export interface CategoryApiResponse<T> {
   message?: string;
   data?: T;
 }
-

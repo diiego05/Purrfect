@@ -100,7 +100,7 @@ SYSTEM_POLICIES = [
         metadata={"category": "policy", "topic": "coupon"}
     ),
     Document(
-        page_content="Hỗ trợ khách hàng: Khi gặp sự cố hoặc cần hỗ trợ chuyên sâu, người dùng có thể gửi email về support@learnova.com hoặc gọi hotline 1900-xxxx trong khung giờ 8:00 - 22:00 hàng ngày.",
+        page_content="Hỗ trợ khách hàng: Khi gặp sự cố hoặc cần hỗ trợ chuyên sâu, người dùng có thể gửi email về support@purrfect.com hoặc gọi hotline 1900-xxxx trong khung giờ 8:00 - 22:00 hàng ngày.",
         metadata={"category": "policy", "topic": "support"}
     ),
     Document(
@@ -146,7 +146,7 @@ class RAGChatbotEngine:
         """constructLLMPrompt(relevantContextChunks, userPrompt)"""
         context = "\n".join([f"- {c}" for c in context_chunks])
         return (
-            f"Bạn là Trợ lý AI tư vấn Learnova. Dưới đây là ngữ cảnh liên quan:\n"
+            f"Bạn là Trợ lý AI tư vấn Purrfect. Dưới đây là ngữ cảnh liên quan:\n"
             f"{context}\n\n"
             f"Câu hỏi của người dùng: {user_prompt}\n"
             f"Hãy trả lời chính xác, thân thiện và không bịa đặt thông tin."
@@ -169,7 +169,7 @@ class RAGChatbotEngine:
         # Bước 3: alt [No Context Found] -> fallbackGenerativeResponse
         if not relevant_docs:
             return {
-                "answer": "Xin lỗi, tôi chưa có dữ liệu chính xác cho thắc mắc này. Bạn có thể liên hệ bộ phận Chăm sóc khách hàng qua email support@learnova.com hoặc hotline 1900-xxxx để được hỗ trợ nhé! 🙏",
+                "answer": "Xin lỗi, tôi chưa có dữ liệu chính xác cho thắc mắc này. Bạn có thể liên hệ bộ phận Chăm sóc khách hàng qua email support@purrfect.com hoặc hotline 1900-xxxx để được hỗ trợ nhé! 🙏",
                 "relevant_sources": [],
                 "suggested_courses": [],
                 "is_out_of_scope": True
