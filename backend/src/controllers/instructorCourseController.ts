@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { Response } from 'express';
 import mongoose from 'mongoose';
 import { Course, ISection, ILecture } from '../models/Course';
@@ -36,6 +38,9 @@ export const getInstructorCourses = async (
 
     const instructorId = req.user._id;
     const { status, search } = req.query;
+    const isAdminView =
+      req.user.role === 'ADMIN' &&
+      (req.query.all === 'true' || req.query.adminView === 'true');
 
     // Bộ lọc theo giảng viên
     const filter: Record<string, unknown> = {
@@ -47,7 +52,7 @@ export const getInstructorCourses = async (
       filter.instructorId = instructorId;
     } else if (req.user.role === 'ADMIN') {
       // Cho phép Admin xem tất cả hoặc lọc theo instructorId nếu chỉ định
-      if (req.query.all !== 'true') {
+      if (!isAdminView) {
         const hasOwnCourses = await Course.exists({
           instructorId,
           isDeleted: false,
@@ -72,32 +77,35 @@ export const getInstructorCourses = async (
       .sort({ updatedAt: -1 })
       .populate('categoryId', 'name slug')
       .populate('skillIds', 'name slug')
+      .populate('instructorId', 'fullName name email avatarUrl avatar headline')
       .lean();
 
-    // Tính toán KPI cho Giảng viên
-    const allInstructorCourses = await Course.find({
-      instructorId:
-        req.user.role === 'INSTRUCTOR' ? instructorId : { $exists: true },
-      isDeleted: false,
-    }).lean();
+    // Tính toán KPI
+    const allCoursesForStats = isAdminView
+      ? await Course.find({ isDeleted: false }).lean()
+      : await Course.find({
+          instructorId:
+            req.user.role === 'INSTRUCTOR' ? instructorId : { $exists: true },
+          isDeleted: false,
+        }).lean();
 
     const stats = {
-      total: allInstructorCourses.length,
-      published: allInstructorCourses.filter((c) => c.status === 'PUBLISHED')
+      total: allCoursesForStats.length,
+      published: allCoursesForStats.filter((c) => c.status === 'PUBLISHED')
         .length,
-      pendingApproval: allInstructorCourses.filter(
+      pendingApproval: allCoursesForStats.filter(
         (c) => c.status === 'PENDING_APPROVAL',
       ).length,
-      draft: allInstructorCourses.filter((c) => c.status === 'DRAFT').length,
-      rejected: allInstructorCourses.filter((c) => c.status === 'REJECTED')
+      draft: allCoursesForStats.filter((c) => c.status === 'DRAFT').length,
+      rejected: allCoursesForStats.filter((c) => c.status === 'REJECTED')
         .length,
-      disabled: allInstructorCourses.filter((c) => c.status === 'DISABLED')
+      disabled: allCoursesForStats.filter((c) => c.status === 'DISABLED')
         .length,
-      totalStudents: allInstructorCourses.reduce(
+      totalStudents: allCoursesForStats.reduce(
         (acc, c) => acc + (c.totalStudents || 0),
         0,
       ),
-      totalRevenue: allInstructorCourses.reduce(
+      totalRevenue: allCoursesForStats.reduce(
         (acc, c) =>
           acc +
           (c.totalStudents || 0) *
@@ -150,6 +158,10 @@ export const getInstructorCourseById = async (
     })
       .populate('categoryId', 'name slug')
       .populate('skillIds', 'name slug')
+      .populate(
+        'instructorId',
+        'fullName name email avatarUrl avatar headline bio',
+      )
       .lean();
 
     if (!course) {
@@ -442,6 +454,94 @@ export const updateCourse = async (
 };
 
 /**
+ * Trích xuất transcript lời nói từ video/audio bằng Gemini Multimodal REST API
+ */
+async function extractSpeechTranscriptFromMedia(
+  buffer: Buffer,
+  mimeType: string,
+  fileName: string,
+): Promise<string | null> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  // Giới hạn buffer inline payload của Gemini REST API là ~20MB
+  if (buffer.length > 20 * 1024 * 1024) {
+    console.warn(
+      '[extractSpeechTranscriptFromMedia] Kích thước file lớn hơn 20MB, bỏ qua inline Gemini API.',
+    );
+    return null;
+  }
+
+  try {
+    const base64Data = buffer.toString('base64');
+    let safeMime = mimeType || 'video/mp4';
+    if (fileName.endsWith('.mp3')) safeMime = 'audio/mp3';
+    else if (fileName.endsWith('.wav')) safeMime = 'audio/wav';
+    else if (fileName.endsWith('.m4a')) safeMime = 'audio/m4a';
+    else if (fileName.endsWith('.webm')) safeMime = 'video/webm';
+    else if (fileName.endsWith('.mp4')) safeMime = 'video/mp4';
+
+    const prompt = `Bạn là hệ thống chuyển đổi âm thanh và giọng nói thành phụ đề (Speech-to-Text / Audio Transcriber) chuyên nghiệp.
+Hãy nghe toàn bộ âm thanh lời nói trong tệp đính kèm và trích xuất TOÀN BỘ lời nói thành phụ đề tiếng Việt (hoặc ngôn ngữ gốc được nói trong bài giảng).
+Yêu cầu định dạng:
+1. Mỗi phát ngôn theo mốc thời gian: [mm:ss] Nội dung lời nói. Ví dụ:
+[00:00] Xin chào các bạn học viên...
+[01:25] Tiếp theo chúng ta sẽ tìm hiểu...
+2. Trích xuất trung thực, chính xác, không bịa đặt, không thêm lời bình hay chào hỏi ngoài lời nói thực tế.
+3. Nếu tệp không có tiếng nói hoặc chỉ có nhạc nền, trả về: [00:00] (Không phát hiện giọng nói trong video).`;
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                inlineData: {
+                  mimeType: safeMime,
+                  data: base64Data,
+                },
+              },
+              { text: prompt },
+            ],
+          },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      console.warn(
+        `[extractSpeechTranscriptFromMedia] Gemini API phản hồi lỗi: ${res.status}`,
+      );
+      return null;
+    }
+
+    const data = (await res.json()) as {
+      candidates?: Array<{
+        content?: { parts?: Array<{ text?: string }> };
+      }>;
+    };
+
+    const transcriptText = data.candidates?.[0]?.content?.parts
+      ?.map((p) => p.text || '')
+      .join('')
+      .trim();
+
+    return transcriptText || null;
+  } catch (err) {
+    console.warn(
+      '[extractSpeechTranscriptFromMedia] Lỗi khi gọi Gemini API:',
+      err,
+    );
+    return null;
+  }
+}
+
+/**
  * 5. Tải lên tệp video hoặc tài liệu bài giảng (BR06.2, BR06.5)
  * Kích hoạt xử lý nén video và trích xuất transcript phục vụ AI RAG Chatbot
  * POST /api/instructor/courses/:id/upload-lecture
@@ -548,6 +648,30 @@ export const uploadLectureMedia = async (
       ? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
       : 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
 
+    // Lưu file cục bộ trước để luôn có bản dự phòng nội bộ
+    if (file && file.buffer) {
+      try {
+        const uploadsDir = path.join(__dirname, '../../uploads/lectures');
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        const safeExt =
+          path.extname(actualFileName || (isVideoType ? '.mp4' : '.pdf')) ||
+          (isVideoType ? '.mp4' : '.pdf');
+        const safeBase = path
+          .basename(actualFileName || 'lecture', safeExt)
+          .replace(/[^a-zA-Z0-9_-]/g, '_');
+        const safeFileNameOnDisk = `${Date.now()}_${safeBase}${safeExt}`;
+        fs.writeFileSync(
+          path.join(uploadsDir, safeFileNameOnDisk),
+          file.buffer,
+        );
+        contentUrl = `/uploads/lectures/${safeFileNameOnDisk}`;
+      } catch (fsErr) {
+        console.warn('[InstructorCourseController] Local save warning:', fsErr);
+      }
+    }
+
     // Nếu có file buffer và dung lượng <= 40MB, thử upload lên Cloudinary
     if (file && file.buffer && file.size <= 40 * 1024 * 1024) {
       try {
@@ -577,14 +701,25 @@ export const uploadLectureMedia = async (
       }
     }
 
-    // Tạo transcript mẫu chuyên sâu phục vụ RAG AI Chatbot (BR06.5)
+    // Xử lý transcript phụ đề phục vụ AI RAG Chatbot (BR06.5)
     const titleVal = lectureTitle || actualFileName || 'Bài giảng mới';
-    const sampleTranscript = isVideoType
-      ? `[00:00] Xin chào các bạn học viên, trong bài học "${titleVal}", chúng ta sẽ cùng tìm hiểu kiến thức cốt lõi và các kỹ thuật thực chiến.
-[02:15] Nội dung trọng tâm bao gồm quy trình thiết lập, giải thích các tham số kỹ thuật và cách tối ưu hóa hiệu năng chuẩn doanh nghiệp.
-[05:30] Khi áp dụng vào thực tế, các bạn hãy lưu ý các lỗi thường gặp như sai lệch cấu hình hoặc thiếu kiểm soát ngoại lệ.
-[08:45] Tóm lại, các nguyên lý này sẽ là nền tảng để trợ lý AI Purrfect hỗ trợ giải đáp thắc mắc và kiểm tra bài tập cho các bạn trong quá trình thực hành.`
-      : `Tài liệu bài giảng: "${titleVal}". Đã trích xuất nội dung văn bản đầy đủ vào cơ sở tri thức phục vụ tra cứu tự động cho RAG Chatbot.`;
+    let extractedTranscript =
+      typeof req.body.transcript === 'string' ? req.body.transcript.trim() : '';
+    let transcriptStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' =
+      extractedTranscript ? 'COMPLETED' : 'PENDING';
+
+    // Nếu người dùng chưa cung cấp transcript và đây là video có buffer
+    if (!extractedTranscript && isVideoType && file?.buffer) {
+      const aiTranscript = await extractSpeechTranscriptFromMedia(
+        file.buffer,
+        file.mimetype || 'video/mp4',
+        actualFileName,
+      );
+      if (aiTranscript) {
+        extractedTranscript = aiTranscript;
+        transcriptStatus = 'COMPLETED';
+      }
+    }
 
     const lectureResult = {
       title: titleVal,
@@ -595,15 +730,18 @@ export const uploadLectureMedia = async (
       fileSize: sizeNumber || 45 * 1024 * 1024,
       durationMinutes: Number(durationMinutes) || 12,
       isPreview: String(isPreview) === 'true' || Boolean(isPreview),
-      compressionStatus: 'COMPLETED', // Nén chuẩn hóa hoàn tất
-      transcript: sampleTranscript,
-      transcriptStatus: 'COMPLETED', // Trích xuất transcript cho RAG hoàn tất
+      compressionStatus: 'COMPLETED',
+      transcript: extractedTranscript,
+      transcriptStatus,
     };
+
+    const successMessage = extractedTranscript
+      ? 'Tải lên bài giảng và trích xuất transcript phụ đề AI thành công!'
+      : 'Tải lên tệp video thành công! Bạn có thể tải lên tệp phụ đề (.srt, .vtt) hoặc nhập transcript để AI RAG học theo.';
 
     res.status(200).json({
       success: true,
-      message:
-        'Tải lên tệp thành công! Đã nén video chuẩn hóa và trích xuất transcript tự động cho RAG Chatbot.',
+      message: successMessage,
       data: lectureResult,
     });
   } catch (error) {
@@ -1039,12 +1177,18 @@ export const approveCourse = async (
 
     course.status = 'PUBLISHED';
     course.publishedAt = new Date();
+    course.rejectionReason = undefined;
     await course.save();
+
+    const populated = await Course.findById(course._id)
+      .populate('categoryId', 'name slug')
+      .populate('instructorId', 'fullName name email avatarUrl avatar headline')
+      .lean();
 
     res.status(200).json({
       success: true,
       message: 'Đã phê duyệt và xuất bản khóa học thành công!',
-      data: course,
+      data: populated || course,
     });
   } catch (error) {
     console.error('[InstructorCourseController] approveCourse error:', error);
@@ -1088,16 +1232,217 @@ export const rejectCourse = async (
         : 'Nội dung khóa học chưa đạt tiêu chuẩn phê duyệt.';
     await course.save();
 
+    const populated = await Course.findById(course._id)
+      .populate('categoryId', 'name slug')
+      .populate('instructorId', 'fullName name email avatarUrl avatar headline')
+      .lean();
+
     res.status(200).json({
       success: true,
       message: 'Đã từ chối phê duyệt khóa học.',
-      data: course,
+      data: populated || course,
     });
   } catch (error) {
     console.error('[InstructorCourseController] rejectCourse error:', error);
     res.status(500).json({
       success: false,
       message: 'Lỗi máy chủ khi từ chối khóa học',
+    });
+  }
+};
+
+/**
+ * 12. Cập nhật transcript bài giảng thủ công hoặc từ file phụ đề
+ * PUT /api/instructor/courses/:id/lectures/:lectureId/transcript
+ */
+export const updateLectureTranscript = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    const lectureId = String(req.params.lectureId);
+    const { transcript } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res
+        .status(400)
+        .json({ success: false, message: 'ID khóa học không hợp lệ' });
+      return;
+    }
+
+    const course = await Course.findOne({ _id: id, isDeleted: false });
+    if (!course) {
+      res
+        .status(404)
+        .json({ success: false, message: 'Không tìm thấy khóa học' });
+      return;
+    }
+
+    if (
+      req.user?.role !== 'ADMIN' &&
+      course.instructorId &&
+      course.instructorId.toString() !== req.user?._id.toString()
+    ) {
+      res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền chỉnh sửa khóa học này',
+      });
+      return;
+    }
+
+    let foundLecture: ILecture | undefined;
+    for (const sec of course.sections) {
+      const match = sec.lectures.find(
+        (lec) =>
+          lec._id?.toString() === lectureId ||
+          lec.title === lectureId ||
+          lec.title.trim().toLowerCase() === lectureId.trim().toLowerCase(),
+      );
+      if (match) {
+        match.transcript = typeof transcript === 'string' ? transcript : '';
+        match.transcriptStatus = match.transcript ? 'COMPLETED' : 'PENDING';
+        foundLecture = match;
+        break;
+      }
+    }
+
+    if (!foundLecture) {
+      res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy bài giảng trong khóa học',
+      });
+      return;
+    }
+
+    await course.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Cập nhật transcript bài giảng thành công!',
+      data: foundLecture,
+    });
+  } catch (error) {
+    console.error(
+      '[InstructorCourseController] updateLectureTranscript error:',
+      error,
+    );
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi máy chủ khi cập nhật transcript bài giảng',
+    });
+  }
+};
+
+/**
+ * 13. Yêu cầu AI trích xuất lại transcript từ video bài giảng
+ * POST /api/instructor/courses/:id/lectures/:lectureId/transcribe
+ */
+export const transcribeLectureWithAI = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    const lectureId = String(req.params.lectureId);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res
+        .status(400)
+        .json({ success: false, message: 'ID khóa học không hợp lệ' });
+      return;
+    }
+
+    const course = await Course.findOne({ _id: id, isDeleted: false });
+    if (!course) {
+      res
+        .status(404)
+        .json({ success: false, message: 'Không tìm thấy khóa học' });
+      return;
+    }
+
+    if (
+      req.user?.role !== 'ADMIN' &&
+      course.instructorId &&
+      course.instructorId.toString() !== req.user?._id.toString()
+    ) {
+      res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền chỉnh sửa khóa học này',
+      });
+      return;
+    }
+
+    let foundLecture: ILecture | undefined;
+    for (const sec of course.sections) {
+      const match = sec.lectures.find(
+        (lec) =>
+          lec._id?.toString() === lectureId ||
+          lec.title === lectureId ||
+          lec.title.trim().toLowerCase() === lectureId.trim().toLowerCase(),
+      );
+      if (match) {
+        foundLecture = match;
+        break;
+      }
+    }
+
+    if (!foundLecture) {
+      res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy bài giảng trong khóa học',
+      });
+      return;
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      res.status(400).json({
+        success: false,
+        message:
+          'Hệ thống chưa cấu hình GEMINI_API_KEY để tự động trích xuất. Bạn có thể tải lên tệp phụ đề (.srt, .vtt) hoặc nhập thủ công.',
+      });
+      return;
+    }
+
+    if (foundLecture.contentUrl && foundLecture.contentUrl.startsWith('http')) {
+      const fileRes = await fetch(foundLecture.contentUrl);
+      if (fileRes.ok) {
+        const arrayBuf = await fileRes.arrayBuffer();
+        const buf = Buffer.from(arrayBuf);
+        const transcript = await extractSpeechTranscriptFromMedia(
+          buf,
+          'video/mp4',
+          foundLecture.fileName || 'lecture.mp4',
+        );
+        if (transcript) {
+          foundLecture.transcript = transcript;
+          foundLecture.transcriptStatus = 'COMPLETED';
+          await course.save();
+
+          res.status(200).json({
+            success: true,
+            message: 'Trích xuất transcript AI thành công!',
+            data: foundLecture,
+          });
+          return;
+        }
+      }
+    }
+
+    res.status(400).json({
+      success: false,
+      message:
+        'Không thể trích xuất tự động từ video này. Bạn có thể tải lên tệp phụ đề (.srt, .vtt) hoặc nhập thủ công.',
+    });
+  } catch (error) {
+    console.error(
+      '[InstructorCourseController] transcribeLectureWithAI error:',
+      error,
+    );
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi máy chủ khi trích xuất transcript',
     });
   }
 };

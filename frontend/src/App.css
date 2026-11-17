@@ -505,6 +505,35 @@
   border-color: #d1d5db;
 }
 
+/* AI Assistant Button in Header */
+.header-ai-btn {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.08) 0%,
+    rgba(236, 72, 153, 0.08) 100%
+  );
+  border-color: rgba(99, 102, 241, 0.25);
+  color: #6366f1;
+}
+
+.header-ai-btn:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.16) 0%,
+    rgba(236, 72, 153, 0.16) 100%
+  );
+  border-color: #6366f1;
+  color: #4f46e5;
+  transform: translateY(-1px);
+}
+
+.header-ai-btn.active {
+  background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
 .notification-badge {
   position: absolute;
   top: 8px;

@@ -10,7 +10,9 @@ import {
   updateInstructorCourse,
   uploadLectureMedia,
   submitCourseForApproval,
+  updateLectureTranscript,
 } from '../../services/instructorCourseApi';
+import { parseSubtitleToTranscript } from '../../utils/subtitleParser';
 import {
   IconlyFolder,
   IconlyPlus,
@@ -88,6 +90,15 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [activeTranscriptLec, setActiveTranscriptLec] =
     useState<LectureItem | null>(null);
+  const [activeTranscriptModalLoc, setActiveTranscriptModalLoc] = useState<{
+    secIdx: number;
+    lecIdx: number;
+  } | null>(null);
+  const [isEditingModalTranscript, setIsEditingModalTranscript] =
+    useState<boolean>(false);
+  const [modalTranscriptDraft, setModalTranscriptDraft] = useState<string>('');
+  const [modalTranscriptNotice, setModalTranscriptNotice] =
+    useState<string>('');
 
   // Modal thêm bài giảng vào chương
   const [addingLectureSectionIdx, setAddingLectureSectionIdx] = useState<
@@ -205,6 +216,76 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     } finally {
       setUploadingMedia(false);
     }
+  };
+
+  // Mở modal quản lý Transcript
+  const handleOpenTranscriptModal = (
+    secIdx: number,
+    lecIdx: number,
+    lecture: LectureItem,
+  ) => {
+    setActiveTranscriptLec(lecture);
+    setActiveTranscriptModalLoc({ secIdx, lecIdx });
+    setModalTranscriptDraft(lecture.transcript || '');
+    setIsEditingModalTranscript(!lecture.transcript);
+    setModalTranscriptNotice('');
+  };
+
+  // Lưu transcript trong modal
+  const handleSaveModalTranscript = async () => {
+    if (!activeTranscriptModalLoc) return;
+    const { secIdx, lecIdx } = activeTranscriptModalLoc;
+    const trimmed = modalTranscriptDraft.trim();
+
+    const updated = [...sections];
+    const targetLec = updated[secIdx]?.lectures?.[lecIdx];
+    if (!targetLec) return;
+
+    targetLec.transcript = trimmed;
+    targetLec.transcriptStatus = trimmed ? 'COMPLETED' : 'PENDING';
+    setSections(updated);
+    setActiveTranscriptLec({ ...targetLec });
+    setIsEditingModalTranscript(false);
+    setModalTranscriptNotice('Đã lưu transcript thành công!');
+
+    if (course._id && targetLec._id) {
+      try {
+        await updateLectureTranscript(course._id, targetLec._id, trimmed);
+      } catch (err) {
+        console.warn('Lưu transcript API nền:', err);
+      }
+    }
+
+    setTimeout(() => {
+      setModalTranscriptNotice('');
+    }, 3500);
+  };
+
+  // Nạp file phụ đề trong modal
+  const handleUploadModalSubtitle = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = String(event.target?.result || '');
+      const parsed = parseSubtitleToTranscript(content);
+      if (parsed) {
+        setModalTranscriptDraft(parsed);
+        setIsEditingModalTranscript(true);
+        setModalTranscriptNotice(
+          `Đã nạp phụ đề từ tệp "${file.name}"! Bấm "Lưu Transcript" để xác nhận.`,
+        );
+      } else {
+        setModalTranscriptNotice(
+          `Tệp "${file.name}" không có nội dung văn bản hợp lệ.`,
+        );
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   // Thêm bài giảng không cần file đính kèm (hoặc dùng tài nguyên mặc định)
@@ -448,8 +529,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
             <span
               style={{
                 fontSize: '11px',
-                background: '#1e293b',
-                color: '#cbd5e1',
+                background: '#f1f5f9',
+                color: '#475569',
                 padding: '2px 6px',
                 borderRadius: '10px',
               }}
@@ -621,11 +702,11 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   paddingBottom: '12px',
-                  borderBottom: '1px solid #1f2937',
+                  borderBottom: '1px solid #e2e8f0',
                 }}
               >
                 <div>
-                  <h4 style={{ margin: 0, fontSize: '15px', color: '#f8fafc' }}>
+                  <h4 style={{ margin: 0, fontSize: '15px', color: '#0f172a' }}>
                     Cấu trúc chương trình học (Curriculum)
                   </h4>
                 </div>
@@ -747,7 +828,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                                   style={{
                                     fontWeight: 600,
                                     fontSize: '13.5px',
-                                    color: '#f8fafc',
+                                    color: '#0f172a',
                                   }}
                                 >
                                   {secIdx + 1}.{lecIdx + 1} {lecture.title}
@@ -825,22 +906,43 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                                 <span>Xem thử (Preview)</span>
                               </label>
 
-                              {/* Xem transcript AI */}
-                              {lecture.transcript && (
-                                <button
-                                  type="button"
-                                  className="btn-action-secondary"
-                                  style={{
-                                    padding: '4px 8px',
-                                    fontSize: '11.5px',
-                                  }}
-                                  onClick={() =>
-                                    setActiveTranscriptLec(lecture)
+                              {/* Xem & Sửa transcript AI */}
+                              <button
+                                type="button"
+                                className="btn-action-secondary"
+                                style={{
+                                  padding: '4px 8px',
+                                  fontSize: '11.5px',
+                                  color: lecture.transcript
+                                    ? '#c084fc'
+                                    : '#94a3b8',
+                                  borderColor: lecture.transcript
+                                    ? 'rgba(192, 132, 252, 0.4)'
+                                    : undefined,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                }}
+                                onClick={() =>
+                                  handleOpenTranscriptModal(
+                                    secIdx,
+                                    lecIdx,
+                                    lecture,
+                                  )
+                                }
+                              >
+                                <IconlyAiChip
+                                  size={13}
+                                  color={
+                                    lecture.transcript ? '#c084fc' : '#94a3b8'
                                   }
-                                >
-                                  Xem Transcript
-                                </button>
-                              )}
+                                />
+                                <span>
+                                  {lecture.transcript
+                                    ? 'Xem / Sửa Transcript'
+                                    : 'Thêm Transcript'}
+                                </span>
+                              </button>
 
                               <button
                                 type="button"
@@ -866,8 +968,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
               {addingLectureSectionIdx !== null && (
                 <div
                   style={{
-                    background: '#1e293b',
-                    border: '1.5px dashed #3b82f6',
+                    background: '#f8fafc',
+                    border: '1.5px dashed #0056d2',
                     borderRadius: '12px',
                     padding: '18px',
                     display: 'flex',
@@ -1121,59 +1223,272 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
           )}
         </div>
 
-        {/* Modal Xem Transcript AI của bài giảng */}
+        {/* Modal Xem & Chỉnh sửa Transcript AI của bài giảng */}
         {activeTranscriptLec && (
           <div
             className="editor-modal-backdrop"
             style={{ zIndex: 1200 }}
-            onClick={() => setActiveTranscriptLec(null)}
+            onClick={() => {
+              setActiveTranscriptLec(null);
+              setIsEditingModalTranscript(false);
+            }}
           >
             <div
               className="playlist-modal-dialog"
-              style={{ maxWidth: '640px' }}
+              style={{ maxWidth: '680px' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="playlist-modal-header">
                 <div>
-                  <h3 className="playlist-modal-title">
-                    Transcript trích xuất tự động cho AI RAG
+                  <h3
+                    className="playlist-modal-title"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <IconlyAiChip size={18} color="#c084fc" />
+                    <span>Transcript phụ đề (AI RAG)</span>
                   </h3>
                   <p className="playlist-modal-subtitle">
-                    Bài giảng: {activeTranscriptLec.title}
+                    Bài giảng: <strong>{activeTranscriptLec.title}</strong>
                   </p>
                 </div>
                 <button
                   type="button"
                   className="playlist-modal-close-btn"
-                  onClick={() => setActiveTranscriptLec(null)}
+                  onClick={() => {
+                    setActiveTranscriptLec(null);
+                    setIsEditingModalTranscript(false);
+                  }}
                 >
                   <IconlyClose size={18} />
                 </button>
               </div>
               <div className="playlist-modal-body">
-                <p
+                <div
                   style={{
-                    fontSize: '13px',
-                    color: '#94a3b8',
-                    margin: '0 0 10px 0',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '10px',
+                    flexWrap: 'wrap',
+                    gap: '8px',
                   }}
                 >
-                  Toàn bộ video bài giảng sau khi nén chuẩn hóa được trích xuất
-                  văn bản phụ đề (transcript) để làm nguồn tri thức cho trợ lý
-                  trí tuệ nhân tạo (RAG Chatbot):
-                </p>
-                <div className="transcript-box">
-                  {activeTranscriptLec.transcript || 'Chưa có transcript.'}
+                  <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>
+                    Nội dung transcript được nạp vào ChromaDB vector store để
+                    Trợ lý AI tra cứu và giải đáp bài học.
+                  </span>
+                  <label
+                    style={{
+                      cursor: 'pointer',
+                      background: '#ffffff',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      fontSize: '11.5px',
+                      color: '#334155',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      userSelect: 'none',
+                    }}
+                    title="Tải lên tệp phụ đề .srt, .vtt hoặc .txt từ máy tính"
+                  >
+                    <IconlyFolder size={12} color="#a78bfa" />
+                    <span>Tải tệp phụ đề (.srt, .vtt)</span>
+                    <input
+                      type="file"
+                      accept=".srt,.vtt,.txt"
+                      style={{ display: 'none' }}
+                      onChange={handleUploadModalSubtitle}
+                    />
+                  </label>
                 </div>
+
+                {modalTranscriptNotice && (
+                  <div
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      border: '1px solid rgba(59, 130, 246, 0.25)',
+                      color: '#93c5fd',
+                      fontSize: '12px',
+                      marginBottom: '10px',
+                    }}
+                  >
+                    {modalTranscriptNotice}
+                  </div>
+                )}
+
+                {isEditingModalTranscript ? (
+                  <div>
+                    <textarea
+                      value={modalTranscriptDraft}
+                      onChange={(e) => setModalTranscriptDraft(e.target.value)}
+                      placeholder="Nhập hoặc dán lời nói bài giảng có kèm mốc thời gian:&#10;[00:00] Xin chào các bạn...&#10;[01:15] Nội dung bài học..."
+                      rows={10}
+                      style={{
+                        width: '100%',
+                        background: '#ffffff',
+                        border: '1px solid #0056d2',
+                        borderRadius: '6px',
+                        color: '#0f172a',
+                        fontFamily: 'monospace',
+                        fontSize: '12.5px',
+                        lineHeight: '1.6',
+                        padding: '10px 12px',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        resize: 'vertical',
+                      }}
+                    />
+                    <div
+                      style={{
+                        marginTop: '6px',
+                        fontSize: '11px',
+                        color: '#64748b',
+                      }}
+                    >
+                      * Hỗ trợ mốc thời gian dạng [mm:ss] để AI RAG đối chiếu
+                      chính xác theo video.
+                    </div>
+                  </div>
+                ) : activeTranscriptLec.transcript ? (
+                  <div
+                    className="transcript-box"
+                    style={{ margin: 0, maxHeight: '280px' }}
+                  >
+                    {activeTranscriptLec.transcript}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      padding: '24px 12px',
+                      background: '#f8fafc',
+                      border: '1px dashed #cbd5e1',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: '0 0 10px 0',
+                        fontSize: '13px',
+                        color: '#64748b',
+                      }}
+                    >
+                      Bài giảng này chưa có nội dung phụ đề transcript.
+                    </p>
+                    <button
+                      type="button"
+                      style={{
+                        background: '#0056d2',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '12px',
+                        color: '#ffffff',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => {
+                        setModalTranscriptDraft('');
+                        setIsEditingModalTranscript(true);
+                      }}
+                    >
+                      Nhập nội dung transcript thủ công
+                    </button>
+                  </div>
+                )}
               </div>
-              <div className="playlist-modal-footer">
-                <button
-                  type="button"
-                  className="playlist-btn-primary"
-                  onClick={() => setActiveTranscriptLec(null)}
-                >
-                  Đóng
-                </button>
+              <div
+                className="playlist-modal-footer"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <div>
+                  {activeTranscriptLec.transcript &&
+                    !isEditingModalTranscript && (
+                      <button
+                        type="button"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          textDecoration: 'underline',
+                          padding: 0,
+                        }}
+                        onClick={() => {
+                          setModalTranscriptDraft('');
+                          handleSaveModalTranscript();
+                        }}
+                      >
+                        Xóa transcript
+                      </button>
+                    )}
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {isEditingModalTranscript ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn-action-secondary"
+                        onClick={() => {
+                          setModalTranscriptDraft(
+                            activeTranscriptLec.transcript || '',
+                          );
+                          setIsEditingModalTranscript(false);
+                        }}
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="button"
+                        className="playlist-btn-primary"
+                        style={{
+                          background: '#10b981',
+                          borderColor: '#10b981',
+                        }}
+                        onClick={handleSaveModalTranscript}
+                      >
+                        Lưu Transcript
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="btn-action-secondary"
+                        onClick={() => {
+                          setModalTranscriptDraft(
+                            activeTranscriptLec.transcript || '',
+                          );
+                          setIsEditingModalTranscript(true);
+                        }}
+                      >
+                        Chỉnh sửa
+                      </button>
+                      <button
+                        type="button"
+                        className="playlist-btn-primary"
+                        onClick={() => {
+                          setActiveTranscriptLec(null);
+                          setIsEditingModalTranscript(false);
+                        }}
+                      >
+                        Đóng
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

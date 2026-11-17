@@ -220,7 +220,7 @@ export const InstructorCoursesPage: React.FC = () => {
                 fontSize: '20px',
                 fontWeight: 800,
                 margin: '16px 0 8px',
-                color: '#f8fafc',
+                color: '#0f172a',
               }}
             >
               Yêu cầu đăng nhập Giảng viên
@@ -278,7 +278,7 @@ export const InstructorCoursesPage: React.FC = () => {
                 fontSize: '20px',
                 fontWeight: 800,
                 margin: '0 0 10px',
-                color: '#f8fafc',
+                color: '#0f172a',
               }}
             >
               Khu vực dành cho Giảng viên (Instructor)
@@ -479,7 +479,7 @@ export const InstructorCoursesPage: React.FC = () => {
                 fontSize: '18px',
                 fontWeight: 700,
                 margin: '14px 0 6px',
-                color: '#f8fafc',
+                color: '#0f172a',
               }}
             >
               Chưa có khóa học nào phù hợp
@@ -771,17 +771,17 @@ export const InstructorCoursesPage: React.FC = () => {
                 <div
                   style={{
                     fontSize: '13.5px',
-                    color: '#e2e8f0',
+                    color: '#334155',
                     lineHeight: 1.6,
                   }}
                 >
                   <p style={{ margin: '0 0 12px 0' }}>
                     Khóa học{' '}
-                    <strong style={{ color: '#ffffff' }}>
+                    <strong style={{ color: '#0f172a' }}>
                       "{deleteConfirmCourse.title}"
                     </strong>{' '}
                     đã xuất bản và hiện có{' '}
-                    <strong style={{ color: '#ffffff' }}>
+                    <strong style={{ color: '#0f172a' }}>
                       {deleteConfirmCourse.totalStudents}
                     </strong>{' '}
                     học viên đã đăng ký học.
@@ -791,15 +791,15 @@ export const InstructorCoursesPage: React.FC = () => {
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '8px',
-                      background: 'rgba(245, 158, 11, 0.15)',
-                      border: '1px solid rgba(245, 158, 11, 0.35)',
-                      color: '#fde68a',
+                      background: '#fffbeb',
+                      border: '1px solid #fde68a',
+                      color: '#92400e',
                       padding: '10px 14px',
                       borderRadius: '8px',
                       fontSize: '12.5px',
                     }}
                   >
-                    <IconlyShield size={18} color="#fcd34d" />
+                    <IconlyShield size={18} color="#d97706" />
                     <div>
                       <strong>Lưu ý:</strong> Để bảo toàn quyền lợi học tập của
                       học viên cũ, hệ thống sẽ chuyển khóa học sang trạng thái{' '}
@@ -812,13 +812,13 @@ export const InstructorCoursesPage: React.FC = () => {
                 <p
                   style={{
                     fontSize: '14px',
-                    color: '#e2e8f0',
+                    color: '#334155',
                     lineHeight: 1.6,
                     margin: 0,
                   }}
                 >
                   Bạn có chắc chắn muốn xóa khóa học{' '}
-                  <strong style={{ color: '#ffffff' }}>
+                  <strong style={{ color: '#0f172a' }}>
                     "{deleteConfirmCourse.title}"
                   </strong>{' '}
                   không? Thao tác này sẽ gỡ bỏ dữ liệu bài giảng.

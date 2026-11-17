@@ -1,0 +1,1045 @@
+/* Trang phòng học trực tuyến chuyên biệt (Dedicated Course Learning Room)
+   Theme: Light Modern matching Home layout (#ffffff / #f8fafc / #e2e8f0) */
+
+.course-learning-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+  color: #1e293b;
+  font-family: inherit;
+}
+
+/* 1. THANH TOPBAR PHÒNG HỌC */
+.learning-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.learning-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
+}
+
+.btn-learning-return {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-learning-return:hover {
+  background: #e2e8f0;
+  color: #0056d2;
+  border-color: #cbd5e1;
+}
+
+.learning-topbar-divider {
+  width: 1px;
+  height: 24px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+.learning-title-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.learning-kicker {
+  font-size: 0.78rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.learning-lecture-headline {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.learning-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.learning-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-learning-step {
+  padding: 8px 14px;
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-learning-step:hover:not(:disabled) {
+  background: #f8fafc;
+  color: #0056d2;
+  border-color: #cbd5e1;
+}
+
+.btn-learning-step:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+.btn-learning-complete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-learning-complete:hover {
+  background: #f8fafc;
+  color: #0056d2;
+  border-color: #cbd5e1;
+}
+
+.btn-learning-complete.completed {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #059669;
+}
+
+.btn-learning-sidebar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-learning-sidebar-toggle:hover {
+  background: #f8fafc;
+  color: #0056d2;
+  border-color: #cbd5e1;
+}
+
+.btn-learning-exit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-learning-exit:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+/* 2. BỐ CỤC PHÒNG HỌC */
+.learning-layout-body {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  transition: all 0.2s ease;
+}
+
+.learning-layout-body.sidebar-visible {
+  grid-template-columns: minmax(0, 1fr) 380px;
+}
+
+.learning-layout-body.sidebar-hidden {
+  grid-template-columns: 1fr;
+}
+
+/* 3. KHU VỰC CHÍNH (STAGE & TABS) */
+.learning-main-stage {
+  padding: 24px;
+  overflow-y: auto;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.learning-player-wrapper {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.learning-video-container {
+  position: relative;
+  width: 100%;
+  background: #000000;
+  aspect-ratio: 16 / 9;
+  max-height: 580px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.learning-video-element {
+  width: 100%;
+  height: 100%;
+  max-height: 580px;
+  display: block;
+  outline: none;
+}
+
+.learning-doc-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 580px;
+  background: #ffffff;
+}
+
+.learning-doc-frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+
+.learning-doc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+.learning-doc-filename {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.learning-doc-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn-learning-doc-download {
+  color: #0056d2;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.btn-learning-doc-download:hover {
+  color: #00409a;
+  text-decoration: underline;
+}
+
+.learning-empty-stage {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  text-align: center;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.learning-empty-stage h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #0f172a;
+}
+
+.learning-empty-stage p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.btn-learning-edit-course {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: #0056d2;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-learning-edit-course:hover {
+  background: #00409a;
+}
+
+/* 4. THANH THÔNG TIN BÀI GIẢNG VÀ CÁC TAB */
+.learning-content-panel {
+  margin-top: 24px;
+}
+
+.learning-info-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.learning-info-title-box {
+  flex: 1;
+}
+
+.learning-lecture-title {
+  margin: 0 0 10px;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.learning-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.learning-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-type {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.badge-duration {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-preview {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.btn-learning-ask-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-learning-ask-ai:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.35);
+}
+
+/* TABS NAVIGATION */
+.learning-tabs-nav {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-top: 20px;
+}
+
+.learning-tab-btn {
+  padding: 12px 4px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #64748b;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.learning-tab-btn:hover {
+  color: #0f172a;
+}
+
+.learning-tab-btn.active {
+  color: #0056d2;
+  border-bottom-color: #0056d2;
+}
+
+.learning-tab-body {
+  padding: 20px 0;
+}
+
+/* OVERVIEW PANE */
+.tab-pane-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.learning-course-desc {
+  margin: 0;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.learning-instructor-card {
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.instructor-card-name {
+  margin: 0 0 4px;
+  font-size: 0.98rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.instructor-card-sub {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+/* TRANSCRIPT PANE */
+.tab-pane-transcript {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.learning-transcript-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.transcript-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.transcript-header-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0056d2;
+}
+
+.btn-copy-transcript {
+  padding: 6px 12px;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-copy-transcript:hover {
+  background: #f8fafc;
+  color: #0056d2;
+  border-color: #cbd5e1;
+}
+
+.transcript-box-content {
+  padding: 20px;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: #1e293b;
+  background: #ffffff;
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.learning-transcript-empty {
+  padding: 32px;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  color: #64748b;
+}
+
+.learning-transcript-empty p {
+  margin: 0 0 6px;
+}
+
+.learning-transcript-empty .text-muted {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+/* AI PANE */
+.tab-pane-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.learning-ai-intro {
+  padding: 18px 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(124, 58, 237, 0.08) 0%,
+    rgba(37, 99, 235, 0.08) 100%
+  );
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 12px;
+}
+
+.ai-intro-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ai-intro-heading h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: #7c3aed;
+}
+
+.learning-ai-intro p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.prompts-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.prompts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prompt-chip {
+  text-align: left;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: #1e293b;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.prompt-chip:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #0056d2;
+  transform: translateX(4px);
+}
+
+/* 5. SIDEBAR NỘI DUNG KHÓA HỌC (CURRICULUM PLAYLIST) */
+.learning-sidebar {
+  background: #ffffff;
+  border-left: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 65px);
+  position: sticky;
+  top: 65px;
+  overflow: hidden;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.02);
+}
+
+.learning-sidebar-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.sidebar-header-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.sidebar-header-title h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sidebar-lectures-count {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.sidebar-progress-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.sidebar-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.sidebar-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0056d2, #10b981);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.learning-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.learning-section-accordion {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.learning-section-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #f8fafc;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.learning-section-btn:hover {
+  background: #f1f5f9;
+}
+
+.section-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding-right: 12px;
+}
+
+.section-number {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #0056d2;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.section-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.section-meta-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.section-meta-text {
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.learning-lectures-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+}
+
+.learning-lecture-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.learning-lecture-item:hover {
+  background: #f8fafc;
+}
+
+.learning-lecture-item.active {
+  background: #eff6ff;
+  border-left: 3px solid #0056d2;
+}
+
+.learning-lecture-item.active .lecture-item-title {
+  color: #0056d2;
+  font-weight: 600;
+}
+
+.learning-lecture-item.locked {
+  opacity: 0.65;
+}
+
+.learning-lecture-item.completed .lecture-item-title {
+  color: #475569;
+}
+
+.lecture-item-icon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.lecture-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.lecture-item-title {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: #1e293b;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.lecture-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.meta-preview-pill {
+  padding: 1px 6px;
+  background: #ecfdf5;
+  color: #059669;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.7rem;
+  border: 1px solid #a7f3d0;
+}
+
+.learning-lecture-empty {
+  padding: 14px 18px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* 6. MODAL KHÓA BÀI HỌC */
+.learning-locked-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.learning-locked-dialog {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+.locked-dialog-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.learning-locked-dialog h3 {
+  margin: 0 0 10px;
+  font-size: 1.25rem;
+  color: #0f172a;
+}
+
+.learning-locked-dialog p {
+  margin: 0 0 24px;
+  font-size: 0.92rem;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.learning-locked-dialog strong {
+  color: #0f172a;
+}
+
+.locked-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-locked-cancel {
+  padding: 9px 18px;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-locked-cancel:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.btn-locked-enroll {
+  padding: 9px 20px;
+  background: #0056d2;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-locked-enroll:hover {
+  background: #00409a;
+}
+
+/* 7. LOADING & ERROR STATES */
+.learning-page-loading,
+.learning-page-error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #f8fafc;
+  color: #1e293b;
+  padding: 24px;
+  text-align: center;
+}
+
+.learning-loading-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #0056d2;
+  border-radius: 50%;
+  animation: learning-spin 0.8s linear infinite;
+}
+
+@keyframes learning-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.learning-error-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 32px;
+  border-radius: 16px;
+  max-width: 440px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.learning-error-box h2 {
+  color: #0f172a;
+}
+
+.learning-error-box p {
+  color: #64748b;
+}
+
+.btn-learning-back {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: #0056d2;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-learning-back:hover {
+  background: #00409a;
+}
+
+/* RESPONSIVE */
+@media (max-width: 992px) {
+  .learning-layout-body.sidebar-visible {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-sidebar {
+    height: auto;
+    position: static;
+    border-left: none;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .sidebar-toggle-text {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .learning-topbar {
+    padding: 10px 14px;
+  }
+
+  .learning-lecture-headline {
+    font-size: 0.95rem;
+  }
+
+  .btn-learning-complete span,
+  .btn-learning-exit span,
+  .btn-learning-return span {
+    display: none;
+  }
+
+  .learning-main-stage {
+    padding: 14px;
+  }
+}

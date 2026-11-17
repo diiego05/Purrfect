@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import { Readable } from 'stream';
+import cloudinary from '../config/cloudinary';
 import { Course, ICourse } from '../models/Course';
 import { Category } from '../models/Category';
 import { Skill } from '../models/Skill';
@@ -658,9 +660,19 @@ export const getCourseBySlug = async (
   try {
     const slug = String(req.params.slug);
     const isObjectId = mongoose.Types.ObjectId.isValid(slug);
+    const slugAliases = [slug];
+    if (slug === 'tieng-trung-giao-tiep-thuong-mai-nguoi-di-lam') {
+      slugAliases.push('tieng-trung-giao-tiep-thuong-mai');
+    } else if (slug === 'tieng-trung-giao-tiep-thuong-mai') {
+      slugAliases.push('tieng-trung-giao-tiep-thuong-mai-nguoi-di-lam');
+    }
+
     const query = isObjectId
-      ? { $or: [{ slug }, { _id: slug }], isDeleted: false }
-      : { slug, isDeleted: false };
+      ? {
+          $or: [{ slug: { $in: slugAliases } }, { _id: slug }],
+          isDeleted: false,
+        }
+      : { slug: { $in: slugAliases }, isDeleted: false };
 
     const course = await Course.findOne(query)
       .populate('categoryId', 'name slug description')
@@ -749,6 +761,116 @@ export const resetAndSeedCourses = async (
     res.status(500).json({
       success: false,
       message: 'Lỗi khi reset seed courses',
+      error: error instanceof Error ? error.message : error,
+    });
+  }
+};
+
+/**
+ * Stream tài liệu bài giảng (PDF / Word / Doc) trực tiếp từ server
+ * Giúp vượt qua hạn chế chặn phân phối PDF (ACL Deny) của Cloudinary
+ */
+export const streamLectureDocument = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const rawUrl = String(req.query.url || '').trim();
+    const download = String(req.query.download || '') === 'true';
+    const customFileName = String(req.query.filename || 'tai-lieu.pdf').trim();
+
+    if (!rawUrl) {
+      res
+        .status(400)
+        .json({ success: false, message: 'Thiếu tham số url tài liệu' });
+      return;
+    }
+
+    const disposition = download ? 'attachment' : 'inline';
+
+    // 1. Nếu là Cloudinary URL
+    if (rawUrl.includes('cloudinary.com')) {
+      // Tìm public_id: từ sau /upload/(v.../)? đến trước .pdf hoặc đuôi mở rộng
+      const match = rawUrl.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^/.]+)?$/);
+      const publicIdWithFormat = match ? match[1] : '';
+      const cleanPublicId = publicIdWithFormat.replace(/\.[^/.]+$/, '');
+
+      if (cleanPublicId) {
+        // Tạo private download URL từ Cloudinary SDK với chữ ký API (vượt qua ACL restriction)
+        const privateDownloadUrl = cloudinary.utils.private_download_url(
+          cleanPublicId,
+          'pdf',
+          {
+            resource_type: 'image',
+            type: 'upload',
+          },
+        );
+
+        try {
+          const cloudRes = await fetch(privateDownloadUrl);
+          if (cloudRes.ok && cloudRes.body) {
+            const contentType =
+              cloudRes.headers.get('content-type') || 'application/pdf';
+            const contentLength = cloudRes.headers.get('content-length');
+
+            res.setHeader('Content-Type', contentType);
+            res.setHeader(
+              'Content-Disposition',
+              `${disposition}; filename="${encodeURIComponent(customFileName)}"`,
+            );
+            if (contentLength) {
+              res.setHeader('Content-Length', contentLength);
+            }
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+
+            // @ts-expect-error Readable.fromWeb supports web stream
+            const readable = Readable.fromWeb(cloudRes.body);
+            readable.pipe(res);
+            return;
+          }
+        } catch (fetchErr) {
+          console.warn(
+            '[CourseController] Cloudinary private fetch warning:',
+            fetchErr,
+          );
+        }
+      }
+    }
+
+    // 2. Nếu là URL HTTP thông thường
+    if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+      try {
+        const extRes = await fetch(rawUrl);
+        if (extRes.ok && extRes.body) {
+          const contentType =
+            extRes.headers.get('content-type') || 'application/pdf';
+          const contentLength = extRes.headers.get('content-length');
+
+          res.setHeader('Content-Type', contentType);
+          res.setHeader(
+            'Content-Disposition',
+            `${disposition}; filename="${encodeURIComponent(customFileName)}"`,
+          );
+          if (contentLength) {
+            res.setHeader('Content-Length', contentLength);
+          }
+          // @ts-expect-error Readable.fromWeb supports web stream
+          const readable = Readable.fromWeb(extRes.body);
+          readable.pipe(res);
+          return;
+        }
+      } catch (extErr) {
+        console.warn('[CourseController] External fetch warning:', extErr);
+      }
+    }
+
+    // Fallback: chuyển hướng
+    res.redirect(rawUrl);
+  } catch (error) {
+    console.error('[CourseController] streamLectureDocument error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Không thể tải tài liệu bài giảng',
       error: error instanceof Error ? error.message : error,
     });
   }

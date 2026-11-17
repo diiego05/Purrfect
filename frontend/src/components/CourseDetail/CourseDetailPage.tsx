@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FC } from 'react';
+import { useEffect, useState, type FC } from 'react';
 import type {
   Course,
   SkillItem,
@@ -36,12 +36,6 @@ interface CourseDetailPageProps {
   slug: string;
 }
 
-interface ActiveLectureState {
-  sectionIndex: number;
-  lectureIndex: number;
-  lecture: CourseLecture;
-}
-
 export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
   const { navigate, isAuthenticated, user } = useAuth();
   const { addToCart, isInCart, toggleWishlist, isInWishlist } =
@@ -55,11 +49,7 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
   const [isEnrolled, setIsEnrolled] = useState<boolean>(false);
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] =
     useState<boolean>(false);
-  const [activeLecture, setActiveLecture] = useState<ActiveLectureState | null>(
-    null,
-  );
   const [actionMessage, setActionMessage] = useState<string>('');
-  const playerSectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -185,15 +175,6 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
   const canAccessLecture = (lecture: CourseLecture, bypassLock = false) =>
     Boolean(bypassLock || isEnrolled || isOwnerOrAdmin || lecture.isPreview);
 
-  const scrollToPlayer = () => {
-    window.setTimeout(() => {
-      playerSectionRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }, 60);
-  };
-
   const openLecturePlayer = (
     sectionIndex: number,
     lectureIndex: number,
@@ -211,22 +192,14 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
     }
 
     setActionMessage('');
-    setActiveLecture({ sectionIndex, lectureIndex, lecture });
-    setExpandedModule(sectionIndex);
-    setActiveTab('syllabus');
-
-    if (course._id && isAuthenticated) {
-      recordCourseInteraction({
-        actionType: 'PROGRESS',
-        courseId: course._id,
-        metadata: { lectureTitle: lecture.title },
-      });
-    }
-
-    scrollToPlayer();
+    // Chuyển sang trang phòng học chuyên biệt
+    navigate(
+      `/learning/${course.slug || course._id}?s=${sectionIndex}&l=${lectureIndex}`,
+    );
   };
 
   const handleStartLearning = (bypassLock = false) => {
+    if (!course) return;
     for (let sIdx = 0; sIdx < normalizedSections.length; sIdx += 1) {
       const lectures = normalizedSections[sIdx].lectures;
       if (lectures && lectures.length > 0) {
@@ -235,11 +208,11 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
       }
     }
 
-    setActiveTab('syllabus');
-    setActionMessage('Khóa học hiện chưa có bài giảng nào được tải lên.');
+    navigate(`/learning/${course.slug || course._id}`);
   };
 
   const handlePreviewCourse = () => {
+    if (!course) return;
     if (isEnrolled || isOwnerOrAdmin) {
       handleStartLearning();
       return;
@@ -258,37 +231,6 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
     setActionMessage(
       'Khóa học này chưa có bài giảng xem thử miễn phí. Bạn có thể đăng ký để học toàn bộ nội dung.',
     );
-  };
-
-  const handleStepLecture = (direction: -1 | 1) => {
-    if (!activeLecture) return;
-
-    const flatList: Array<{
-      sectionIndex: number;
-      lectureIndex: number;
-      lecture: CourseLecture;
-    }> = [];
-
-    normalizedSections.forEach((sec, sIdx) => {
-      sec.lectures.forEach((lec, lIdx) => {
-        flatList.push({ sectionIndex: sIdx, lectureIndex: lIdx, lecture: lec });
-      });
-    });
-
-    const currentPos = flatList.findIndex(
-      (item) =>
-        item.sectionIndex === activeLecture.sectionIndex &&
-        item.lectureIndex === activeLecture.lectureIndex,
-    );
-
-    const target = flatList[currentPos + direction];
-    if (target) {
-      openLecturePlayer(
-        target.sectionIndex,
-        target.lectureIndex,
-        target.lecture,
-      );
-    }
   };
 
   const handleEnrollClick = () => {
@@ -488,174 +430,6 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
             </div>
           </div>
         </div>
-      )}
-
-      {activeLecture && (
-        <section ref={playerSectionRef} className="course-player-section">
-          <div className="course-player-container">
-            <div className="course-player-topbar">
-              <div>
-                <div className="course-player-kicker">
-                  {course.title} • Chương {activeLecture.sectionIndex + 1}
-                </div>
-                <h2 className="course-player-title">
-                  {activeLecture.lecture.title}
-                </h2>
-              </div>
-              <div className="course-player-actions">
-                <button
-                  type="button"
-                  className="btn-player-nav"
-                  onClick={() => handleStepLecture(-1)}
-                >
-                  ‹ Bài trước
-                </button>
-                <button
-                  type="button"
-                  className="btn-player-nav"
-                  onClick={() => handleStepLecture(1)}
-                >
-                  Bài tiếp ›
-                </button>
-                <button
-                  type="button"
-                  className="btn-player-close"
-                  onClick={() => setActiveLecture(null)}
-                >
-                  <IconlyClose size={14} color="currentColor" />
-                  <span>Đóng trình phát</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="course-player-grid">
-              <div className="course-player-main">
-                <div className="course-player-stage">
-                  {activeLecture.lecture.type === 'DOCUMENT' ? (
-                    activeLecture.lecture.contentUrl ? (
-                      <div className="course-player-doc-wrap">
-                        <iframe
-                          title={activeLecture.lecture.title}
-                          src={activeLecture.lecture.contentUrl}
-                          className="course-player-doc"
-                        />
-                        <div className="course-player-doc-footer">
-                          <span>
-                            {activeLecture.lecture.fileName ||
-                              'Tài liệu bài giảng'}
-                          </span>
-                          <a
-                            href={activeLecture.lecture.contentUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="course-player-doc-link"
-                          >
-                            Mở tài liệu trong tab mới ↗
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="course-player-empty">
-                        <p>Bài giảng tài liệu này chưa có tệp đính kèm.</p>
-                      </div>
-                    )
-                  ) : activeLecture.lecture.contentUrl ? (
-                    <video
-                      key={
-                        activeLecture.lecture.contentUrl ||
-                        activeLecture.lecture.title
-                      }
-                      controls
-                      autoPlay
-                      className="course-player-video"
-                      src={activeLecture.lecture.contentUrl}
-                    />
-                  ) : (
-                    <div className="course-player-empty">
-                      <p>Bài giảng này chưa có tệp video tải lên.</p>
-                      {isOwnerOrAdmin && (
-                        <button
-                          type="button"
-                          className="btn-back-instructor"
-                          onClick={() => navigate('/instructor/courses')}
-                        >
-                          Mở Quản lý khóa học để bổ sung video
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {activeLecture.lecture.transcript && (
-                  <div className="course-player-transcript">
-                    <h4>Phụ đề / Transcript trích xuất cho Trợ lý AI</h4>
-                    <p>{activeLecture.lecture.transcript}</p>
-                  </div>
-                )}
-              </div>
-
-              <aside className="course-player-sidebar">
-                <div className="player-sidebar-header">
-                  Nội dung khóa học ({totalLecturesCount} bài giảng)
-                </div>
-                <div className="player-playlist-scroll">
-                  {normalizedSections.map((sec, sIdx) => (
-                    <div key={sIdx} className="player-section-group">
-                      <div className="player-section-heading">{sec.title}</div>
-                      <ul className="player-lecture-list">
-                        {sec.lectures.length > 0 ? (
-                          sec.lectures.map((lec, lIdx) => {
-                            const isActive =
-                              activeLecture.sectionIndex === sIdx &&
-                              activeLecture.lectureIndex === lIdx;
-                            const unlocked = canAccessLecture(lec);
-                            return (
-                              <li
-                                key={lIdx}
-                                className={`player-lecture-item ${isActive ? 'active' : ''} ${!unlocked ? 'locked' : ''}`}
-                                onClick={() =>
-                                  openLecturePlayer(sIdx, lIdx, lec)
-                                }
-                              >
-                                <span className="player-lecture-icon">
-                                  {isActive ? (
-                                    <IconlyPlay size={14} color="#60a5fa" />
-                                  ) : unlocked ? (
-                                    <IconlyPlay size={14} color="#94a3b8" />
-                                  ) : (
-                                    <IconlyLock size={14} color="#64748b" />
-                                  )}
-                                </span>
-                                <div className="player-lecture-info">
-                                  <span className="player-lecture-name">
-                                    {lec.title}
-                                  </span>
-                                  <span className="player-lecture-meta">
-                                    {lec.type === 'DOCUMENT'
-                                      ? 'Tài liệu'
-                                      : 'Video'}
-                                    {lec.durationMinutes
-                                      ? ` • ${lec.durationMinutes}m`
-                                      : ''}
-                                    {lec.isPreview ? ' • Xem thử' : ''}
-                                  </span>
-                                </div>
-                              </li>
-                            );
-                          })
-                        ) : (
-                          <li className="player-lecture-empty">
-                            Chưa có bài giảng trong chương này
-                          </li>
-                        )}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </aside>
-            </div>
-          </div>
-        </section>
       )}
 
       {/* 1. HERO BANNER THEO MẪU */}
@@ -1030,13 +804,10 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                 mod.lectures.map(
                                   (lec: CourseLecture, lIdx: number) => {
                                     const unlocked = canAccessLecture(lec);
-                                    const isPlaying =
-                                      activeLecture?.sectionIndex === idx &&
-                                      activeLecture?.lectureIndex === lIdx;
                                     return (
                                       <li
                                         key={lIdx}
-                                        className={`clickable-lesson ${isPlaying ? 'playing' : ''} ${!unlocked ? 'locked-lesson' : ''}`}
+                                        className={`clickable-lesson ${!unlocked ? 'locked-lesson' : ''}`}
                                         role="button"
                                         tabIndex={0}
                                         onClick={() =>
@@ -1054,7 +825,7 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                       >
                                         <span className="lesson-title-cell">
                                           <span className="lesson-play-badge">
-                                            {isPlaying || unlocked ? (
+                                            {unlocked ? (
                                               <IconlyPlay
                                                 size={14}
                                                 color="#0056d2"
@@ -1075,9 +846,7 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                             </span>
                                           ) : unlocked ? (
                                             <span className="lesson-tag lesson-tag-play">
-                                              {isPlaying
-                                                ? 'Đang phát'
-                                                : 'Phát ngay'}
+                                              Vào học
                                             </span>
                                           ) : (
                                             <span className="lesson-tag lesson-tag-lock">

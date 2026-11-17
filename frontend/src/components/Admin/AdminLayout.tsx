@@ -7,12 +7,14 @@ import {
   IconlyUserGroup,
   IconlyLogout,
   IconlyHome,
+  IconlyTick,
 } from '../Onboarding/IconlyIcons';
 import './AdminLayout.css';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  activeTab?: 'categories' | 'system-configs' | 'coupons' | 'users';
+  activeTab?:
+    'categories' | 'system-configs' | 'coupons' | 'users' | 'course-approvals';
   pageTitle?: string;
 }
 
@@ -45,6 +47,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
         <nav className="admin-sidebar-nav">
           <div className="admin-nav-section-label">Quản trị nội dung</div>
+
+          <button
+            type="button"
+            className={`admin-nav-item ${activeTab === 'course-approvals' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/courses')}
+          >
+            <div className="admin-nav-icon">
+              <IconlyTick size={18} color="currentColor" />
+            </div>
+            <span>Phê duyệt khóa học</span>
+          </button>
 
           <button
             type="button"

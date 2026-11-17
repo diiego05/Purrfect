@@ -6,6 +6,7 @@ import {
   getCourseBySlug,
   resetAndSeedCourses,
   recordCourseInteraction,
+  streamLectureDocument,
 } from '../controllers/courseController';
 import { getOnboardingData } from '../controllers/onboardingController';
 import {
@@ -37,6 +38,9 @@ router.get('/', getCourses);
 
 // Seed lại dữ liệu nếu cần (Yêu cầu quyền Admin)
 router.post('/seed', authenticateToken, requireAdmin, resetAndSeedCourses);
+
+// Stream tài liệu bài giảng (vượt qua giới hạn ACL Deny PDF của Cloudinary)
+router.get('/lectures/document-stream', streamLectureDocument);
 
 // Lấy chi tiết khóa học theo slug
 router.get('/:slug', getCourseBySlug);

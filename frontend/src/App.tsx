@@ -1,5 +1,6 @@
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartWishlistProvider } from './context/CartWishlistContext';
+import { ChatbotProvider } from './context/ChatbotContext';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { HomeCourses } from './components/Courses/HomeCourses';
@@ -8,6 +9,7 @@ import { Footer } from './components/Footer';
 import { AuthCard } from './components/Auth/AuthCard';
 import { OnboardingFlow } from './components/Onboarding/OnboardingFlow';
 import { CourseDetailPage } from './components/CourseDetail/CourseDetailPage';
+import { CourseLearningPage } from './components/Learning/CourseLearningPage';
 import { CategoryPage } from './components/Category/CategoryPage';
 import { SearchPage } from './components/Search/SearchPage';
 import { CartPage } from './components/Cart/CartPage';
@@ -20,6 +22,7 @@ import { CategoryManagement } from './components/Admin/CategoryManagement/Catego
 import SystemConfigManagement from './components/Admin/SystemConfig/SystemConfigManagement';
 import CouponManagement from './components/Admin/CouponManagement/CouponManagement';
 import { UserManagement } from './components/Admin/UserManagement/UserManagement';
+import { CourseApprovalManagement } from './components/Admin/CourseApproval/CourseApprovalManagement';
 import { ProfilePage } from './components/Profile/ProfilePage';
 import { PlaylistsPage } from './components/Playlist/PlaylistsPage';
 import { PlaylistDetailPage } from './components/Playlist/PlaylistDetailPage';
@@ -150,6 +153,23 @@ function MainRouter() {
     );
   }
 
+  // 4. Phòng học trực tuyến / Trình phát bài giảng chuyên biệt (Course Learning Room)
+  const learningMatch = normalizedPath.match(
+    /^\/(?:learning|learn|hoc-tap)\/([^/]+)$/,
+  );
+  if (learningMatch) {
+    const slug = decodeURIComponent(learningMatch[1]);
+    return <CourseLearningPage key={slug} slug={slug} />;
+  }
+
+  const courseLearnMatch = normalizedPath.match(
+    /^\/courses\/([^/]+)\/(?:learn|learning)$/,
+  );
+  if (courseLearnMatch) {
+    const slug = decodeURIComponent(courseLearnMatch[1]);
+    return <CourseLearningPage key={slug} slug={slug} />;
+  }
+
   // Handle course detail page: /courses/:slug or /course/:slug
   const courseMatch = normalizedPath.match(/^\/(?:courses|course)\/([^/]+)$/);
   if (courseMatch) {
@@ -233,6 +253,18 @@ function MainRouter() {
   }
 
   // 3. Phân hệ Quản trị viên (Admin Dashboard)
+  if (
+    normalizedPath === '/admin/courses' ||
+    normalizedPath === '/admin/course-approvals' ||
+    normalizedPath === '/admin/phe-duyet-khoa-hoc'
+  ) {
+    return (
+      <AdminLayout activeTab="course-approvals" pageTitle="Phê duyệt khóa học">
+        <CourseApprovalManagement />
+      </AdminLayout>
+    );
+  }
+
   if (normalizedPath === '/admin' || normalizedPath === '/admin/categories') {
     return (
       <AdminLayout
@@ -308,8 +340,10 @@ function App() {
   return (
     <AuthProvider>
       <CartWishlistProvider>
-        <MainRouter />
-        <ChatbotWidget />
+        <ChatbotProvider>
+          <MainRouter />
+          <ChatbotWidget />
+        </ChatbotProvider>
       </CartWishlistProvider>
     </AuthProvider>
   );

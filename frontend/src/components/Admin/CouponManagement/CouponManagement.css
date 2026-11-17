@@ -21,7 +21,7 @@
   width: 28px;
   height: 28px;
   border: 3px solid #e2e8f0;
-  border-top-color: #6366f1;
+  border-top-color: #0056d2;
   border-radius: 50%;
   animation: coupon-spin 0.8s linear infinite;
 }
@@ -121,7 +121,7 @@
 
 .coupon-tester-hint {
   font-size: 13px;
-  color: #6366f1;
+  color: #0056d2;
 }
 
 .coupon-tester-inputs {
@@ -217,7 +217,7 @@
 }
 
 .coupon-search-input:focus {
-  border-color: #6366f1;
+  border-color: #0056d2;
 }
 
 .coupon-filters {
@@ -247,7 +247,7 @@
 }
 
 .coupon-select:focus {
-  border-color: #6366f1;
+  border-color: #0056d2;
 }
 
 /* ── Table ───────────────────────────────────────────────────────── */
@@ -388,7 +388,7 @@
 
 .usage-progress-fill {
   height: 100%;
-  background: #6366f1;
+  background: #0056d2;
   border-radius: 999px;
   transition: width 0.3s;
 }
@@ -495,7 +495,7 @@
 }
 
 .coupon-toggle input:checked + .coupon-toggle-slider {
-  background: #6366f1;
+  background: #0056d2;
 }
 
 .coupon-toggle input:checked + .coupon-toggle-slider::before {
@@ -526,7 +526,7 @@
 }
 
 .coupon-btn--primary {
-  background: #6366f1;
+  background: #0056d2;
   color: #fff;
 }
 
@@ -537,8 +537,8 @@
 
 .coupon-btn--outline {
   background: transparent;
-  border: 1.5px solid #6366f1;
-  color: #6366f1;
+  border: 1.5px solid #0056d2;
+  color: #0056d2;
 }
 
 .coupon-btn--outline:hover:not(:disabled) {
@@ -583,7 +583,7 @@
 .btn-link {
   background: none;
   border: none;
-  color: #6366f1;
+  color: #0056d2;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -707,7 +707,7 @@
 
 .coupon-input:focus {
   outline: none;
-  border-color: #6366f1;
+  border-color: #0056d2;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
@@ -756,14 +756,14 @@
 }
 
 .type-option--selected {
-  border-color: #6366f1;
+  border-color: #0056d2;
   background: #eef2ff;
   color: #4338ca;
   font-weight: 600;
 }
 
 .type-option input[type='radio'] {
-  accent-color: #6366f1;
+  accent-color: #0056d2;
 }
 
 /* ── Checkbox ────────────────────────────────────────────────────── */
@@ -779,7 +779,7 @@
 .coupon-checkbox-label input[type='checkbox'] {
   width: 16px;
   height: 16px;
-  accent-color: #6366f1;
+  accent-color: #0056d2;
 }
 
 /* ── Empty State ─────────────────────────────────────────────────── */

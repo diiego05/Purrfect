@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type FC } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCartWishlist } from '../context/CartWishlistContext';
+import { useChatbot } from '../context/ChatbotContext';
 import {
   fetchCategories,
   defaultCategories,
@@ -20,6 +21,7 @@ import {
   IconlyFolder,
   IconlyLogout,
   IconlyDocument,
+  IconlySparkles,
 } from './Onboarding/IconlyIcons';
 
 export const Header: FC = () => {
@@ -50,6 +52,7 @@ export const Header: FC = () => {
     hideCartNotification,
     isCartBouncing,
   } = useCartWishlist();
+  const { isOpen: isChatOpen, toggleChat, openChat } = useChatbot();
 
   // Load platform categories from backend
   useEffect(() => {
@@ -539,6 +542,23 @@ export const Header: FC = () => {
             )}
           </div>
 
+          {/* AI Assistant Button - Cạnh bên Avatar */}
+          <button
+            type="button"
+            className={`header-icon-btn header-ai-btn ${isChatOpen ? 'active' : ''}`}
+            title={
+              language === 'vi' ? 'Trợ lý AI Purrfect' : 'Purrfect AI Assistant'
+            }
+            aria-label="Trợ lý AI"
+            onClick={() => {
+              toggleChat();
+              setNotificationOpen(false);
+              setAvatarMenuOpen(false);
+            }}
+          >
+            <IconlySparkles size={20} color="currentColor" />
+          </button>
+
           {/* Avatar & User Dropdown */}
           <div className="header-popover-anchor" ref={avatarRef}>
             <button
@@ -1005,6 +1025,17 @@ export const Header: FC = () => {
             }}
           >
             {language === 'vi' ? 'Playlist khóa học' : 'Course Playlists'}
+          </a>
+
+          <a
+            href="#ai-chat"
+            onClick={(e) => {
+              e.preventDefault();
+              setMobileMenuOpen(false);
+              openChat();
+            }}
+          >
+            {language === 'vi' ? 'Trợ lý AI Purrfect' : 'Purrfect AI Assistant'}
           </a>
 
           <div

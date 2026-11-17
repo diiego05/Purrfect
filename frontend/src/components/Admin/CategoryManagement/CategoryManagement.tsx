@@ -649,7 +649,7 @@ export const CategoryManagement: React.FC = () => {
                       <div
                         style={{
                           fontSize: '1rem',
-                          color: '#f1f5f9',
+                          color: '#0f172a',
                           fontWeight: 600,
                         }}
                       >
@@ -855,7 +855,7 @@ export const CategoryManagement: React.FC = () => {
                     <div
                       style={{
                         fontSize: '1rem',
-                        color: '#f1f5f9',
+                        color: '#0f172a',
                         fontWeight: 600,
                       }}
                     >

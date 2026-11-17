@@ -457,7 +457,7 @@ export default function CouponManagement() {
         </div>
         <div className="coupon-stat-card">
           <span className="coupon-stat-icon">
-            <IconlyUserGroup size={22} color="#6366f1" />
+            <IconlyUserGroup size={22} color="#0056d2" />
           </span>
           <div>
             <div className="coupon-stat-value">{totalUsed}</div>

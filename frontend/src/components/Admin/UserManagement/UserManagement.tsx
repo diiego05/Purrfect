@@ -718,9 +718,9 @@ export const UserManagement: React.FC = () => {
               </h3>
             </div>
             <div className="user-modal-body">
-              <p style={{ margin: 0, color: '#94a3b8', lineHeight: 1.6 }}>
+              <p style={{ margin: 0, color: '#334155', lineHeight: 1.6 }}>
                 Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản{' '}
-                <strong style={{ color: '#f1f5f9' }}>
+                <strong style={{ color: '#0f172a' }}>
                   {deletingUser.fullName || deletingUser.email}
                 </strong>{' '}
                 ({deletingUser.email}) khỏi hệ thống? Hành động này không thể

@@ -445,7 +445,7 @@ export default function SystemConfigManagement() {
         </div>
         <div className="scm-stat-card">
           <span className="scm-stat-icon">
-            <IconlySetting size={22} color="#6366f1" />
+            <IconlySetting size={22} color="#0056d2" />
           </span>
           <div>
             <div className="scm-stat-value">{configs.length}</div>

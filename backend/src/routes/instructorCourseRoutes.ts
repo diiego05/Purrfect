@@ -17,6 +17,8 @@ import {
   toggleCourseStatus,
   approveCourse,
   rejectCourse,
+  updateLectureTranscript,
+  transcribeLectureWithAI,
 } from '../controllers/instructorCourseController';
 
 const router = Router();
@@ -82,5 +84,11 @@ router.delete('/:id', deleteOrDisableCourse);
 
 // 8. Tạm dừng kinh doanh hoặc mở bán lại
 router.patch('/:id/toggle-status', toggleCourseStatus);
+
+// 9. Cập nhật transcript cho bài giảng
+router.put('/:id/lectures/:lectureId/transcript', updateLectureTranscript);
+
+// 10. Yêu cầu AI trích xuất lại transcript cho bài giảng
+router.post('/:id/lectures/:lectureId/transcribe', transcribeLectureWithAI);
 
 export default router;

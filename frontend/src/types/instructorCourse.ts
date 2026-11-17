@@ -27,8 +27,21 @@ export interface SectionItem {
 export type InstructorCourseStatus =
   'DRAFT' | 'PENDING_APPROVAL' | 'PUBLISHED' | 'REJECTED' | 'DISABLED';
 
+export interface InstructorUserSummary {
+  _id?: string;
+  id?: string;
+  fullName?: string;
+  name?: string;
+  email?: string;
+  avatarUrl?: string;
+  avatar?: string;
+  headline?: string;
+  bio?: string;
+}
+
 export interface InstructorCourse {
   _id: string;
+  instructorId?: InstructorUserSummary | string;
   title: string;
   slug: string;
   shortDescription?: string;

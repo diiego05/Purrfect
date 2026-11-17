@@ -12,7 +12,10 @@ import {
   uploadLectureMedia,
   uploadCourseThumbnail,
   submitCourseForApproval,
+  updateLectureTranscript,
+  transcribeLectureWithAI,
 } from '../../services/instructorCourseApi';
+import { parseSubtitleToTranscript } from '../../utils/subtitleParser';
 import {
   IconlyFolder,
   IconlyPlus,
@@ -97,8 +100,19 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
   // Trạng thái xử lý & lỗi
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
-  const [activeTranscriptLec, setActiveTranscriptLec] =
-    useState<LectureItem | null>(null);
+
+  // Quản lý xem & chỉnh sửa Transcript bài giảng
+  const [activeTranscriptLoc, setActiveTranscriptLoc] = useState<{
+    secIdx: number;
+    lecIdx: number;
+  } | null>(null);
+  const [isEditingTranscript, setIsEditingTranscript] =
+    useState<boolean>(false);
+  const [transcriptDraft, setTranscriptDraft] = useState<string>('');
+  const [transcriptNotice, setTranscriptNotice] = useState<string>('');
+  const [transcribingLecKey, setTranscribingLecKey] = useState<string | null>(
+    null,
+  );
 
   // Thêm bài giảng vào chương (drawer nội bộ, không popup modal)
   const [addingLectureSectionIdx, setAddingLectureSectionIdx] = useState<
@@ -302,6 +316,123 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
     }
   };
 
+  // Xử lý bật/tắt xem & chỉnh sửa Transcript cho 1 bài giảng
+  const handleToggleTranscript = (
+    secIdx: number,
+    lecIdx: number,
+    lecture: LectureItem,
+  ) => {
+    if (
+      activeTranscriptLoc?.secIdx === secIdx &&
+      activeTranscriptLoc?.lecIdx === lecIdx
+    ) {
+      setActiveTranscriptLoc(null);
+      setIsEditingTranscript(false);
+      setTranscriptNotice('');
+    } else {
+      setActiveTranscriptLoc({ secIdx, lecIdx });
+      setTranscriptDraft(lecture.transcript || '');
+      setIsEditingTranscript(!lecture.transcript);
+      setTranscriptNotice('');
+    }
+  };
+
+  // Lưu nội dung Transcript
+  const handleSaveTranscript = async (secIdx: number, lecIdx: number) => {
+    const trimmed = transcriptDraft.trim();
+    const updated = [...sections];
+    const targetLec = updated[secIdx]?.lectures?.[lecIdx];
+    if (!targetLec) return;
+
+    targetLec.transcript = trimmed;
+    targetLec.transcriptStatus = trimmed ? 'COMPLETED' : 'PENDING';
+    setSections(updated);
+    setIsEditingTranscript(false);
+    setTranscriptNotice('Đã lưu nội dung transcript thành công!');
+
+    if (currentCourse?._id && targetLec._id) {
+      try {
+        await updateLectureTranscript(
+          currentCourse._id,
+          targetLec._id,
+          trimmed,
+        );
+      } catch (err) {
+        console.warn('Lưu transcript API nền:', err);
+      }
+    }
+
+    setTimeout(() => {
+      setTranscriptNotice('');
+    }, 3500);
+  };
+
+  // Tải lên tệp phụ đề (.srt, .vtt, .txt) và trích xuất tự động vào Transcript
+  const handleUploadSubtitleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = String(event.target?.result || '');
+      const parsed = parseSubtitleToTranscript(content);
+      if (parsed) {
+        setTranscriptDraft(parsed);
+        setIsEditingTranscript(true);
+        setTranscriptNotice(
+          `Đã nạp phụ đề từ tệp "${file.name}"! Nhấn "Lưu Transcript" để lưu thay đổi.`,
+        );
+      } else {
+        setTranscriptNotice(
+          `Tệp "${file.name}" không có nội dung văn bản hợp lệ.`,
+        );
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  // Trích xuất lại bằng AI (Gemini) cho bài giảng
+  const handleAiTranscribe = async (
+    secIdx: number,
+    lecIdx: number,
+    lecture: LectureItem,
+  ) => {
+    if (!currentCourse?._id || !lecture._id) {
+      setTranscriptNotice(
+        'Vui lòng "Lưu nháp" khóa học trước khi trích xuất bằng AI.',
+      );
+      return;
+    }
+
+    const key = `${secIdx}-${lecIdx}`;
+    setTranscribingLecKey(key);
+    setTranscriptNotice('Đang gửi video đến AI để trích xuất transcript...');
+
+    try {
+      const res = await transcribeLectureWithAI(currentCourse._id, lecture._id);
+      if (res.data?.transcript) {
+        const updated = [...sections];
+        updated[secIdx].lectures[lecIdx].transcript = res.data.transcript;
+        updated[secIdx].lectures[lecIdx].transcriptStatus = 'COMPLETED';
+        setSections(updated);
+        setTranscriptDraft(res.data.transcript);
+        setIsEditingTranscript(false);
+        setTranscriptNotice('Trích xuất transcript AI thành công!');
+      } else {
+        setTranscriptNotice(res.message || 'Không thể trích xuất transcript.');
+      }
+    } catch (err) {
+      setTranscriptNotice(
+        err instanceof Error
+          ? err.message
+          : 'Lỗi khi trích xuất transcript bằng AI.',
+      );
+    } finally {
+      setTranscribingLecKey(null);
+    }
+  };
+
   // Chuẩn bị payload
   const buildPayload = () => {
     const payload: Partial<InstructorCourse> = {
@@ -490,8 +621,8 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
             <span
               style={{
                 fontSize: '11px',
-                background: '#1e293b',
-                color: '#cbd5e1',
+                background: '#f1f5f9',
+                color: '#475569',
                 padding: '2px 6px',
                 borderRadius: '10px',
               }}
@@ -513,7 +644,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
           className="editor-body"
           style={{
             borderRadius: '0 0 12px 12px',
-            border: '1px solid #1f2937',
+            border: '1px solid #e2e8f0',
             borderTop: 'none',
             marginBottom: '24px',
           }}
@@ -673,7 +804,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                             style={{
                               fontSize: '13.5px',
                               fontWeight: 700,
-                              color: '#f8fafc',
+                              color: '#0f172a',
                             }}
                           >
                             Ảnh đại diện khóa học
@@ -827,13 +958,13 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   paddingBottom: '12px',
-                  borderBottom: '1px solid #1f2937',
+                  borderBottom: '1px solid #e2e8f0',
                   flexWrap: 'wrap',
                   gap: '12px',
                 }}
               >
                 <div>
-                  <h4 style={{ margin: 0, fontSize: '15px', color: '#f8fafc' }}>
+                  <h4 style={{ margin: 0, fontSize: '15px', color: '#0f172a' }}>
                     Cấu trúc chương trình học (Curriculum)
                   </h4>
                 </div>
@@ -964,7 +1095,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                     style={{
                                       fontWeight: 600,
                                       fontSize: '13.5px',
-                                      color: '#f8fafc',
+                                      color: '#0f172a',
                                     }}
                                   >
                                     {secIdx + 1}.{lecIdx + 1} {lecture.title}
@@ -1043,30 +1174,46 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                   <span>Xem thử (Preview)</span>
                                 </label>
 
-                                {/* Xem transcript AI - Mở trực tiếp inline */}
-                                {lecture.transcript && (
-                                  <button
-                                    type="button"
-                                    className="btn-action-secondary"
-                                    style={{
-                                      padding: '4px 8px',
-                                      fontSize: '11.5px',
-                                    }}
-                                    onClick={() =>
-                                      setActiveTranscriptLec(
-                                        activeTranscriptLec?.title ===
-                                          lecture.title
-                                          ? null
-                                          : lecture,
-                                      )
+                                {/* Xem & Chỉnh sửa transcript AI */}
+                                <button
+                                  type="button"
+                                  className="btn-action-secondary"
+                                  style={{
+                                    padding: '4px 8px',
+                                    fontSize: '11.5px',
+                                    color: lecture.transcript
+                                      ? '#c084fc'
+                                      : '#94a3b8',
+                                    borderColor: lecture.transcript
+                                      ? 'rgba(192, 132, 252, 0.4)'
+                                      : undefined,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                  }}
+                                  onClick={() =>
+                                    handleToggleTranscript(
+                                      secIdx,
+                                      lecIdx,
+                                      lecture,
+                                    )
+                                  }
+                                >
+                                  <IconlyAiChip
+                                    size={13}
+                                    color={
+                                      lecture.transcript ? '#c084fc' : '#94a3b8'
                                     }
-                                  >
-                                    {activeTranscriptLec?.title ===
-                                    lecture.title
+                                  />
+                                  <span>
+                                    {activeTranscriptLoc?.secIdx === secIdx &&
+                                    activeTranscriptLoc?.lecIdx === lecIdx
                                       ? 'Đóng Transcript'
-                                      : 'Xem Transcript AI'}
-                                  </button>
-                                )}
+                                      : lecture.transcript
+                                        ? 'Xem / Sửa Transcript'
+                                        : 'Thêm Transcript'}
+                                  </span>
+                                </button>
 
                                 <button
                                   type="button"
@@ -1082,16 +1229,16 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                               </div>
                             </div>
 
-                            {/* Transcript hiển thị inline bên dưới bài giảng (Không modal popup) */}
-                            {activeTranscriptLec?.title === lecture.title &&
-                              lecture.transcript && (
+                            {/* Transcript hiển thị inline bên dưới bài giảng */}
+                            {activeTranscriptLoc?.secIdx === secIdx &&
+                              activeTranscriptLoc?.lecIdx === lecIdx && (
                                 <div
                                   style={{
-                                    background: '#080c14',
-                                    border: '1px solid #1f2937',
+                                    background: '#f8fafc',
+                                    border: '1px solid #e2e8f0',
                                     borderRadius: '8px',
-                                    padding: '12px 16px',
-                                    margin: '2px 0 6px 0',
+                                    padding: '14px 16px',
+                                    margin: '4px 0 8px 0',
                                   }}
                                 >
                                   <div
@@ -1099,54 +1246,465 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                       display: 'flex',
                                       justifyContent: 'space-between',
                                       alignItems: 'center',
-                                      marginBottom: '8px',
+                                      marginBottom: '10px',
+                                      flexWrap: 'wrap',
+                                      gap: '8px',
                                     }}
                                   >
-                                    <span
+                                    <div
                                       style={{
-                                        fontSize: '12px',
-                                        fontWeight: 700,
-                                        color: '#a78bfa',
                                         display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          fontSize: '12.5px',
+                                          fontWeight: 700,
+                                          color: '#c084fc',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '6px',
+                                        }}
+                                      >
+                                        <IconlyAiChip
+                                          size={14}
+                                          color="#c084fc"
+                                        />
+                                        <span>Transcript phụ đề (AI RAG):</span>
+                                      </span>
+                                      <span
+                                        style={{
+                                          fontSize: '11px',
+                                          padding: '2px 8px',
+                                          borderRadius: '12px',
+                                          background: lecture.transcript
+                                            ? 'rgba(16, 185, 129, 0.15)'
+                                            : 'rgba(234, 179, 8, 0.15)',
+                                          color: lecture.transcript
+                                            ? '#34d399'
+                                            : '#facc15',
+                                          border: `1px solid ${
+                                            lecture.transcript
+                                              ? 'rgba(16, 185, 129, 0.3)'
+                                              : 'rgba(234, 179, 8, 0.3)'
+                                          }`,
+                                        }}
+                                      >
+                                        {lecture.transcript
+                                          ? 'AI Sẵn sàng'
+                                          : 'Chưa có transcript'}
+                                      </span>
+                                    </div>
+
+                                    <div
+                                      style={{
+                                        display: 'flex',
                                         alignItems: 'center',
                                         gap: '6px',
+                                        flexWrap: 'wrap',
                                       }}
                                     >
-                                      <IconlyAiChip size={14} color="#a78bfa" />
-                                      <span>
-                                        Transcript phụ đề trích xuất tự động cho
-                                        AI RAG:
-                                      </span>
-                                    </span>
-                                    <button
-                                      type="button"
+                                      {/* Tải tệp phụ đề .srt, .vtt, .txt */}
+                                      <label
+                                        style={{
+                                          cursor: 'pointer',
+                                          background: '#ffffff',
+                                          border: '1px solid #cbd5e1',
+                                          borderRadius: '6px',
+                                          padding: '4px 10px',
+                                          fontSize: '11.5px',
+                                          color: '#334155',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '5px',
+                                          userSelect: 'none',
+                                        }}
+                                        title="Tải lên tệp phụ đề .srt, .vtt hoặc .txt từ máy tính"
+                                      >
+                                        <IconlyFolder
+                                          size={12}
+                                          color="#a78bfa"
+                                        />
+                                        <span>
+                                          Tải file phụ đề (.srt, .vtt)
+                                        </span>
+                                        <input
+                                          type="file"
+                                          accept=".srt,.vtt,.txt"
+                                          style={{ display: 'none' }}
+                                          onChange={(e) =>
+                                            handleUploadSubtitleFile(e)
+                                          }
+                                        />
+                                      </label>
+
+                                      {/* Trích xuất AI */}
+                                      {currentCourse?._id && lecture._id && (
+                                        <button
+                                          type="button"
+                                          style={{
+                                            background: '#312e81',
+                                            border: '1px solid #4338ca',
+                                            borderRadius: '6px',
+                                            padding: '4px 10px',
+                                            fontSize: '11.5px',
+                                            color: '#e0e7ff',
+                                            cursor:
+                                              transcribingLecKey ===
+                                              `${secIdx}-${lecIdx}`
+                                                ? 'not-allowed'
+                                                : 'pointer',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                          }}
+                                          disabled={
+                                            transcribingLecKey ===
+                                            `${secIdx}-${lecIdx}`
+                                          }
+                                          onClick={() =>
+                                            handleAiTranscribe(
+                                              secIdx,
+                                              lecIdx,
+                                              lecture,
+                                            )
+                                          }
+                                        >
+                                          <IconlyAiChip
+                                            size={12}
+                                            color="#818cf8"
+                                          />
+                                          <span>
+                                            {transcribingLecKey ===
+                                            `${secIdx}-${lecIdx}`
+                                              ? 'Đang trích xuất...'
+                                              : 'Trích xuất lại AI'}
+                                          </span>
+                                        </button>
+                                      )}
+
+                                      {/* Chỉnh sửa / Lưu */}
+                                      {isEditingTranscript ? (
+                                        <button
+                                          type="button"
+                                          style={{
+                                            background: '#10b981',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            padding: '4px 12px',
+                                            fontSize: '11.5px',
+                                            fontWeight: 600,
+                                            color: '#ffffff',
+                                            cursor: 'pointer',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                          }}
+                                          onClick={() =>
+                                            handleSaveTranscript(secIdx, lecIdx)
+                                          }
+                                        >
+                                          <IconlyTick
+                                            size={12}
+                                            color="#ffffff"
+                                          />
+                                          <span>Lưu Transcript</span>
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          style={{
+                                            background: '#ffffff',
+                                            border: '1px solid #cbd5e1',
+                                            borderRadius: '6px',
+                                            padding: '4px 10px',
+                                            fontSize: '11.5px',
+                                            color: '#334155',
+                                            cursor: 'pointer',
+                                          }}
+                                          onClick={() => {
+                                            setTranscriptDraft(
+                                              lecture.transcript || '',
+                                            );
+                                            setIsEditingTranscript(true);
+                                          }}
+                                        >
+                                          Chỉnh sửa
+                                        </button>
+                                      )}
+
+                                      {/* Đóng */}
+                                      <button
+                                        type="button"
+                                        style={{
+                                          background: 'none',
+                                          border: 'none',
+                                          color: '#94a3b8',
+                                          cursor: 'pointer',
+                                          fontSize: '12px',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          padding: '4px 6px',
+                                        }}
+                                        onClick={() => {
+                                          setActiveTranscriptLoc(null);
+                                          setIsEditingTranscript(false);
+                                        }}
+                                      >
+                                        <IconlyClose
+                                          size={13}
+                                          color="currentColor"
+                                        />
+                                        <span>Đóng</span>
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Thông báo thao tác */}
+                                  {transcriptNotice && (
+                                    <div
                                       style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        color: '#94a3b8',
-                                        cursor: 'pointer',
+                                        padding: '6px 12px',
+                                        borderRadius: '6px',
+                                        background: 'rgba(59, 130, 246, 0.1)',
+                                        border:
+                                          '1px solid rgba(59, 130, 246, 0.25)',
+                                        color: '#93c5fd',
                                         fontSize: '12px',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
+                                        marginBottom: '10px',
                                       }}
-                                      onClick={() =>
-                                        setActiveTranscriptLec(null)
-                                      }
                                     >
-                                      <IconlyClose
-                                        size={13}
-                                        color="currentColor"
+                                      {transcriptNotice}
+                                    </div>
+                                  )}
+
+                                  {/* Nội dung: Soạn thảo hoặc Hiển thị */}
+                                  {isEditingTranscript ? (
+                                    <div>
+                                      <textarea
+                                        value={transcriptDraft}
+                                        onChange={(e) =>
+                                          setTranscriptDraft(e.target.value)
+                                        }
+                                        placeholder="Nhập hoặc dán lời nói bài giảng có kèm mốc thời gian:&#10;[00:00] Xin chào các bạn...&#10;[01:15] Nội dung bài học...&#10;&#10;Hoặc bấm 'Tải file phụ đề (.srt, .vtt)' ở trên để nạp tự động."
+                                        rows={8}
+                                        style={{
+                                          width: '100%',
+                                          background: '#ffffff',
+                                          border: '1px solid #0056d2',
+                                          borderRadius: '6px',
+                                          color: '#0f172a',
+                                          fontFamily: 'monospace',
+                                          fontSize: '12.5px',
+                                          lineHeight: '1.6',
+                                          padding: '10px 12px',
+                                          outline: 'none',
+                                          boxSizing: 'border-box',
+                                          resize: 'vertical',
+                                        }}
                                       />
-                                      <span>Đóng</span>
-                                    </button>
-                                  </div>
-                                  <div
-                                    className="transcript-box"
-                                    style={{ margin: 0 }}
-                                  >
-                                    {lecture.transcript}
-                                  </div>
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'center',
+                                          marginTop: '8px',
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            fontSize: '11px',
+                                            color: '#64748b',
+                                          }}
+                                        >
+                                          * Hỗ trợ mốc thời gian dạng [mm:ss] để
+                                          AI RAG tra cứu chính xác.
+                                        </span>
+                                        <div
+                                          style={{
+                                            display: 'flex',
+                                            gap: '8px',
+                                          }}
+                                        >
+                                          <button
+                                            type="button"
+                                            style={{
+                                              background: '#ffffff',
+                                              border: '1px solid #cbd5e1',
+                                              borderRadius: '6px',
+                                              padding: '4px 10px',
+                                              fontSize: '11.5px',
+                                              color: '#475569',
+                                              cursor: 'pointer',
+                                            }}
+                                            onClick={() => {
+                                              setTranscriptDraft(
+                                                lecture.transcript || '',
+                                              );
+                                              setIsEditingTranscript(false);
+                                            }}
+                                          >
+                                            Hủy
+                                          </button>
+                                          <button
+                                            type="button"
+                                            style={{
+                                              background: '#10b981',
+                                              border: 'none',
+                                              borderRadius: '6px',
+                                              padding: '4px 12px',
+                                              fontSize: '11.5px',
+                                              fontWeight: 600,
+                                              color: '#ffffff',
+                                              cursor: 'pointer',
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '4px',
+                                            }}
+                                            onClick={() =>
+                                              handleSaveTranscript(
+                                                secIdx,
+                                                lecIdx,
+                                              )
+                                            }
+                                          >
+                                            <IconlyTick
+                                              size={12}
+                                              color="#ffffff"
+                                            />
+                                            <span>Lưu thay đổi</span>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : lecture.transcript ? (
+                                    <div>
+                                      <div
+                                        className="transcript-box"
+                                        style={{ margin: 0 }}
+                                      >
+                                        {lecture.transcript}
+                                      </div>
+                                      <div
+                                        style={{
+                                          marginTop: '6px',
+                                          fontSize: '11px',
+                                          color: '#64748b',
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'center',
+                                        }}
+                                      >
+                                        <span>
+                                          Toàn bộ nội dung transcript này đã
+                                          được nạp vào vector store cho Trợ lý
+                                          AI Purrfect.
+                                        </span>
+                                        <button
+                                          type="button"
+                                          style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: '#ef4444',
+                                            cursor: 'pointer',
+                                            fontSize: '11px',
+                                            textDecoration: 'underline',
+                                            padding: 0,
+                                          }}
+                                          onClick={() => {
+                                            setTranscriptDraft('');
+                                            handleSaveTranscript(
+                                              secIdx,
+                                              lecIdx,
+                                            );
+                                          }}
+                                        >
+                                          Xóa transcript
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div
+                                      style={{
+                                        textAlign: 'center',
+                                        padding: '18px 12px',
+                                        background: '#f8fafc',
+                                        border: '1px dashed #cbd5e1',
+                                        borderRadius: '6px',
+                                      }}
+                                    >
+                                      <p
+                                        style={{
+                                          margin: '0 0 10px 0',
+                                          fontSize: '12.5px',
+                                          color: '#94a3b8',
+                                        }}
+                                      >
+                                        Bài giảng này chưa có nội dung
+                                        transcript phụ đề.
+                                      </p>
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          gap: '8px',
+                                          justifyContent: 'center',
+                                          flexWrap: 'wrap',
+                                        }}
+                                      >
+                                        <label
+                                          style={{
+                                            cursor: 'pointer',
+                                            background: '#0056d2',
+                                            borderRadius: '6px',
+                                            padding: '6px 12px',
+                                            fontSize: '12px',
+                                            color: '#ffffff',
+                                            fontWeight: 600,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                          }}
+                                        >
+                                          <IconlyFolder
+                                            size={14}
+                                            color="#ffffff"
+                                          />
+                                          <span>
+                                            Tải file phụ đề (.srt, .vtt)
+                                          </span>
+                                          <input
+                                            type="file"
+                                            accept=".srt,.vtt,.txt"
+                                            style={{ display: 'none' }}
+                                            onChange={(e) =>
+                                              handleUploadSubtitleFile(e)
+                                            }
+                                          />
+                                        </label>
+                                        <button
+                                          type="button"
+                                          style={{
+                                            background: '#ffffff',
+                                            border: '1px solid #cbd5e1',
+                                            borderRadius: '6px',
+                                            padding: '6px 12px',
+                                            fontSize: '12px',
+                                            color: '#334155',
+                                            cursor: 'pointer',
+                                          }}
+                                          onClick={() => {
+                                            setTranscriptDraft('');
+                                            setIsEditingTranscript(true);
+                                          }}
+                                        >
+                                          Nhập nội dung thủ công
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                           </div>
@@ -1158,8 +1716,8 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                     {addingLectureSectionIdx === secIdx && (
                       <div
                         style={{
-                          background: '#0d131f',
-                          borderTop: '1px solid #1f2937',
+                          background: '#f8fafc',
+                          borderTop: '1px solid #e2e8f0',
                           padding: '18px',
                           display: 'flex',
                           flexDirection: 'column',
@@ -1450,8 +2008,8 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
         {/* Thanh công cụ dưới cùng (Bottom Action Bar) */}
         <div
           style={{
-            background: '#111827',
-            border: '1px solid #1f2937',
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
             borderRadius: '12px',
             padding: '16px 24px',
             display: 'flex',

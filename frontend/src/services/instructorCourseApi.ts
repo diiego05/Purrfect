@@ -14,6 +14,8 @@ const API_BASE = '/api/instructor/courses';
 export const fetchInstructorCourses = async (params?: {
   status?: string;
   search?: string;
+  all?: boolean;
+  adminView?: boolean;
 }): Promise<{
   success: boolean;
   data: {
@@ -24,10 +26,12 @@ export const fetchInstructorCourses = async (params?: {
   const query = new URLSearchParams();
   if (params?.status) query.append('status', params.status);
   if (params?.search) query.append('search', params.search);
+  if (params?.all) query.append('all', 'true');
+  if (params?.adminView) query.append('adminView', 'true');
 
   const url = `${API_BASE}${query.toString() ? `?${query.toString()}` : ''}`;
   const res = await authFetch(url);
-  return parseApiJson(res, 'Lỗi khi tải danh sách khóa học giảng viên');
+  return parseApiJson(res, 'Lỗi khi tải danh sách khóa học');
 };
 
 /**
@@ -110,6 +114,7 @@ export const uploadLectureMedia = async (
     fileSize: number;
     durationMinutes: number;
     isPreview: boolean;
+    transcript?: string;
     file?: File;
   },
 ): Promise<{ success: boolean; message: string; data: LectureItem }> => {
@@ -129,6 +134,9 @@ export const uploadLectureMedia = async (
     formData.append('fileSize', String(payload.fileSize || payload.file.size));
     formData.append('durationMinutes', String(payload.durationMinutes || 12));
     formData.append('isPreview', String(payload.isPreview));
+    if (payload.transcript) {
+      formData.append('transcript', payload.transcript);
+    }
 
     res = await authFetch(url, {
       method: 'POST',
@@ -209,4 +217,38 @@ export const rejectInstructorCourse = async (
     body: JSON.stringify({ reason }),
   });
   return parseApiJson(res, 'Lỗi khi từ chối khóa học');
+};
+
+/**
+ * Cập nhật transcript bài giảng trực tiếp
+ */
+export const updateLectureTranscript = async (
+  courseId: string,
+  lectureId: string,
+  transcript: string,
+): Promise<{ success: boolean; message: string; data: LectureItem }> => {
+  const res = await authFetch(
+    `${API_BASE}/${courseId}/lectures/${lectureId}/transcript`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({ transcript }),
+    },
+  );
+  return parseApiJson(res, 'Lỗi khi cập nhật transcript bài giảng');
+};
+
+/**
+ * Yêu cầu AI trích xuất lại transcript từ video bài giảng
+ */
+export const transcribeLectureWithAI = async (
+  courseId: string,
+  lectureId: string,
+): Promise<{ success: boolean; message: string; data: LectureItem }> => {
+  const res = await authFetch(
+    `${API_BASE}/${courseId}/lectures/${lectureId}/transcribe`,
+    {
+      method: 'POST',
+    },
+  );
+  return parseApiJson(res, 'Lỗi khi trích xuất transcript AI');
 };
