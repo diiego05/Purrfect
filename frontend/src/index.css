@@ -39,6 +39,21 @@ body {
   overflow-x: hidden;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-primary);
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
 a {
   text-decoration: none;
   color: inherit;

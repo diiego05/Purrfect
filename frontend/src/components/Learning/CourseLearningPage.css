@@ -492,6 +492,15 @@
   color: #64748b;
 }
 
+/* DISCUSSION PANE (UC22) */
+.tab-pane-discussion {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeInTab 0.25s ease;
+  font-family: var(--font-primary, 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+}
+
 /* TRANSCRIPT PANE */
 .tab-pane-transcript {
   display: flex;

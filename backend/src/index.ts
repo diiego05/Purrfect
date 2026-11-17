@@ -25,6 +25,7 @@ import wishlistRoutes from './routes/wishlistRoutes';
 import userRoutes from './routes/userRoutes';
 import playlistRoutes from './routes/playlistRoutes';
 import instructorCourseRoutes from './routes/instructorCourseRoutes';
+import discussionRoutes from './routes/discussionRoutes';
 
 import { seedDefaultConfigs } from './controllers/systemConfigController';
 import { seedDefaultUsersIfEmpty } from './controllers/userController';
@@ -68,6 +69,8 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/playlists', playlistRoutes);
 app.use('/api/instructor/courses', instructorCourseRoutes);
+app.use('/api/v1', discussionRoutes);
+app.use('/api', discussionRoutes);
 
 // Health check
 app.get('/api/health', (_req, expressRes) => {

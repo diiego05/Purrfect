@@ -18,6 +18,7 @@ import {
   IconlyChevronDown,
   IconlyChevronUp,
 } from '../Onboarding/IconlyIcons';
+import { LectureDiscussionPanel } from './LectureDiscussionPanel';
 import './CourseLearningPage.css';
 
 interface CourseLearningPageProps {
@@ -46,9 +47,10 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
   const [completedLectures, setCompletedLectures] = useState<
     Record<string, boolean>
   >({});
-  const [activeTab, setActiveTab] = useState<'overview' | 'transcript' | 'ai'>(
-    'overview',
-  );
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'discussion' | 'transcript' | 'ai'
+  >('overview');
+  const [discussionCount, setDiscussionCount] = useState<number>(0);
   const [showLockedModal, setShowLockedModal] = useState<CourseLecture | null>(
     null,
   );
@@ -236,6 +238,13 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
       (user.role === 'INSTRUCTOR' &&
         (!instructorObjId || instructorObjId === user.id))),
   );
+
+  const isCourseInstructor = Boolean(
+    user &&
+      user.role === 'INSTRUCTOR' &&
+      (!instructorObjId || instructorObjId === user.id),
+  );
+  const isAdmin = Boolean(user && user.role === 'ADMIN');
 
   const canAccessLecture = (lecture: CourseLecture) =>
     Boolean(isEnrolled || isOwnerOrAdmin || lecture.isPreview);
@@ -646,6 +655,13 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
               </button>
               <button
                 type="button"
+                className={`learning-tab-btn ${activeTab === 'discussion' ? 'active' : ''}`}
+                onClick={() => setActiveTab('discussion')}
+              >
+                💬 Thảo luận bài học {discussionCount > 0 ? `(${discussionCount})` : ''}
+              </button>
+              <button
+                type="button"
                 className={`learning-tab-btn ${activeTab === 'transcript' ? 'active' : ''}`}
                 onClick={() => setActiveTab('transcript')}
               >
@@ -687,6 +703,34 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                       </p>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {activeTab === 'discussion' && (
+                <div className="tab-pane-discussion">
+                  {activeLecture?.lecture?._id ? (
+                    <LectureDiscussionPanel
+                      lectureId={String(activeLecture.lecture._id)}
+                      courseId={String(course._id)}
+                      lectureTitle={activeLecture.lecture.title}
+                      courseTitle={course.title}
+                      isEnrolled={isEnrolled}
+                      isCourseInstructor={isCourseInstructor}
+                      isAdmin={isAdmin}
+                      onEnrollClick={() => {
+                        if (!isAuthenticated) {
+                          navigate('/login');
+                        } else {
+                          navigate(`/checkout?courseId=${course._id}`);
+                        }
+                      }}
+                      onDiscussionCountChange={(count) => setDiscussionCount(count)}
+                    />
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
+                      Vui lòng chọn một bài học để xem và tham gia thảo luận.
+                    </div>
+                  )}
                 </div>
               )}
 
