@@ -6,12 +6,13 @@ import {
   IconlyLogout,
   IconlyHome,
   IconlyUserGroup,
+  IconlyStar,
 } from '../Onboarding/IconlyIcons';
 import './InstructorLayout.css';
 
 interface InstructorLayoutProps {
   children: React.ReactNode;
-  activeTab?: 'courses' | 'analytics' | 'students';
+  activeTab?: 'courses' | 'analytics' | 'students' | 'reviews';
   pageTitle?: string;
   onQuickCreate?: () => void;
 }
@@ -81,6 +82,17 @@ export const InstructorLayout: React.FC<InstructorLayoutProps> = ({
               <IconlyUserGroup size={18} color="currentColor" />
             </div>
             <span>Học viên ghi danh</span>
+          </button>
+
+          <button
+            type="button"
+            className={`instructor-nav-item ${activeTab === 'reviews' ? 'active' : ''}`}
+            onClick={() => navigate('/instructor/reviews')}
+          >
+            <div className="instructor-nav-icon">
+              <IconlyStar size={18} color="currentColor" />
+            </div>
+            <span>Đánh giá & Phản hồi</span>
           </button>
         </nav>
 

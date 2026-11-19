@@ -3,15 +3,17 @@ import mongoose, { Document, Schema } from 'mongoose';
 export type NotificationType =
   | 'NEW_QUESTION'
   | 'NEW_REPLY'
-  | 'OFFICIAL_ANSWER_PINNED';
+  | 'OFFICIAL_ANSWER_PINNED'
+  | 'NEW_REVIEW_REPLY';
 
 export interface INotification extends Document {
   _id: mongoose.Types.ObjectId;
   recipientId: mongoose.Types.ObjectId;
   senderId?: mongoose.Types.ObjectId | null;
-  courseId: mongoose.Types.ObjectId;
-  lectureId: mongoose.Types.ObjectId;
+  courseId?: mongoose.Types.ObjectId | null;
+  lectureId?: mongoose.Types.ObjectId | null;
   discussionId?: mongoose.Types.ObjectId | null;
+  reviewId?: mongoose.Types.ObjectId | null;
   type: NotificationType;
   title: string;
   message: string;
@@ -36,12 +38,12 @@ const notificationSchema = new Schema<INotification>(
     courseId: {
       type: Schema.Types.ObjectId,
       ref: 'Course',
-      required: true,
+      default: null,
       index: true,
     },
     lectureId: {
       type: Schema.Types.ObjectId,
-      required: true,
+      default: null,
       index: true,
     },
     discussionId: {
@@ -49,9 +51,14 @@ const notificationSchema = new Schema<INotification>(
       ref: 'CourseDiscussion',
       default: null,
     },
+    reviewId: {
+      type: Schema.Types.ObjectId,
+      ref: 'CourseReview',
+      default: null,
+    },
     type: {
       type: String,
-      enum: ['NEW_QUESTION', 'NEW_REPLY', 'OFFICIAL_ANSWER_PINNED'],
+      enum: ['NEW_QUESTION', 'NEW_REPLY', 'OFFICIAL_ANSWER_PINNED', 'NEW_REVIEW_REPLY'],
       required: true,
     },
     title: {

@@ -27,6 +27,13 @@ export interface ISection {
   lectures: ILecture[];
 }
 
+export interface ICourseModel extends mongoose.Model<ICourse> {
+  verifyOwnership(
+    courseId: string | mongoose.Types.ObjectId,
+    instructorId: string | mongoose.Types.ObjectId,
+  ): Promise<boolean>;
+}
+
 export interface ICourse extends Document {
   _id: mongoose.Types.ObjectId;
   instructorId?: mongoose.Types.ObjectId | null;
@@ -236,4 +243,20 @@ const courseSchema = new Schema<ICourse>(
 courseSchema.index({ categoryId: 1, level: 1, status: 1 });
 courseSchema.index({ skillIds: 1 });
 
-export const Course = mongoose.model<ICourse>('Course', courseSchema);
+// Khớp Sequence Diagram 3.2.23: verifyOwnership(courseId, instructorId) -> isOwner()
+courseSchema.statics.verifyOwnership = async function (
+  courseId: string | mongoose.Types.ObjectId,
+  instructorId: string | mongoose.Types.ObjectId,
+): Promise<boolean> {
+  if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(instructorId)) {
+    return false;
+  }
+  const course = await this.findOne({
+    _id: courseId,
+    instructorId,
+    isDeleted: false,
+  });
+  return Boolean(course);
+};
+
+export const Course = mongoose.model<ICourse, ICourseModel>('Course', courseSchema);

@@ -26,6 +26,7 @@ import userRoutes from './routes/userRoutes';
 import playlistRoutes from './routes/playlistRoutes';
 import instructorCourseRoutes from './routes/instructorCourseRoutes';
 import discussionRoutes from './routes/discussionRoutes';
+import reviewRoutes from './routes/reviewRoutes';
 
 import { seedDefaultConfigs } from './controllers/systemConfigController';
 import { seedDefaultUsersIfEmpty } from './controllers/userController';
@@ -54,7 +55,9 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/v1/courses', courseRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/system-configs', systemConfigRoutes);
 app.use('/api/banners', bannerRoutes);
@@ -71,6 +74,8 @@ app.use('/api/playlists', playlistRoutes);
 app.use('/api/instructor/courses', instructorCourseRoutes);
 app.use('/api/v1', discussionRoutes);
 app.use('/api', discussionRoutes);
+app.use('/api/v1', reviewRoutes);
+app.use('/api', reviewRoutes);
 
 // Health check
 app.get('/api/health', (_req, expressRes) => {
