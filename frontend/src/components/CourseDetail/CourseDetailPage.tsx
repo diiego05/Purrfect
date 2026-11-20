@@ -1,4 +1,4 @@
-import { useEffect, useState, type FC } from 'react';
+import { useEffect, useState, useCallback, type FC } from 'react';
 import type {
   Course,
   SkillItem,
@@ -13,6 +13,8 @@ import { useAuth } from '../../context/AuthContext';
 import { formatVND } from '../../utils/format';
 import { paymentApi } from '../../services/paymentApi';
 import { useCartWishlist } from '../../context/CartWishlistContext';
+import { reviewApi } from '../../services/reviewApi';
+import type { CourseReviewItem, ReviewStats } from '../../types/review';
 import {
   IconlyTimeCircle,
   IconlyFolder,
@@ -28,6 +30,8 @@ import {
   IconlyArrowLeft,
   IconlyClose,
   IconlyLock,
+  IconlyEdit,
+  IconlyDelete,
 } from '../Onboarding/IconlyIcons';
 import './CourseDetailPage.css';
 import { AddToPlaylistModal } from '../Playlist/AddToPlaylistModal';
@@ -50,6 +54,31 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] =
     useState<boolean>(false);
   const [actionMessage, setActionMessage] = useState<string>('');
+
+  // Đánh giá & Phản hồi (UC23)
+  const [reviews, setReviews] = useState<CourseReviewItem[]>([]);
+  const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
+  const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
+  const [reviewToastMsg, setReviewToastMsg] = useState<string>('');
+
+  // Giảng viên / Admin phản hồi trực tiếp (UC23)
+  const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState<string>('');
+  const [replyError, setReplyError] = useState<string>('');
+  const [submittingReply, setSubmittingReply] = useState<boolean>(false);
+
+  // Giảng viên / Admin sửa phản hồi (Alternative Flow 4a1)
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editReplyContent, setEditReplyContent] = useState<string>('');
+  const [editReplyError, setEditReplyError] = useState<string>('');
+  const [submittingEditReply, setSubmittingEditReply] = useState<boolean>(false);
+
+  // Học viên gửi đánh giá mới
+  const [showWriteReview, setShowWriteReview] = useState<boolean>(false);
+  const [studentRating, setStudentRating] = useState<number>(5);
+  const [studentComment, setStudentComment] = useState<string>('');
+  const [studentReviewError, setStudentReviewError] = useState<string>('');
+  const [submittingStudentReview, setSubmittingStudentReview] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -81,6 +110,161 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
       isMounted = false;
     };
   }, [slug, isAuthenticated]);
+
+  // Tải danh sách đánh giá từ API (UC23)
+  const loadReviews = useCallback(() => {
+    if (!course?._id) return;
+    reviewApi
+      .getCourseReviews(course._id)
+      .then((res) => {
+        if (res.success && res.data) {
+          setReviews(res.data.reviews || []);
+          setReviewStats(res.data.stats);
+          if (res.data.userMeta?.isEnrolled) {
+            setIsEnrolled(true);
+          }
+          if (res.data.userMeta?.myReview) {
+            setStudentRating(res.data.userMeta.myReview.rating);
+            setStudentComment(res.data.userMeta.myReview.comment);
+          }
+        }
+        setReviewsLoading(false);
+      })
+      .catch((err) => {
+        console.error('[CourseDetailPage] Error loading reviews:', err);
+        setReviewsLoading(false);
+      });
+  }, [course]);
+
+  useEffect(() => {
+    if (!course?._id || (activeTab !== 'reviews' && !isEnrolled)) return;
+    let isMounted = true;
+    reviewApi
+      .getCourseReviews(course._id)
+      .then((res) => {
+        if (!isMounted) return;
+        if (res.success && res.data) {
+          setReviews(res.data.reviews || []);
+          setReviewStats(res.data.stats);
+          if (res.data.userMeta?.isEnrolled) {
+            setIsEnrolled(true);
+          }
+          if (res.data.userMeta?.myReview) {
+            setStudentRating(res.data.userMeta.myReview.rating);
+            setStudentComment(res.data.userMeta.myReview.comment);
+          }
+        }
+        setReviewsLoading(false);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        console.error('[CourseDetailPage] Error loading reviews:', err);
+        setReviewsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [course, activeTab, isEnrolled]);
+
+  // Giảng viên / Admin gửi phản hồi trực tiếp (UC23 Basic Flow 4)
+  const handleSendReply = async (reviewId: string) => {
+    setReplyError('');
+    const trimmed = replyContent.trim();
+    // Exception Flow 4b
+    if (!trimmed) {
+      setReplyError('Nội dung phản hồi không được để trống');
+      return;
+    }
+    setSubmittingReply(true);
+    try {
+      const res = await reviewApi.replyToReview(reviewId, trimmed);
+      if (res.success) {
+        setReviewToastMsg('Phản hồi đánh giá thành công!');
+        setReplyingReviewId(null);
+        setReplyContent('');
+        loadReviews();
+      } else {
+        setReplyError(res.message || 'Không thể gửi phản hồi.');
+      }
+    } catch (err) {
+      console.error('[CourseDetailPage] Error replying:', err);
+      setReplyError('Lỗi kết nối khi gửi phản hồi.');
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
+
+  // Giảng viên / Admin chỉnh sửa phản hồi (Alternative Flow 4a1)
+  const handleSaveEditReply = async (reviewId: string) => {
+    setEditReplyError('');
+    const trimmed = editReplyContent.trim();
+    if (!trimmed) {
+      setEditReplyError('Nội dung phản hồi không được để trống');
+      return;
+    }
+    setSubmittingEditReply(true);
+    try {
+      const res = await reviewApi.updateReviewReply(reviewId, trimmed);
+      if (res.success) {
+        setReviewToastMsg('Cập nhật phản hồi thành công!');
+        setEditingReviewId(null);
+        setEditReplyContent('');
+        loadReviews();
+      } else {
+        setEditReplyError(res.message || 'Không thể cập nhật phản hồi.');
+      }
+    } catch (err) {
+      console.error('[CourseDetailPage] Error updating reply:', err);
+      setEditReplyError('Lỗi kết nối khi cập nhật.');
+    } finally {
+      setSubmittingEditReply(false);
+    }
+  };
+
+  // Giảng viên / Admin xóa phản hồi (Alternative Flow 4a2)
+  const handleDeleteReply = async (reviewId: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa phản hồi này không?')) return;
+    try {
+      const res = await reviewApi.deleteReviewReply(reviewId);
+      if (res.success) {
+        setReviewToastMsg('Đã xóa phản hồi đánh giá.');
+        loadReviews();
+      } else {
+        alert(res.message || 'Không thể xóa phản hồi.');
+      }
+    } catch (err) {
+      console.error('[CourseDetailPage] Error deleting reply:', err);
+      alert('Lỗi kết nối khi xóa phản hồi.');
+    }
+  };
+
+  // Học viên gửi đánh giá
+  const handleSubmitStudentReview = async () => {
+    if (!course?._id) return;
+    setStudentReviewError('');
+    const trimmed = studentComment.trim();
+    if (!trimmed) {
+      setStudentReviewError('Nội dung nhận xét không được để trống.');
+      return;
+    }
+    setSubmittingStudentReview(true);
+    try {
+      const res = await reviewApi.submitCourseReview(course._id, studentRating, trimmed);
+      if (res.success) {
+        setReviewToastMsg('Gửi nhận xét đánh giá thành công!');
+        setShowWriteReview(false);
+        loadReviews();
+      } else {
+        setStudentReviewError(res.message || 'Không thể gửi đánh giá.');
+      }
+    } catch (err) {
+      console.error('[CourseDetailPage] Error submitting review:', err);
+      setStudentReviewError('Lỗi kết nối khi gửi đánh giá.');
+    } finally {
+      setSubmittingStudentReview(false);
+    }
+  };
 
   const normalizedSections: Array<{
     title: string;
@@ -932,45 +1116,399 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
             </div>
           )}
 
-          {/* Tab 4: Đánh giá */}
+          {/* Tab 4: Đánh giá & Phản hồi (UC23) */}
           {activeTab === 'reviews' && (
             <div className="tab-pane-fade">
               <section className="detail-section-card">
-                <h2 className="section-heading">
-                  Phản hồi từ học viên đã hoàn thành
-                </h2>
+                <div className="reviews-tab-top-row">
+                  <h2 className="section-heading">
+                    Đánh giá & Phản hồi từ học viên
+                  </h2>
+                  {isEnrolled && !showWriteReview && (
+                    <button
+                      type="button"
+                      className="btn-write-review-toggle"
+                      onClick={() => setShowWriteReview(true)}
+                    >
+                      <IconlyStar size={16} color="currentColor" />
+                      <span>{reviewStats && reviewStats.totalReviews > 0 ? 'Viết hoặc sửa nhận xét' : 'Viết đánh giá đầu tiên'}</span>
+                    </button>
+                  )}
+                </div>
+
+                {reviewToastMsg && (
+                  <div className="course-action-notice">
+                    <span>{reviewToastMsg}</span>
+                    <button
+                      type="button"
+                      className="btn-dismiss-notice"
+                      onClick={() => setReviewToastMsg('')}
+                      aria-label="Đóng"
+                    >
+                      <IconlyClose size={15} color="currentColor" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Khối Thống kê điểm số & Phân bố sao */}
                 <div className="reviews-summary-box">
                   <div className="review-big-score">
-                    <span className="big-number">{ratingNum}</span>
+                    <span className="big-number">
+                      {reviewStats ? reviewStats.averageRating.toFixed(1) : ratingNum}
+                    </span>
                     <div className="stars-gold-row">
                       {[1, 2, 3, 4, 5].map((s) => (
                         <IconlyStar key={s} size={20} color="#f59e0b" />
                       ))}
                     </div>
                     <span className="score-desc">
-                      {ratingCount} đánh giá tích cực
+                      {reviewStats ? reviewStats.totalReviews : ratingCount} đánh giá từ học viên
                     </span>
                   </div>
                   <div className="review-bars-col">
-                    {[
-                      { star: '5 sao', percent: '88%' },
-                      { star: '4 sao', percent: '9%' },
-                      { star: '3 sao', percent: '2%' },
-                      { star: '2 sao', percent: '1%' },
-                      { star: '1 sao', percent: '0%' },
-                    ].map((bar, i) => (
-                      <div key={i} className="review-bar-line">
-                        <span className="bar-label">{bar.star}</span>
-                        <div className="bar-track">
-                          <div
-                            className="bar-fill"
-                            style={{ width: bar.percent }}
-                          />
+                    {[5, 4, 3, 2, 1].map((star) => {
+                      const pct = reviewStats?.starPercentages
+                        ? reviewStats.starPercentages[star] || 0
+                        : star === 5
+                          ? 88
+                          : star === 4
+                            ? 9
+                            : star === 3
+                              ? 2
+                              : star === 2
+                                ? 1
+                                : 0;
+                      return (
+                        <div key={star} className="review-bar-line">
+                          <span className="bar-label">{star} sao</span>
+                          <div className="bar-track">
+                            <div
+                              className="bar-fill"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="bar-pct">{pct}%</span>
                         </div>
-                        <span className="bar-pct">{bar.percent}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
+                </div>
+
+                {/* Form Viết đánh giá của Học viên đã ghi danh */}
+                {isEnrolled && showWriteReview && (
+                  <div className="student-write-review-panel">
+                    <h3 className="write-review-heading">Đánh giá của bạn về khóa học</h3>
+                    <div className="rating-select-row">
+                      <span className="rating-label">Mức độ hài lòng:</span>
+                      <div className="star-picker-group">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            className={`star-pick-btn ${star <= studentRating ? 'active' : ''}`}
+                            onClick={() => setStudentRating(star)}
+                            title={`${star} sao`}
+                          >
+                            <IconlyStar
+                              size={24}
+                              color={star <= studentRating ? '#f59e0b' : '#cbd5e1'}
+                            />
+                          </button>
+                        ))}
+                        <span className="star-rating-text-hint">
+                          {studentRating === 5 && 'Tuyệt vời, vượt mong đợi!'}
+                          {studentRating === 4 && 'Rất tốt, nội dung hữu ích'}
+                          {studentRating === 3 && 'Bình thường, tạm ổn'}
+                          {studentRating === 2 && 'Cần cải thiện nhiều'}
+                          {studentRating === 1 && 'Chưa hài lòng'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <textarea
+                      className="student-review-textarea"
+                      placeholder="Chia sẻ cảm nhận chi tiết của bạn về giảng viên, nội dung bài giảng và bài tập..."
+                      value={studentComment}
+                      onChange={(e) => setStudentComment(e.target.value)}
+                    />
+                    {studentReviewError && (
+                      <div className="reply-error-msg">{studentReviewError}</div>
+                    )}
+
+                    <div className="write-review-actions">
+                      <button
+                        type="button"
+                        className="btn-cancel-reply"
+                        onClick={() => setShowWriteReview(false)}
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-send-reply"
+                        disabled={submittingStudentReview}
+                        onClick={handleSubmitStudentReview}
+                      >
+                        {submittingStudentReview ? 'Đang gửi...' : 'Gửi nhận xét'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Danh sách các Đánh giá & Phản hồi (UC23) */}
+                <div className="course-reviews-container">
+                  {reviewsLoading ? (
+                    <div className="reviews-loading-state">
+                      <p>Đang tải danh sách đánh giá...</p>
+                    </div>
+                  ) : reviews.length === 0 ? (
+                    <div className="reviews-empty-state-detail">
+                      <IconlyStar size={36} color="#94a3b8" />
+                      <p className="empty-title">Chưa có đánh giá nào</p>
+                      <p className="empty-sub">
+                        {isEnrolled
+                          ? 'Hãy là người đầu tiên chia sẻ cảm nhận về khóa học này!'
+                          : 'Hãy đăng ký học để trải nghiệm và gửi đánh giá đầu tiên.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="reviews-items-feed">
+                      {reviews.map((rev) => {
+                        const hasReply = Boolean(rev.instructorReply);
+                        const studentAvatar =
+                          rev.userId?.avatarUrl ||
+                          rev.userId?.avatar ||
+                          `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(
+                            rev.userId?.email || 'student',
+                          )}`;
+                        const studentName =
+                          rev.userId?.fullName || rev.userId?.name || rev.userId?.email || 'Học viên';
+                        const revDate = rev.createdAt
+                          ? new Date(rev.createdAt).toLocaleDateString('vi-VN', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })
+                          : '';
+
+                        return (
+                          <div key={rev._id} className="course-review-feed-item">
+                            {/* Header của nhận xét */}
+                            <div className="review-feed-author-row">
+                              <img
+                                src={studentAvatar}
+                                alt={studentName}
+                                className="review-author-avatar"
+                              />
+                              <div className="review-author-info">
+                                <span className="review-author-name">{studentName}</span>
+                                <div className="review-author-stars-date">
+                                  <div className="stars-mini-row">
+                                    {[1, 2, 3, 4, 5].map((s) => (
+                                      <IconlyStar
+                                        key={s}
+                                        size={14}
+                                        color={s <= rev.rating ? '#f59e0b' : '#cbd5e1'}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="review-feed-date">{revDate}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Nội dung nhận xét của học viên */}
+                            <p className="review-feed-comment-text">{rev.comment}</p>
+
+                            {/* Phản hồi chính thức của Giảng viên / Quản trị viên (UC23) */}
+                            {hasReply && (
+                              <div
+                                className={`review-official-reply-card ${
+                                  rev.replyRole === 'ADMIN' ? 'admin' : 'instructor'
+                                }`}
+                              >
+                                <div className="reply-card-header">
+                                  <div className="reply-author-meta">
+                                    <img
+                                      src={
+                                        rev.repliedBy?.avatarUrl ||
+                                        rev.repliedBy?.avatar ||
+                                        `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(
+                                          rev.repliedBy?.email || 'instructor',
+                                        )}`
+                                      }
+                                      alt="Replier Avatar"
+                                      className="reply-avatar-img"
+                                    />
+                                    <span className="reply-author-name">
+                                      {rev.repliedBy?.fullName ||
+                                        rev.repliedBy?.email ||
+                                        (rev.replyRole === 'ADMIN' ? 'Quản trị viên' : 'Giảng viên')}
+                                    </span>
+                                    {/* ROLE BADGE HIỂN THỊ RÕ RÀNG THEO YÊU CẦU */}
+                                    <span
+                                      className={`review-role-badge ${
+                                        rev.replyRole === 'ADMIN' ? 'admin' : 'instructor'
+                                      }`}
+                                    >
+                                      {rev.replyRole === 'ADMIN' ? 'Quản trị viên' : 'Giảng viên'}
+                                    </span>
+                                  </div>
+
+                                  <div className="reply-actions-row">
+                                    <span className="reply-card-date">
+                                      {rev.repliedAt
+                                        ? new Date(rev.repliedAt).toLocaleDateString('vi-VN', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric',
+                                          })
+                                        : ''}
+                                    </span>
+                                    {/* Alternative Flow 4a: Sửa & Xóa (Chỉ cho chủ khóa học hoặc admin) */}
+                                    {isOwnerOrAdmin && (
+                                      <div className="reply-mgmt-buttons">
+                                        <button
+                                          type="button"
+                                          className="btn-reply-action"
+                                          onClick={() => {
+                                            setEditingReviewId(rev._id);
+                                            setEditReplyContent(rev.instructorReply || '');
+                                            setEditReplyError('');
+                                            setReplyingReviewId(null);
+                                          }}
+                                          title="Chỉnh sửa câu trả lời"
+                                        >
+                                          <IconlyEdit size={14} color="currentColor" />
+                                          <span>Sửa</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="btn-reply-action danger"
+                                          onClick={() => handleDeleteReply(rev._id)}
+                                          title="Xóa câu trả lời"
+                                        >
+                                          <IconlyDelete size={14} color="currentColor" />
+                                          <span>Xóa</span>
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Form Chỉnh sửa hoặc Hiển thị nội dung phản hồi */}
+                                {editingReviewId === rev._id ? (
+                                  <div className="reply-edit-box">
+                                    <textarea
+                                      className="reply-textarea-field"
+                                      value={editReplyContent}
+                                      onChange={(e) => setEditReplyContent(e.target.value)}
+                                      placeholder="Chỉnh sửa nội dung phản hồi..."
+                                    />
+                                    {editReplyError && (
+                                      <div className="reply-error-msg">{editReplyError}</div>
+                                    )}
+                                    <div className="reply-composer-footer">
+                                      <button
+                                        type="button"
+                                        className="btn-cancel-reply"
+                                        onClick={() => {
+                                          setEditingReviewId(null);
+                                          setEditReplyError('');
+                                        }}
+                                      >
+                                        Hủy
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="btn-send-reply"
+                                        disabled={submittingEditReply}
+                                        onClick={() => handleSaveEditReply(rev._id)}
+                                      >
+                                        {submittingEditReply ? 'Đang lưu...' : 'Lưu thay đổi'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="reply-card-body">{rev.instructorReply}</p>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Nếu chưa phản hồi và người dùng là Giảng viên sở hữu hoặc Admin -> Cho phép phản hồi */}
+                            {!hasReply && isOwnerOrAdmin && (
+                              <div className="course-reply-trigger-zone">
+                                {replyingReviewId === rev._id ? (
+                                  <div className="inline-reply-composer">
+                                    <div className="composer-header">
+                                      <span>
+                                        Phản hồi nhận xét của <strong>{studentName}</strong>:
+                                      </span>
+                                      <span
+                                        className={`review-role-badge ${
+                                          user?.role === 'ADMIN' ? 'admin' : 'instructor'
+                                        }`}
+                                      >
+                                        {user?.role === 'ADMIN' ? 'Quản trị viên' : 'Giảng viên'}
+                                      </span>
+                                    </div>
+
+                                    <textarea
+                                      className="reply-textarea-field"
+                                      value={replyContent}
+                                      onChange={(e) => setReplyContent(e.target.value)}
+                                      placeholder="Nhập lời cảm ơn hoặc giải đáp thắc mắc của học viên..."
+                                      autoFocus
+                                    />
+                                    {/* Exception Flow 4b: Thông báo lỗi khi nội dung rỗng */}
+                                    {replyError && (
+                                      <div className="reply-error-msg">{replyError}</div>
+                                    )}
+
+                                    <div className="reply-composer-footer">
+                                      <button
+                                        type="button"
+                                        className="btn-cancel-reply"
+                                        onClick={() => {
+                                          setReplyingReviewId(null);
+                                          setReplyError('');
+                                        }}
+                                      >
+                                        Hủy bỏ
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="btn-send-reply"
+                                        disabled={submittingReply}
+                                        onClick={() => handleSendReply(rev._id)}
+                                      >
+                                        <IconlyTick size={16} color="currentColor" />
+                                        <span>{submittingReply ? 'Đang gửi...' : 'Gửi phản hồi'}</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="btn-open-reply"
+                                    onClick={() => {
+                                      setReplyingReviewId(rev._id);
+                                      setReplyContent('');
+                                      setReplyError('');
+                                      setEditingReviewId(null);
+                                    }}
+                                  >
+                                    <IconlyChat size={16} color="currentColor" />
+                                    <span>Phản hồi nhận xét này</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </section>
             </div>

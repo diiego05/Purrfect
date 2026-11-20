@@ -28,6 +28,7 @@ import { PlaylistsPage } from './components/Playlist/PlaylistsPage';
 import { PlaylistDetailPage } from './components/Playlist/PlaylistDetailPage';
 import { InstructorLayout } from './components/Instructor/InstructorLayout';
 import { InstructorCoursesPage } from './components/Instructor/InstructorCoursesPage';
+import { InstructorReviewsPage } from './components/Instructor/InstructorReviewsPage';
 import { BannerCarousel } from './components/Banner/BannerCarousel';
 import { ChatbotWidget } from './components/Chatbot/ChatbotWidget';
 import './App.css';
@@ -248,6 +249,19 @@ function MainRouter() {
     return (
       <InstructorLayout activeTab="courses" pageTitle="Quản lý khóa học">
         <InstructorCoursesPage />
+      </InstructorLayout>
+    );
+  }
+
+  // Quản lý Đánh giá & Phản hồi của Giảng viên (UC23)
+  if (
+    normalizedPath === '/instructor/reviews' ||
+    normalizedPath === '/giang-vien/danh-gia' ||
+    normalizedPath === '/instructor/danh-gia'
+  ) {
+    return (
+      <InstructorLayout activeTab="reviews" pageTitle="Đánh giá & Phản hồi học viên">
+        <InstructorReviewsPage />
       </InstructorLayout>
     );
   }
