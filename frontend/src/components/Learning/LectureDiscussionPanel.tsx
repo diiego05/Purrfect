@@ -2,6 +2,7 @@ import { useState, useEffect, type FC } from 'react';
 import type { DiscussionQuestion } from '../../types/discussion';
 import { discussionApi } from '../../services/discussionApi';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from '../../context/ToastContext';
 import { formatTimeAgo } from '../../utils/format';
 import {
   IconlyChat,
@@ -67,12 +68,17 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
     if (!lectureId) return;
     try {
       setLoading(true);
-      const res = await discussionApi.getLectureDiscussions(lectureId, courseId);
+      const res = await discussionApi.getLectureDiscussions(
+        lectureId,
+        courseId,
+      );
       if (res.success) {
         setQuestions(res.data || []);
         setAccessDenied(false);
         if (onDiscussionCountChange) {
-          onDiscussionCountChange(res.meta?.totalQuestions || res.data?.length || 0);
+          onDiscussionCountChange(
+            res.meta?.totalQuestions || res.data?.length || 0,
+          );
         }
       }
     } catch {
@@ -87,16 +93,24 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
 
     const fetchDiscussions = async () => {
       try {
-        const res = await discussionApi.getLectureDiscussions(lectureId, courseId);
+        const res = await discussionApi.getLectureDiscussions(
+          lectureId,
+          courseId,
+        );
         if (!ignore) {
           if (res.success) {
             setQuestions(res.data || []);
             setAccessDenied(false);
             if (onDiscussionCountChange) {
-              onDiscussionCountChange(res.meta?.totalQuestions || res.data?.length || 0);
+              onDiscussionCountChange(
+                res.meta?.totalQuestions || res.data?.length || 0,
+              );
             }
           } else {
-            if (res.isEnrolled === false || (!isEnrolled && !isCourseInstructor && !isAdmin)) {
+            if (
+              res.isEnrolled === false ||
+              (!isEnrolled && !isCourseInstructor && !isAdmin)
+            ) {
               setAccessDenied(true);
             }
           }
@@ -112,7 +126,14 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
     return () => {
       ignore = true;
     };
-  }, [lectureId, courseId, isEnrolled, isCourseInstructor, isAdmin, onDiscussionCountChange]);
+  }, [
+    lectureId,
+    courseId,
+    isEnrolled,
+    isCourseInstructor,
+    isAdmin,
+    onDiscussionCountChange,
+  ]);
 
   // 1. Đăng câu hỏi mới (POST /api/v1/lectures/:id/discussions)
   const handlePostQuestion = async () => {
@@ -121,7 +142,11 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
 
     try {
       setSubmittingQuestion(true);
-      const res = await discussionApi.createQuestion(lectureId, trimmed, courseId);
+      const res = await discussionApi.createQuestion(
+        lectureId,
+        trimmed,
+        courseId,
+      );
       if (res.success && res.data) {
         setNewQuestionText('');
         showToast('Đã đăng câu hỏi thảo luận thành công!');
@@ -160,7 +185,10 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
   };
 
   // 3. Giảng viên ghim / bỏ ghim câu trả lời (PATCH /api/v1/discussions/:replyId/pin)
-  const handleTogglePin = async (replyId: string, currentPinStatus: boolean) => {
+  const handleTogglePin = async (
+    replyId: string,
+    currentPinStatus: boolean,
+  ) => {
     try {
       const res = await discussionApi.togglePin(replyId, !currentPinStatus);
       if (res.success) {
@@ -214,11 +242,24 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
   };
 
   // 5. Xóa thảo luận (DELETE /api/v1/discussions/:id)
-  const handleDeleteDiscussion = async (discussionId: string, isReply = false) => {
-    const confirmMsg = isReply
-      ? 'Bạn có chắc chắn muốn xóa phản hồi này?'
-      : 'Bạn có chắc chắn muốn xóa câu hỏi này cùng toàn bộ phản hồi liên quan?';
-    if (!window.confirm(confirmMsg)) return;
+  const handleDeleteDiscussion = async (
+    discussionId: string,
+    isReply = false,
+  ) => {
+    const confirmed = await toast.confirm({
+      title: isReply
+        ? 'Xác nhận xóa phản hồi'
+        : 'Xác nhận xóa câu hỏi thảo luận',
+      message: isReply
+        ? 'Bạn có chắc chắn muốn xóa phản hồi này?'
+        : 'Bạn có chắc chắn muốn xóa câu hỏi này cùng toàn bộ phản hồi liên quan?',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy bỏ',
+      confirmVariant: 'danger',
+      type: 'error',
+    });
+
+    if (!confirmed) return;
 
     try {
       const res = await discussionApi.deleteDiscussion(discussionId);
@@ -244,7 +285,8 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
       const matchReplies = q.replies.some(
         (r) =>
           r.content.toLowerCase().includes(qLower) ||
-          (r.userId.fullName && r.userId.fullName.toLowerCase().includes(qLower)),
+          (r.userId.fullName &&
+            r.userId.fullName.toLowerCase().includes(qLower)),
       );
       if (!matchQuestion && !matchReplies) return false;
     }
@@ -270,8 +312,8 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
         </h3>
         <p className="discussion-locked-desc">
           Bạn đang xem bài giảng ở chế độ Xem trước (Preview). Chỉ học viên đã
-          ghi danh khóa học mới có quyền xem các câu hỏi và nhận giải đáp trực tiếp
-          từ Giảng viên.
+          ghi danh khóa học mới có quyền xem các câu hỏi và nhận giải đáp trực
+          tiếp từ Giảng viên.
         </p>
         {onEnrollClick && (
           <button
@@ -433,7 +475,9 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
 
       {/* 4. Danh sách câu hỏi */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
+        <div
+          style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}
+        >
           Đang tải danh sách câu hỏi thảo luận...
         </div>
       ) : filteredQuestions.length === 0 ? (
@@ -483,9 +527,7 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
                         </span>
                       )}
                       {q.isPinned && (
-                        <span className="badge-role pinned">
-                          📌 Đã ghim
-                        </span>
+                        <span className="badge-role pinned">📌 Đã ghim</span>
                       )}
                     </div>
                     <span className="comment-time">
@@ -515,13 +557,12 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
                   type="button"
                   className="btn-action-disc"
                   onClick={() => {
-                    setActiveReplyId(
-                      activeReplyId === q._id ? null : q._id,
-                    );
+                    setActiveReplyId(activeReplyId === q._id ? null : q._id);
                     setReplyText('');
                   }}
                 >
-                  💬 {q.repliesCount > 0 ? `${q.repliesCount} trả lời` : 'Trả lời'}
+                  💬{' '}
+                  {q.repliesCount > 0 ? `${q.repliesCount} trả lời` : 'Trả lời'}
                 </button>
 
                 {/* Delete button (Author or Instructor/Admin) */}
@@ -601,15 +642,24 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
                         ) : (
                           <div
                             className="user-avatar-placeholder"
-                            style={{ width: '30px', height: '30px', fontSize: '0.8rem' }}
+                            style={{
+                              width: '30px',
+                              height: '30px',
+                              fontSize: '0.8rem',
+                            }}
                           >
-                            {(reply.userId.fullName || 'U').charAt(0).toUpperCase()}
+                            {(reply.userId.fullName || 'U')
+                              .charAt(0)
+                              .toUpperCase()}
                           </div>
                         )}
 
                         <div className="author-info-col">
                           <div className="author-name-row">
-                            <span className="author-name" style={{ fontSize: '0.86rem' }}>
+                            <span
+                              className="author-name"
+                              style={{ fontSize: '0.86rem' }}
+                            >
                               {reply.userId.fullName || 'Học viên'}
                             </span>
                             {reply.isInstructor && (
@@ -618,9 +668,7 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
                               </span>
                             )}
                             {reply.isAuthor && (
-                              <span className="badge-role author">
-                                Tác giả
-                              </span>
+                              <span className="badge-role author">Tác giả</span>
                             )}
                           </div>
                           <span className="comment-time">
@@ -631,14 +679,18 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
 
                       <div className="reply-content">{reply.content}</div>
 
-                      <div className="question-actions-row" style={{ paddingTop: '4px' }}>
+                      <div
+                        className="question-actions-row"
+                        style={{ paddingTop: '4px' }}
+                      >
                         <button
                           type="button"
                           className={`btn-action-disc ${reply.isUpvoted ? 'upvoted' : ''}`}
                           onClick={() => handleToggleUpvote(reply._id)}
                           style={{ fontSize: '0.78rem' }}
                         >
-                          👍 {reply.upvoteCount > 0 ? reply.upvoteCount : 'Thích'}
+                          👍{' '}
+                          {reply.upvoteCount > 0 ? reply.upvoteCount : 'Thích'}
                         </button>
 
                         {/* Ghim câu trả lời chính thức (Chỉ Giảng viên sở hữu khóa học hoặc Admin) */}
@@ -646,9 +698,15 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
                           <button
                             type="button"
                             className="btn-action-disc pin-btn"
-                            onClick={() => handleTogglePin(reply._id, reply.isPinned)}
+                            onClick={() =>
+                              handleTogglePin(reply._id, reply.isPinned)
+                            }
                             style={{ fontSize: '0.78rem' }}
-                            title={reply.isPinned ? 'Bỏ ghim câu trả lời' : 'Ghim làm câu trả lời chính thức'}
+                            title={
+                              reply.isPinned
+                                ? 'Bỏ ghim câu trả lời'
+                                : 'Ghim làm câu trả lời chính thức'
+                            }
                           >
                             📌 {reply.isPinned ? 'Bỏ ghim' : 'Ghim câu trả lời'}
                           </button>
@@ -659,7 +717,9 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
                           <button
                             type="button"
                             className="btn-action-disc danger"
-                            onClick={() => handleDeleteDiscussion(reply._id, true)}
+                            onClick={() =>
+                              handleDeleteDiscussion(reply._id, true)
+                            }
                             style={{ fontSize: '0.78rem' }}
                             title="Xóa phản hồi này"
                           >

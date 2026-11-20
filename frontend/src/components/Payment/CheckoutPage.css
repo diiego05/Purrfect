@@ -190,23 +190,28 @@
 .checkout-gateway-banner {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 8px;
-  margin-bottom: 1.25rem;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.checkout-gateway-banner:hover {
+  border-color: #0056d2;
+  background: #f0f7ff;
 }
 
 .vnpay-badge-logo {
-  font-weight: 800;
-  font-size: 1rem;
-  color: #dc2626;
-  background: #fee2e2;
-  padding: 0.4rem 0.75rem;
-  border-radius: 6px;
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: #ffffff;
+  background: #ed1c24;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
   letter-spacing: 0.05em;
-  border: 1px solid #fca5a5;
+  box-shadow: 0 2px 6px rgba(237, 28, 36, 0.25);
 }
 
 .gateway-details {
@@ -214,15 +219,16 @@
 }
 
 .gateway-title {
-  font-weight: 600;
-  color: #15803d;
-  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 1rem;
 }
 
 .gateway-subtitle {
-  font-size: 0.8rem;
-  color: #4b5563;
-  margin-top: 0.15rem;
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+  line-height: 1.45;
 }
 
 .bank-selection-group {
@@ -495,4 +501,112 @@
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* Payment method choices & test card box */
+.checkout-payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.checkout-method-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.checkout-method-option:hover {
+  border-color: #0056d2;
+  background: #f8faff;
+}
+
+.checkout-method-option.active {
+  border-color: #0056d2;
+  background: #f0f7ff;
+  box-shadow: 0 0 0 1px #0056d2;
+}
+
+.checkout-method-option input[type='radio'] {
+  margin-top: 3px;
+  accent-color: #0056d2;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.method-option-info {
+  flex: 1;
+}
+
+.method-option-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.method-option-header strong {
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.badge-recommend {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.method-option-desc {
+  font-size: 0.825rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.vnpay-sandbox-card-info {
+  background: #f8fafc;
+  border: 1px dashed #94a3b8;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.vnpay-sandbox-card-info .info-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.vnpay-sandbox-card-info .info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem 1rem;
+  font-size: 0.825rem;
+  color: #475569;
+}
+
+.vnpay-sandbox-card-info .info-grid span {
+  color: #64748b;
+}
+
+.vnpay-sandbox-card-info .info-grid strong {
+  color: #0f172a;
+  font-family: monospace;
+  font-size: 0.875rem;
 }

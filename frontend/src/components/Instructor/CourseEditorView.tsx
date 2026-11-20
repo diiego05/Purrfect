@@ -4,7 +4,9 @@ import type {
   SectionItem,
   LectureItem,
   LectureType,
+  QuizDataItem,
 } from '../../types/instructorCourse';
+import { AiQuizGenerator } from './AiQuizGenerator';
 import type { Category } from '../../types/course';
 import {
   createCourseDraft,
@@ -27,8 +29,10 @@ import {
   IconlyTimeCircle,
   IconlyAiChip,
   IconlyClose,
+  IconlySparkles,
 } from '../Onboarding/IconlyIcons';
 import { formatVND } from '../../utils/format';
+import { toast } from '../../context/ToastContext';
 
 interface CourseEditorViewProps {
   course: InstructorCourse | null;
@@ -95,7 +99,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
   const [discountPrice, setDiscountPrice] = useState<number>(
     initialCourse?.discountPrice || 0,
   );
-  const [badge, setBadge] = useState<string>(initialCourse?.badge || '');
+  const [badge] = useState<string>(initialCourse?.badge || '');
 
   // Trạng thái xử lý & lỗi
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -124,6 +128,22 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
   const [newLectureIsPreview, setNewLectureIsPreview] =
     useState<boolean>(false);
   const [uploadingMedia, setUploadingMedia] = useState<boolean>(false);
+
+  // AI Quiz states
+  const [editingQuizData, setEditingQuizData] = useState<QuizDataItem | null>(
+    null,
+  );
+  const [activeQuizLoc, setActiveQuizLoc] = useState<{
+    secIdx: number;
+    lecIdx: number;
+  } | null>(null);
+  const [addingQuizSectionIdx, setAddingQuizSectionIdx] = useState<
+    number | null
+  >(null);
+  const [quizPresetContext, setQuizPresetContext] = useState<{
+    topic: string;
+    content: string;
+  } | null>(null);
 
   // Upload Ảnh Thumbnail lên Cloudinary
   const [uploadingThumbnail, setUploadingThumbnail] = useState<boolean>(false);
@@ -207,15 +227,40 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
   // Mở drawer thêm bài giảng cho Section
   const handleOpenAddLecture = (sectionIndex: number) => {
     setAddingLectureSectionIdx(sectionIndex);
+    setAddingQuizSectionIdx(null);
     setNewLectureTitle('');
     setNewLectureType('VIDEO');
     setNewLectureDuration(15);
     setNewLectureIsPreview(false);
+    setEditingQuizData(null);
+    setErrorMsg('');
+  };
+
+  // Mở trình tạo Quiz bằng AI cho Chương học
+  const handleOpenAiQuizForSection = (
+    sectionIndex: number,
+    specificLecture?: LectureItem,
+  ) => {
+    setAddingLectureSectionIdx(null);
+    setAddingQuizSectionIdx(sectionIndex);
+    if (specificLecture) {
+      setQuizPresetContext({
+        topic: `Kiểm tra: ${specificLecture.title}`,
+        content: specificLecture.transcript || specificLecture.title,
+      });
+    } else {
+      const sec = sections[sectionIndex];
+      setQuizPresetContext({
+        topic: `Kiểm tra: ${sec.title || `Chương ${sectionIndex + 1}`}`,
+        content:
+          sec.lectures?.map((l) => l.transcript || l.title).join('\n') || '',
+      });
+    }
     setErrorMsg('');
   };
 
   // Thêm bài giảng vào section
-  const handleSaveNewLecture = (sectionIndex: number) => {
+  const handleSaveNewLecture = async (sectionIndex: number) => {
     if (!newLectureTitle.trim()) {
       setErrorMsg('Vui lòng nhập tên bài giảng');
       return;
@@ -228,12 +273,28 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
       durationMinutes: Number(newLectureDuration) || 10,
       isPreview: newLectureIsPreview,
       order: currentSecLectures.length + 1,
+      quizData:
+        newLectureType === 'QUIZ' ? editingQuizData || undefined : undefined,
     };
 
     const updated = [...sections];
     updated[sectionIndex].lectures = [...currentSecLectures, newLec];
     setSections(updated);
     setAddingLectureSectionIdx(null);
+    setEditingQuizData(null);
+
+    if (currentCourse?._id) {
+      try {
+        await updateInstructorCourse(currentCourse._id, {
+          sections: updated,
+        });
+        toast.success(
+          `Đã thêm và lưu bài giảng "${newLec.title}" vào khóa học!`,
+        );
+      } catch (err) {
+        console.warn('Lỗi tự động lưu bài giảng:', err);
+      }
+    }
   };
 
   // Bật/Tắt xem thử miễn phí (Preview) - Basic flow step 6
@@ -1035,11 +1096,36 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                           type="button"
                           className="btn-action-secondary"
                           style={{ padding: '6px 10px', fontSize: '12px' }}
-                          onClick={() => handleOpenAddLecture(secIdx)}
+                          onClick={() => {
+                            setAddingQuizSectionIdx(null);
+                            handleOpenAddLecture(secIdx);
+                          }}
                         >
                           <IconlyPlus size={14} />
                           <span>Thêm bài giảng</span>
                         </button>
+
+                        <button
+                          type="button"
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: '#7c3aed',
+                            background: '#f5f3ff',
+                            border: '1px solid #ddd6fe',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}
+                          onClick={() => handleOpenAiQuizForSection(secIdx)}
+                          title="Dùng AI tự động tạo bài kiểm tra trắc nghiệm và tự luận cho chương này"
+                        >
+                          <span>Soạn Quiz bằng AI</span>
+                        </button>
+
                         <button
                           type="button"
                           className="btn-action-danger"
@@ -1051,6 +1137,77 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                         </button>
                       </div>
                     </div>
+
+                    {/* Bảng soạn Quiz bằng AI nhanh cho Chương */}
+                    {addingQuizSectionIdx === secIdx && (
+                      <div
+                        style={{
+                          margin: '12px 0',
+                          border: '2px solid #ddd6fe',
+                          borderRadius: '10px',
+                          background: '#ffffff',
+                          boxShadow: '0 4px 12px rgba(124, 58, 237, 0.08)',
+                        }}
+                      >
+                        <AiQuizGenerator
+                          defaultTopic={
+                            quizPresetContext?.topic ||
+                            section.title ||
+                            `Kiểm tra kiến thức Chương ${secIdx + 1}`
+                          }
+                          defaultContent={quizPresetContext?.content || ''}
+                          onSaveQuiz={async (quizData) => {
+                            const currentSecLectures =
+                              sections[secIdx].lectures || [];
+                            const newQuizLecture: LectureItem = {
+                              title:
+                                quizData.title ||
+                                `Bài kiểm tra: ${section.title}`,
+                              type: 'QUIZ',
+                              durationMinutes: 15,
+                              isPreview: false,
+                              order: currentSecLectures.length + 1,
+                              quizData,
+                            };
+                            const updated = [...sections];
+                            updated[secIdx].lectures = [
+                              ...currentSecLectures,
+                              newQuizLecture,
+                            ];
+                            setSections(updated);
+                            setAddingQuizSectionIdx(null);
+                            setQuizPresetContext(null);
+
+                            if (currentCourse?._id) {
+                              try {
+                                await updateInstructorCourse(
+                                  currentCourse._id,
+                                  {
+                                    sections: updated,
+                                  },
+                                );
+                                toast.ai(
+                                  `Đã tạo và lưu thành công bài kiểm tra "${newQuizLecture.title}" (${quizData.questions.length} câu hỏi) vào khóa học!`,
+                                  'Tạo Quiz AI thành công',
+                                );
+                                return;
+                              } catch (err) {
+                                console.warn('Lỗi lưu quiz tự động:', err);
+                              }
+                            }
+
+                            toast.ai(
+                              `Đã tạo thành công bài kiểm tra "${newQuizLecture.title}" (${quizData.questions.length} câu hỏi). Hãy bấm "Lưu thay đổi khóa học" bên dưới để hoàn tất!`,
+                              'Tạo Quiz AI thành công',
+                            );
+                          }}
+                          onCancel={() => {
+                            setAddingQuizSectionIdx(null);
+                            setQuizPresetContext(null);
+                          }}
+                        />
+                      </div>
+                    )}
 
                     {/* Danh sách bài giảng trong Section */}
                     <div className="lectures-list">
@@ -1082,12 +1239,25 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                   className={`lecture-badge-type ${
                                     lecture.type === 'VIDEO'
                                       ? 'type-video'
-                                      : 'type-doc'
+                                      : lecture.type === 'QUIZ'
+                                        ? 'type-quiz'
+                                        : 'type-doc'
                                   }`}
+                                  style={
+                                    lecture.type === 'QUIZ'
+                                      ? {
+                                          background: '#f5f3ff',
+                                          color: '#7c3aed',
+                                          border: '1px solid #ddd6fe',
+                                        }
+                                      : undefined
+                                  }
                                 >
                                   {lecture.type === 'VIDEO'
                                     ? 'Video'
-                                    : 'Tài liệu'}
+                                    : lecture.type === 'QUIZ'
+                                      ? 'Bài kiểm tra AI'
+                                      : 'Tài liệu'}
                                 </span>
 
                                 <div>
@@ -1113,6 +1283,19 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                     <span>
                                       {lecture.durationMinutes || 10} phút
                                     </span>
+                                    {lecture.type === 'QUIZ' && (
+                                      <span
+                                        style={{
+                                          color: '#7c3aed',
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        ✨{' '}
+                                        {lecture.quizData?.questions?.length ||
+                                          0}{' '}
+                                        câu hỏi trắc nghiệm & tự luận
+                                      </span>
+                                    )}
                                     {lecture.fileName && (
                                       <span>Tệp: {lecture.fileName}</span>
                                     )}
@@ -1174,46 +1357,113 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                   <span>Xem thử (Preview)</span>
                                 </label>
 
+                                {/* Nút Xem / Sửa đề thi AI nếu là bài QUIZ */}
+                                {lecture.type === 'QUIZ' && (
+                                  <button
+                                    type="button"
+                                    className="btn-action-secondary"
+                                    style={{
+                                      padding: '4px 8px',
+                                      fontSize: '11.5px',
+                                      color: '#7c3aed',
+                                      borderColor: '#ddd6fe',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                    }}
+                                    onClick={() => {
+                                      if (
+                                        activeQuizLoc?.secIdx === secIdx &&
+                                        activeQuizLoc?.lecIdx === lecIdx
+                                      ) {
+                                        setActiveQuizLoc(null);
+                                      } else {
+                                        setActiveQuizLoc({ secIdx, lecIdx });
+                                      }
+                                    }}
+                                  >
+                                    <IconlySparkles size={13} color="#7c3aed" />
+                                    <span>
+                                      {activeQuizLoc?.secIdx === secIdx &&
+                                      activeQuizLoc?.lecIdx === lecIdx
+                                        ? 'Đóng Đề thi'
+                                        : 'Xem / Sửa Đề thi AI'}
+                                    </span>
+                                  </button>
+                                )}
+
                                 {/* Xem & Chỉnh sửa transcript AI */}
-                                <button
-                                  type="button"
-                                  className="btn-action-secondary"
-                                  style={{
-                                    padding: '4px 8px',
-                                    fontSize: '11.5px',
-                                    color: lecture.transcript
-                                      ? '#c084fc'
-                                      : '#94a3b8',
-                                    borderColor: lecture.transcript
-                                      ? 'rgba(192, 132, 252, 0.4)'
-                                      : undefined,
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                  }}
-                                  onClick={() =>
-                                    handleToggleTranscript(
-                                      secIdx,
-                                      lecIdx,
-                                      lecture,
-                                    )
-                                  }
-                                >
-                                  <IconlyAiChip
-                                    size={13}
-                                    color={
-                                      lecture.transcript ? '#c084fc' : '#94a3b8'
+                                {lecture.type !== 'QUIZ' && (
+                                  <button
+                                    type="button"
+                                    className="btn-action-secondary"
+                                    style={{
+                                      padding: '4px 8px',
+                                      fontSize: '11.5px',
+                                      color: lecture.transcript
+                                        ? '#c084fc'
+                                        : '#94a3b8',
+                                      borderColor: lecture.transcript
+                                        ? 'rgba(192, 132, 252, 0.4)'
+                                        : undefined,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                    }}
+                                    onClick={() =>
+                                      handleToggleTranscript(
+                                        secIdx,
+                                        lecIdx,
+                                        lecture,
+                                      )
                                     }
-                                  />
-                                  <span>
-                                    {activeTranscriptLoc?.secIdx === secIdx &&
-                                    activeTranscriptLoc?.lecIdx === lecIdx
-                                      ? 'Đóng Transcript'
-                                      : lecture.transcript
-                                        ? 'Xem / Sửa Transcript'
-                                        : 'Thêm Transcript'}
-                                  </span>
-                                </button>
+                                  >
+                                    <IconlyAiChip
+                                      size={13}
+                                      color={
+                                        lecture.transcript
+                                          ? '#c084fc'
+                                          : '#94a3b8'
+                                      }
+                                    />
+                                    <span>
+                                      {activeTranscriptLoc?.secIdx === secIdx &&
+                                      activeTranscriptLoc?.lecIdx === lecIdx
+                                        ? 'Đóng Transcript'
+                                        : lecture.transcript
+                                          ? 'Xem / Sửa Transcript'
+                                          : 'Thêm Transcript'}
+                                    </span>
+                                  </button>
+                                )}
+
+                                {/* Nút Tạo Quiz từ bài học này bằng AI */}
+                                {lecture.type !== 'QUIZ' && (
+                                  <button
+                                    type="button"
+                                    className="btn-action-secondary"
+                                    style={{
+                                      padding: '4px 8px',
+                                      fontSize: '11.5px',
+                                      color: '#7c3aed',
+                                      borderColor: '#ddd6fe',
+                                      background: '#f5f3ff',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                    }}
+                                    onClick={() =>
+                                      handleOpenAiQuizForSection(
+                                        secIdx,
+                                        lecture,
+                                      )
+                                    }
+                                    title="Dùng AI đọc bài học này để soạn bài kiểm tra"
+                                  >
+                                    <IconlySparkles size={12} color="#7c3aed" />
+                                    <span>Tạo Quiz</span>
+                                  </button>
+                                )}
 
                                 <button
                                   type="button"
@@ -1384,7 +1634,6 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                           </span>
                                         </button>
                                       )}
-
                                       {/* Chỉnh sửa / Lưu */}
                                       {isEditingTranscript ? (
                                         <button
@@ -1472,7 +1721,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                         background: 'rgba(59, 130, 246, 0.1)',
                                         border:
                                           '1px solid rgba(59, 130, 246, 0.25)',
-                                        color: '#93c5fd',
+                                        color: '#2563eb',
                                         fontSize: '12px',
                                         marginBottom: '10px',
                                       }}
@@ -1707,6 +1956,54 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                   )}
                                 </div>
                               )}
+
+                            {/* Bảng soạn / sửa đề thi AI cho bài giảng đã có */}
+                            {activeQuizLoc?.secIdx === secIdx &&
+                              activeQuizLoc?.lecIdx === lecIdx && (
+                                <div style={{ margin: '4px 0 10px 0' }}>
+                                  <AiQuizGenerator
+                                    defaultTopic={lecture.title}
+                                    defaultContent={
+                                      sections[secIdx]?.lectures
+                                        ?.map((l) => l.transcript || l.title)
+                                        .join('\n') || ''
+                                    }
+                                    initialQuizData={lecture.quizData}
+                                    onSaveQuiz={async (updatedQuiz) => {
+                                      const updated = [...sections];
+                                      updated[secIdx].lectures[
+                                        lecIdx
+                                      ].quizData = updatedQuiz;
+                                      setSections(updated);
+                                      setActiveQuizLoc(null);
+
+                                      if (currentCourse?._id) {
+                                        try {
+                                          await updateInstructorCourse(
+                                            currentCourse._id,
+                                            {
+                                              sections: updated,
+                                            },
+                                          );
+                                          toast.ai(
+                                            `Đã cập nhật và lưu ${updatedQuiz.questions.length} câu hỏi bài kiểm tra vào khóa học!`,
+                                            'Cập nhật đề thi AI',
+                                          );
+                                          return;
+                                        } catch (err) {
+                                          console.warn('Lỗi lưu quiz:', err);
+                                        }
+                                      }
+
+                                      toast.ai(
+                                        `Đã cập nhật ${updatedQuiz.questions.length} câu hỏi cho bài kiểm tra.`,
+                                        'Cập nhật đề thi AI',
+                                      );
+                                    }}
+                                    onCancel={() => setActiveQuizLoc(null)}
+                                  />
+                                </div>
+                              )}
                           </div>
                         ))
                       )}
@@ -1775,18 +2072,92 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                           </div>
                           <div>
                             <label className="editor-form-label">
-                              Định dạng
+                              Định dạng bài học
                             </label>
-                            <select
-                              className="editor-form-input"
-                              value={newLectureType}
-                              onChange={(e) =>
-                                setNewLectureType(e.target.value as LectureType)
-                              }
+                            <div
+                              style={{
+                                display: 'flex',
+                                gap: '6px',
+                                flexWrap: 'wrap',
+                                marginTop: '4px',
+                              }}
                             >
-                              <option value="VIDEO">Video bài giảng</option>
-                              <option value="DOCUMENT">Tài liệu / PDF</option>
-                            </select>
+                              <button
+                                type="button"
+                                onClick={() => setNewLectureType('VIDEO')}
+                                style={{
+                                  padding: '6px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  border:
+                                    newLectureType === 'VIDEO'
+                                      ? '1.5px solid #0056d2'
+                                      : '1px solid #cbd5e1',
+                                  background:
+                                    newLectureType === 'VIDEO'
+                                      ? '#eff6ff'
+                                      : '#ffffff',
+                                  color:
+                                    newLectureType === 'VIDEO'
+                                      ? '#0056d2'
+                                      : '#475569',
+                                }}
+                              >
+                                🎥 Video
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setNewLectureType('DOCUMENT')}
+                                style={{
+                                  padding: '6px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  border:
+                                    newLectureType === 'DOCUMENT'
+                                      ? '1.5px solid #0056d2'
+                                      : '1px solid #cbd5e1',
+                                  background:
+                                    newLectureType === 'DOCUMENT'
+                                      ? '#eff6ff'
+                                      : '#ffffff',
+                                  color:
+                                    newLectureType === 'DOCUMENT'
+                                      ? '#0056d2'
+                                      : '#475569',
+                                }}
+                              >
+                                📄 Tài liệu
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setNewLectureType('QUIZ')}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  border:
+                                    newLectureType === 'QUIZ'
+                                      ? '1.5px solid #7c3aed'
+                                      : '1px solid #ddd6fe',
+                                  background:
+                                    newLectureType === 'QUIZ'
+                                      ? '#f5f3ff'
+                                      : '#ffffff',
+                                  color: '#7c3aed',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                }}
+                              >
+                                <span>Quiz AI</span>
+                              </button>
+                            </div>
                           </div>
                           <div>
                             <label className="editor-form-label">
@@ -1806,75 +2177,103 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                           </div>
                         </div>
 
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '20px',
-                            flexWrap: 'wrap',
-                          }}
-                        >
-                          <label
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              fontSize: '13px',
-                              cursor: 'pointer',
-                              color: '#cbd5e1',
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={newLectureIsPreview}
-                              onChange={(e) =>
-                                setNewLectureIsPreview(e.target.checked)
+                        {newLectureType === 'QUIZ' ? (
+                          <div style={{ marginTop: '6px' }}>
+                            <AiQuizGenerator
+                              defaultTopic={
+                                newLectureTitle ||
+                                `Bài kiểm tra Chương ${secIdx + 1}`
                               }
+                              defaultContent={
+                                sections[secIdx]?.lectures
+                                  ?.map((l) => l.transcript || l.title)
+                                  .join('\n') || ''
+                              }
+                              initialQuizData={editingQuizData || undefined}
+                              onSaveQuiz={(quizData) => {
+                                setEditingQuizData(quizData);
+                                toast.success(
+                                  `Đã lưu ${quizData.questions.length} câu hỏi. Hãy bấm "Lưu bài giảng" bên dưới để hoàn tất thêm bài kiểm tra vào chương!`,
+                                  'Đã lưu câu hỏi Quiz',
+                                );
+                              }}
+                              onCancel={() => {
+                                setEditingQuizData(null);
+                                setNewLectureType('VIDEO');
+                              }}
                             />
-                            <span>
-                              Cho phép học viên xem thử miễn phí (Preview)
-                            </span>
-                          </label>
-
-                          {/* Upload Media Button */}
+                          </div>
+                        ) : (
                           <div
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '10px',
+                              gap: '20px',
+                              flexWrap: 'wrap',
                             }}
                           >
                             <label
-                              className="btn-action-secondary"
                               style={{
-                                cursor: uploadingMedia
-                                  ? 'not-allowed'
-                                  : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontSize: '13px',
+                                cursor: 'pointer',
+                                color: '#475569',
                               }}
                             >
-                              {uploadingMedia ? (
-                                <>
-                                  <IconlyTimeCircle
-                                    size={14}
-                                    color="currentColor"
-                                  />
-                                  <span>
-                                    Đang nén & trích xuất transcript AI...
-                                  </span>
-                                </>
-                              ) : (
-                                <span>Tải video / PDF bài học (Max 2GB)</span>
-                              )}
                               <input
-                                type="file"
-                                accept="video/*,application/pdf"
-                                style={{ display: 'none' }}
-                                disabled={uploadingMedia}
-                                onChange={(e) => handleFileUpload(e, secIdx)}
+                                type="checkbox"
+                                checked={newLectureIsPreview}
+                                onChange={(e) =>
+                                  setNewLectureIsPreview(e.target.checked)
+                                }
                               />
+                              <span>
+                                Cho phép học viên xem thử miễn phí (Preview)
+                              </span>
                             </label>
+
+                            {/* Upload Media Button */}
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                              }}
+                            >
+                              <label
+                                className="btn-action-secondary"
+                                style={{
+                                  cursor: uploadingMedia
+                                    ? 'not-allowed'
+                                    : 'pointer',
+                                }}
+                              >
+                                {uploadingMedia ? (
+                                  <>
+                                    <IconlyTimeCircle
+                                      size={14}
+                                      color="currentColor"
+                                    />
+                                    <span>
+                                      Đang nén & trích xuất transcript AI...
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span>Tải video / PDF bài học (Max 2GB)</span>
+                                )}
+                                <input
+                                  type="file"
+                                  accept="video/*,application/pdf"
+                                  style={{ display: 'none' }}
+                                  disabled={uploadingMedia}
+                                  onChange={(e) => handleFileUpload(e, secIdx)}
+                                />
+                              </label>
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         <div
                           style={{
@@ -1986,20 +2385,50 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                   )}
               </div>
 
-              <div className="editor-form-group">
-                <label className="editor-form-label">
-                  Huy hiệu nổi bật (Badge)
-                </label>
-                <select
-                  className="editor-form-input"
-                  value={badge}
-                  onChange={(e) => setBadge(e.target.value)}
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '12px 14px',
+                  fontSize: '12.5px',
+                  color: '#475569',
+                  lineHeight: '1.6',
+                }}
+              >
+                <strong
+                  style={{
+                    color: '#0f172a',
+                    display: 'block',
+                    marginBottom: '4px',
+                  }}
                 >
-                  <option value="">-- Không sử dụng huy hiệu --</option>
-                  <option value="NEW">MỚI (NEW)</option>
-                  <option value="HOT">HOT</option>
-                  <option value="BESTSELLER">BÁN CHẠY (BESTSELLER)</option>
-                </select>
+                  Huy hiệu khóa học tự động (Smart Badge System):
+                </strong>
+                Hệ thống tự động phân loại và cấp huy hiệu theo hiệu suất thực
+                tế:
+                <ul style={{ margin: '4px 0 0 18px', padding: 0 }}>
+                  <li>
+                    <span style={{ color: '#059669', fontWeight: 600 }}>
+                      NEW
+                    </span>
+                    : Dành cho khóa học mới ra mắt gần đây.
+                  </li>
+                  <li>
+                    <span style={{ color: '#dc2626', fontWeight: 600 }}>
+                      HOT
+                    </span>
+                    : Dành cho khóa học mới ra có lượng truy cập và quan tâm
+                    cao.
+                  </li>
+                  <li>
+                    <span style={{ color: '#d97706', fontWeight: 600 }}>
+                      BESTSELLER
+                    </span>
+                    : Dành cho khóa học có số lượng học viên ghi danh đông đảo
+                    nhất.
+                  </li>
+                </ul>
               </div>
             </div>
           )}
@@ -2037,19 +2466,33 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
             >
               {submitting ? 'Đang lưu...' : 'Lưu bản nháp (Draft)'}
             </button>
-            <button
-              type="button"
-              className="btn-create-course"
-              onClick={handleSubmitApproval}
-              disabled={submitting}
-            >
-              <IconlyTick size={16} />
-              <span>
-                {submitting
-                  ? 'Đang gửi...'
-                  : 'Gửi phê duyệt (Pending Approval)'}
-              </span>
-            </button>
+            {currentCourse?.status === 'PUBLISHED' ? (
+              <button
+                type="button"
+                className="btn-create-course"
+                onClick={handleSaveDraft}
+                disabled={submitting}
+              >
+                <IconlyTick size={16} />
+                <span>
+                  {submitting ? 'Đang lưu...' : 'Lưu thay đổi khóa học'}
+                </span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn-create-course"
+                onClick={handleSubmitApproval}
+                disabled={submitting}
+              >
+                <IconlyTick size={16} />
+                <span>
+                  {submitting
+                    ? 'Đang gửi...'
+                    : 'Gửi phê duyệt (Pending Approval)'}
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </div>

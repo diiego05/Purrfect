@@ -5,6 +5,23 @@ export interface CreatePaymentPayload {
   courseId: string;
   couponCode?: string;
   bankCode?: string;
+  paymentMethod?: string;
+}
+
+export interface DirectCheckoutPayload {
+  courseId: string;
+  couponCode?: string;
+  bankCode?: string;
+  paymentMethod?: 'DIRECT' | 'BANK_TRANSFER' | 'VNPAY' | 'MOCK' | 'FREE';
+}
+
+export interface DirectCheckoutResponse {
+  success: boolean;
+  isEnrolled?: boolean;
+  message?: string;
+  order?: VNPayReturnResponse['order'];
+  orderCode?: string;
+  finalAmount?: number;
 }
 
 export interface CreatePaymentResponse {
@@ -79,6 +96,22 @@ export const paymentApi = {
   },
 
   /**
+   * Hoàn tất thanh toán trực tiếp / Kích hoạt khóa học ngay lập tức
+   */
+  async directCheckout(
+    payload: DirectCheckoutPayload,
+  ): Promise<DirectCheckoutResponse> {
+    const res = await authFetch('/api/payment/direct-checkout', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return parseJsonSafe<DirectCheckoutResponse>(
+      res,
+      'Không thể hoàn tất thanh toán trực tiếp',
+    );
+  },
+
+  /**
    * Xác thực kết quả thanh toán từ VNPAY khi được redirect về
    */
   async verifyVNPayReturn(queryString: string): Promise<VNPayReturnResponse> {
@@ -126,6 +159,66 @@ export const paymentApi = {
       return {
         valid: false,
         message: 'Lỗi kết nối khi kiểm tra mã giảm giá.',
+      };
+    }
+  },
+
+  /**
+   * Lấy thông tin đơn hàng hiển thị trên Cổng VNPAY Gateway
+   */
+  async getGatewayOrderInfo(orderCode: string): Promise<{
+    success: boolean;
+    message?: string;
+    order?: {
+      orderCode: string;
+      amount: number;
+      status: string;
+      course?: {
+        title: string;
+        slug: string;
+        thumbnailUrl?: string;
+        price?: number;
+      };
+      createdAt: string;
+    };
+  }> {
+    try {
+      const res = await fetch(`/api/payment/gateway-order/${orderCode}`);
+      return await parseJsonSafe(res, 'Không thể tải thông tin đơn hàng VNPAY');
+    } catch (err) {
+      return {
+        success: false,
+        message: err instanceof Error ? err.message : 'Lỗi kết nối máy chủ',
+      };
+    }
+  },
+
+  /**
+   * Hoàn tất giao dịch tại Cổng VNPAY và nhận Redirect URL có chữ ký
+   */
+  async completeGatewayPayment(payload: {
+    orderCode: string;
+    cardNumber?: string;
+    cardHolder?: string;
+    issueDate?: string;
+    otp?: string;
+  }): Promise<{
+    success: boolean;
+    redirectUrl?: string;
+    message?: string;
+  }> {
+    try {
+      const res = await fetch('/api/payment/vnpay-complete-gateway', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return await parseJsonSafe(res, 'Lỗi xử lý giao dịch tại cổng VNPAY');
+    } catch (err) {
+      return {
+        success: false,
+        message:
+          err instanceof Error ? err.message : 'Lỗi kết nối cổng thanh toán',
       };
     }
   },

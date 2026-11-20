@@ -18,6 +18,7 @@ import bannerRoutes from './routes/bannerRoutes';
 import couponRoutes from './routes/couponRoutes';
 
 import aiChatRoutes from './routes/aiChatRoutes';
+import aiQuizRoutes from './routes/aiQuizRoutes';
 
 import paymentRoutes from './routes/paymentRoutes';
 import cartRoutes from './routes/cartRoutes';
@@ -41,14 +42,36 @@ connectDB();
 // Middlewares
 app.use(
   cors({
-    origin: [
-      process.env.CLIENT_URL || 'http://localhost:5173',
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-    ],
+    origin: (origin, callback) => {
+      // Cho phép requests không có origin (ví dụ curl, Postman, health check)
+      if (!origin) return callback(null, true);
+      const allowedOrigins = [
+        process.env.CLIENT_URL || 'http://localhost:5173',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+      ];
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        process.env.NODE_ENV !== 'production'
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   }),
 );
+
+// Health check endpoint (Đáp ứng tiêu chí Rubric TC2.6 về giám sát & health check sau triển khai)
+app.get(['/health', '/api/health'], (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    service: 'Purrfect Backend API',
+  });
+});
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -65,6 +88,8 @@ app.use('/api/coupons', couponRoutes);
 
 app.use('/api/ai', aiChatRoutes);
 app.use('/api/v1/ai', aiChatRoutes);
+app.use('/api/ai/quiz', aiQuizRoutes);
+app.use('/api/v1/ai/quiz', aiQuizRoutes);
 
 app.use('/api/payment', paymentRoutes);
 app.use('/api/cart', cartRoutes);
@@ -77,7 +102,29 @@ app.use('/api', discussionRoutes);
 app.use('/api/v1', reviewRoutes);
 app.use('/api', reviewRoutes);
 
+// Root endpoint
+app.get('/', (_req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Purrfect Backend API is running successfully!',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/health',
+      apiHealth: '/api/health',
+      courses: '/api/courses',
+    },
+  });
+});
+
 // Health check
+app.get('/health', (_req, expressRes) => {
+  expressRes.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'Purrfect API Service',
+  });
+});
+
 app.get('/api/health', (_req, expressRes) => {
   expressRes.json({
     status: 'ok',

@@ -15,6 +15,7 @@ import {
 } from '../../services/instructorCourseApi';
 import { fetchCategories } from '../../services/courseApi';
 import { CourseEditorView } from './CourseEditorView';
+import { CourseStudentsModal } from './CourseStudentsModal';
 import {
   IconlyFolder,
   IconlyPlus,
@@ -69,6 +70,10 @@ export const InstructorCoursesPage: React.FC = () => {
   const [deleteConfirmCourse, setDeleteConfirmCourse] =
     useState<InstructorCourse | null>(null);
   const [deleting, setDeleting] = useState<boolean>(false);
+
+  // Modal xem danh sách học viên của khóa học
+  const [viewingStudentsCourse, setViewingStudentsCourse] =
+    useState<InstructorCourse | null>(null);
 
   // Tải danh mục ngành học
   useEffect(() => {
@@ -411,12 +416,22 @@ export const InstructorCoursesPage: React.FC = () => {
             <span className="stat-sub">Đang soạn thảo</span>
           </div>
 
-          <div className="instructor-stat-card stat-card-revenue">
+          <div
+            className="instructor-stat-card stat-card-revenue"
+            onClick={() => navigate('/instructor/students')}
+            style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
+            title="Nhấn để mở trang Quản lý học viên ghi danh"
+          >
             <span className="stat-label">Tổng học viên</span>
             <span className="stat-value">
               {stats.totalStudents.toLocaleString('vi-VN')}
             </span>
-            <span className="stat-sub">Đã ghi danh</span>
+            <span
+              className="stat-sub"
+              style={{ color: '#0056d2', fontWeight: 600 }}
+            >
+              👉 Xem danh sách ghi danh
+            </span>
           </div>
         </div>
 
@@ -576,8 +591,22 @@ export const InstructorCoursesPage: React.FC = () => {
                           <strong>{totalLectures}</strong> bài giảng
                         </span>
                       </span>
-                      <span>
-                        <IconlyUserGroup size={14} color="#64748b" />
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewingStudentsCourse(c);
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                          color: '#0056d2',
+                          fontWeight: 600,
+                          padding: '2px 6px',
+                          background: '#eff6ff',
+                          borderRadius: '4px',
+                        }}
+                        title="Xem danh sách học viên ghi danh khóa học này"
+                      >
+                        <IconlyUserGroup size={14} color="#0056d2" />
                         <span>
                           {(c.totalStudents || 0).toLocaleString('vi-VN')} học
                           viên
@@ -682,6 +711,25 @@ export const InstructorCoursesPage: React.FC = () => {
                           </button>
                         </>
                       )}
+
+                    {/* Xem danh sách học viên ghi danh của khóa học này */}
+                    <button
+                      type="button"
+                      className="btn-action-secondary"
+                      style={{
+                        color: '#0056d2',
+                        borderColor: '#bfdbfe',
+                        background: '#eff6ff',
+                      }}
+                      onClick={() => setViewingStudentsCourse(c)}
+                      title="Xem danh sách học viên ghi danh khóa học này"
+                    >
+                      <IconlyUserGroup size={14} color="#0056d2" />
+                      <span>
+                        Học viên (
+                        {(c.totalStudents || 0).toLocaleString('vi-VN')})
+                      </span>
+                    </button>
 
                     {/* Xem trực tiếp trang khóa học */}
                     <button
@@ -856,6 +904,20 @@ export const InstructorCoursesPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal xem danh sách học viên của khóa học */}
+      {viewingStudentsCourse && (
+        <CourseStudentsModal
+          course={viewingStudentsCourse}
+          onClose={() => setViewingStudentsCourse(null)}
+          onNavigateFull={() => {
+            const cId = viewingStudentsCourse._id;
+            setViewingStudentsCourse(null);
+            navigate(`/instructor/students?courseId=${cId}`);
+          }}
+          onStudentsChanged={() => reloadCourses()}
+        />
       )}
 
       {/* Toast Feedback */}

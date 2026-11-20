@@ -7,6 +7,12 @@ import {
 } from '../middlewares/auth';
 import {
   getInstructorCourses,
+  getInstructorStudents,
+  getCourseStudents,
+  getInstructorStatistics,
+  enrollManualStudent,
+  toggleBlockStudent,
+  removeStudentFromCourse,
   getInstructorCourseById,
   createCourseDraft,
   updateCourse,
@@ -62,6 +68,17 @@ router.post('/:id/upload-lecture', lectureFields, uploadLectureMedia);
 
 // 1. Danh sách khóa học và chỉ số KPI
 router.get('/', getInstructorCourses);
+
+// Quản lý danh sách học viên ghi danh của Giảng viên (đặt trước /:id)
+router.get('/students', getInstructorStudents);
+router.post('/students/enroll-manual', enrollManualStudent);
+router.post('/students/toggle-block', toggleBlockStudent);
+router.post('/students/remove', removeStudentFromCourse);
+router.delete('/students/:enrollmentId', removeStudentFromCourse);
+router.get('/:id/students', getCourseStudents);
+
+// Thống kê Giảng viên: Tổng khóa học và Doanh thu từng tháng
+router.get('/statistics', getInstructorStatistics);
 
 // 2. Chi tiết khóa học để soạn thảo
 router.get('/:id', getInstructorCourseById);
