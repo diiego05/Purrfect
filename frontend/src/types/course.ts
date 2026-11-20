@@ -33,6 +33,24 @@ export interface CourseLecture {
   isPreview?: boolean;
   transcript?: string;
   order?: number;
+  quizData?: {
+    title?: string;
+    description?: string;
+    passingScore?: number;
+    availableFrom?: string;
+    availableUntil?: string;
+    timeLimitMinutes?: number;
+    questions: Array<{
+      id: string;
+      type: 'MULTIPLE_CHOICE' | 'ESSAY';
+      question: string;
+      options?: string[];
+      correctAnswer?: number | string;
+      explanation: string;
+      sampleAnswer?: string;
+      points?: number;
+    }>;
+  };
 }
 
 export interface CourseSection {

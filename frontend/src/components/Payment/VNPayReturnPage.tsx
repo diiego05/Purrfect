@@ -214,9 +214,9 @@ export const VNPayReturnPage: FC = () => {
                 className="btn-primary-action"
                 onClick={() => {
                   if (order?.courseId?.slug) {
-                    navigate(`/learning/${order.courseId.slug}`);
+                    navigate(`/checkout/${order.courseId.slug}`);
                   } else {
-                    navigate('/');
+                    navigate('/cart');
                   }
                 }}
               >

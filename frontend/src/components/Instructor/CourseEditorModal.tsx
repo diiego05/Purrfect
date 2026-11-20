@@ -83,7 +83,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const [discountPrice, setDiscountPrice] = useState<number>(
     course.discountPrice || 0,
   );
-  const [badge, setBadge] = useState<string>(course.badge || '');
+  const [badge] = useState<string>(course.badge || '');
 
   // Trạng thái xử lý & lỗi
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -815,12 +815,16 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                                 className={`lecture-badge-type ${
                                   lecture.type === 'VIDEO'
                                     ? 'type-video'
-                                    : 'type-doc'
+                                    : lecture.type === 'QUIZ'
+                                      ? 'type-quiz'
+                                      : 'type-doc'
                                 }`}
                               >
                                 {lecture.type === 'VIDEO'
                                   ? 'Video'
-                                  : 'Tài liệu'}
+                                  : lecture.type === 'QUIZ'
+                                    ? 'Bài kiểm tra AI'
+                                    : 'Tài liệu'}
                               </span>
 
                               <div>
@@ -1204,20 +1208,50 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                   )}
               </div>
 
-              <div className="playlist-form-group">
-                <label className="playlist-form-label">
-                  Huy hiệu nổi bật (Badge)
-                </label>
-                <select
-                  className="playlist-input"
-                  value={badge}
-                  onChange={(e) => setBadge(e.target.value)}
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '12px 14px',
+                  fontSize: '12.5px',
+                  color: '#475569',
+                  lineHeight: '1.6',
+                }}
+              >
+                <strong
+                  style={{
+                    color: '#0f172a',
+                    display: 'block',
+                    marginBottom: '4px',
+                  }}
                 >
-                  <option value="">-- Không sử dụng huy hiệu --</option>
-                  <option value="NEW">MỚI (NEW)</option>
-                  <option value="HOT">HOT</option>
-                  <option value="BESTSELLER">BÁN CHẠY (BESTSELLER)</option>
-                </select>
+                  Huy hiệu khóa học tự động (Smart Badge System):
+                </strong>
+                Hệ thống tự động phân loại và cấp huy hiệu theo hiệu suất thực
+                tế:
+                <ul style={{ margin: '4px 0 0 18px', padding: 0 }}>
+                  <li>
+                    <span style={{ color: '#059669', fontWeight: 600 }}>
+                      NEW
+                    </span>
+                    : Dành cho khóa học mới ra mắt gần đây.
+                  </li>
+                  <li>
+                    <span style={{ color: '#dc2626', fontWeight: 600 }}>
+                      HOT
+                    </span>
+                    : Dành cho khóa học mới ra có lượng truy cập và quan tâm
+                    cao.
+                  </li>
+                  <li>
+                    <span style={{ color: '#d97706', fontWeight: 600 }}>
+                      BESTSELLER
+                    </span>
+                    : Dành cho khóa học có số lượng học viên ghi danh đông đảo
+                    nhất.
+                  </li>
+                </ul>
               </div>
             </div>
           )}

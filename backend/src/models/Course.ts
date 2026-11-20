@@ -5,10 +5,31 @@ export type CourseStatus =
 
 export type CourseLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 
+export interface IQuizQuestion {
+  id: string;
+  type: 'MULTIPLE_CHOICE' | 'ESSAY';
+  question: string;
+  options?: string[]; // 4 lựa chọn cho trắc nghiệm
+  correctAnswer?: number | string; // index (0..3) hoặc từ khóa gợi ý
+  explanation: string; // Giải thích chi tiết từ AI
+  sampleAnswer?: string; // Đáp án mẫu cho tự luận
+  points?: number; // Điểm số
+}
+
+export interface IQuizData {
+  title?: string;
+  description?: string;
+  passingScore?: number; // % điểm đạt (mặc định 80)
+  questions: IQuizQuestion[];
+  availableFrom?: string; // Thời điểm bắt đầu mở bài thi (ISO string e.g. 2026-11-20T08:00)
+  availableUntil?: string; // Thời điểm kết thúc hạn nộp (ISO string e.g. 2026-11-20T22:00)
+  timeLimitMinutes?: number; // Thời gian làm bài (phút, ví dụ 15, 30, 45, 60)
+}
+
 export interface ILecture {
   _id?: mongoose.Types.ObjectId;
   title: string;
-  type: 'VIDEO' | 'DOCUMENT';
+  type: 'VIDEO' | 'DOCUMENT' | 'QUIZ';
   contentUrl?: string;
   fileName?: string;
   fileSize?: number; // bytes (<= 2GB - BR06.2)
@@ -18,6 +39,7 @@ export interface ILecture {
   compressionStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; // BR06.5
   transcript?: string; // BR06.5 trích xuất phụ đề cho RAG Chatbot
   transcriptStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  quizData?: IQuizData; // Dữ liệu bài kiểm tra trắc nghiệm & tự luận nếu type === 'QUIZ'
 }
 
 export interface ISection {
@@ -63,7 +85,11 @@ export interface ICourse extends Document {
 const lectureSchema = new Schema<ILecture>(
   {
     title: { type: String, required: true, trim: true },
-    type: { type: String, enum: ['VIDEO', 'DOCUMENT'], default: 'VIDEO' },
+    type: {
+      type: String,
+      enum: ['VIDEO', 'DOCUMENT', 'QUIZ'],
+      default: 'VIDEO',
+    },
     contentUrl: { type: String, default: '' },
     fileName: { type: String, default: '' },
     fileSize: { type: Number, default: 0 },
@@ -81,6 +107,7 @@ const lectureSchema = new Schema<ILecture>(
       enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'],
       default: 'COMPLETED',
     },
+    quizData: { type: Schema.Types.Mixed, default: null },
   },
   { _id: true },
 );

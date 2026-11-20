@@ -1,6 +1,27 @@
 import type { Category, SkillItem } from './course';
 
-export type LectureType = 'VIDEO' | 'DOCUMENT';
+export type LectureType = 'VIDEO' | 'DOCUMENT' | 'QUIZ';
+
+export interface QuizQuestionItem {
+  id: string;
+  type: 'MULTIPLE_CHOICE' | 'ESSAY';
+  question: string;
+  options?: string[];
+  correctAnswer?: number | string;
+  explanation: string;
+  sampleAnswer?: string;
+  points?: number;
+}
+
+export interface QuizDataItem {
+  title?: string;
+  description?: string;
+  passingScore?: number;
+  questions: QuizQuestionItem[];
+  availableFrom?: string; // Thời điểm bắt đầu mở đề
+  availableUntil?: string; // Thời điểm đóng đề (hạn chót)
+  timeLimitMinutes?: number; // Thời gian làm bài (phút)
+}
 
 export interface LectureItem {
   _id?: string;
@@ -15,6 +36,7 @@ export interface LectureItem {
   compressionStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; // BR06.5
   transcript?: string; // BR06.5 trích xuất phụ đề cho RAG Chatbot
   transcriptStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  quizData?: QuizDataItem;
 }
 
 export interface SectionItem {
@@ -73,4 +95,59 @@ export interface InstructorStats {
   disabled: number;
   totalStudents: number;
   totalRevenue: number;
+}
+
+export interface EnrolledStudentItem {
+  id: string;
+  enrollmentId: string;
+  orderCode: string;
+  student: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl: string;
+    phoneNumber?: string;
+  };
+  course: {
+    id: string;
+    title: string;
+    slug?: string;
+    thumbnail?: string;
+    price: number;
+    totalLectures: number;
+  };
+  paymentMethod: 'VNPAY' | 'FREE';
+  amount: number;
+  enrolledAt: string;
+  status: 'ACTIVE' | 'COMPLETED' | 'BLOCKED';
+  progress?: number;
+  completedLectures?: number;
+}
+
+export interface InstructorStudentsStats {
+  totalEnrollments: number;
+  uniqueStudents: number;
+  paidEnrollments: number;
+  freeEnrollments: number;
+  totalRevenue: number;
+  coursesCount: number;
+}
+
+export interface InstructorStudentsResponse {
+  success: boolean;
+  data: {
+    students: EnrolledStudentItem[];
+    stats: InstructorStudentsStats;
+    courses: Array<{
+      id: string;
+      title: string;
+      totalStudents: number;
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
 }

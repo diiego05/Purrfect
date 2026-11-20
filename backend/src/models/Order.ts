@@ -1,7 +1,8 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export type OrderStatus = 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED';
-export type PaymentMethod = 'VNPAY' | 'FREE';
+export type PaymentMethod =
+  'VNPAY' | 'FREE' | 'DIRECT' | 'BANK_TRANSFER' | 'MOCK';
 
 export interface IOrder extends Document {
   _id: mongoose.Types.ObjectId;
@@ -77,7 +78,7 @@ const orderSchema = new Schema<IOrder>(
     },
     paymentMethod: {
       type: String,
-      enum: ['VNPAY', 'FREE'],
+      enum: ['VNPAY', 'FREE', 'DIRECT', 'BANK_TRANSFER', 'MOCK'],
       default: 'VNPAY',
     },
     vnpayDetails: {

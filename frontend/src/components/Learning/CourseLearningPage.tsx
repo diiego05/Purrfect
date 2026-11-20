@@ -19,6 +19,9 @@ import {
   IconlyChevronUp,
 } from '../Onboarding/IconlyIcons';
 import { LectureDiscussionPanel } from './LectureDiscussionPanel';
+import { QuizPlayer } from './QuizPlayer';
+import { toast } from '../../context/ToastContext';
+import { formatVND } from '../../utils/format';
 import './CourseLearningPage.css';
 
 interface CourseLearningPageProps {
@@ -241,8 +244,8 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
 
   const isCourseInstructor = Boolean(
     user &&
-      user.role === 'INSTRUCTOR' &&
-      (!instructorObjId || instructorObjId === user.id),
+    user.role === 'INSTRUCTOR' &&
+    (!instructorObjId || instructorObjId === user.id),
   );
   const isAdmin = Boolean(user && user.role === 'ADMIN');
 
@@ -279,13 +282,13 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
     lectureIndex: number,
     lecture: CourseLecture,
   ) => {
+    setActiveLecture({ sectionIndex, lectureIndex, lecture });
+    setExpandedSections((prev) => ({ ...prev, [sectionIndex]: true }));
+
     if (!canAccessLecture(lecture)) {
       setShowLockedModal(lecture);
       return;
     }
-
-    setActiveLecture({ sectionIndex, lectureIndex, lecture });
-    setExpandedSections((prev) => ({ ...prev, [sectionIndex]: true }));
 
     // Cập nhật URL sạch mà không làm reload trang
     const newUrl = `/learning/${course?.slug || slug}?s=${sectionIndex}&l=${lectureIndex}`;
@@ -488,9 +491,9 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
             className="btn-learning-exit"
             onClick={() => navigate(`/courses/${course.slug || course._id}`)}
             title="Đóng trình phát và quay lại chi tiết khóa học"
+            aria-label="Đóng trình phát"
           >
-            <IconlyClose size={15} color="currentColor" />
-            <span>Đóng trình phát</span>
+            <IconlyClose size={18} color="currentColor" />
           </button>
         </div>
       </header>
@@ -502,8 +505,136 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
         {/* CỘT TRÁI: VIDEO / TÀI LIỆU STAGE & NỘI DUNG CHI TIẾT */}
         <main className="learning-main-stage">
           <div className="learning-player-wrapper">
+            {/* Banner thông báo xem thử miễn phí */}
+            {activeLecture &&
+              activeLecture.lecture.isPreview &&
+              !isEnrolled &&
+              !isOwnerOrAdmin && (
+                <div className="learning-preview-sticky-bar">
+                  <div className="preview-sticky-left">
+                    <span className="preview-sticky-tag">BÀI HỌC XEM THỬ</span>
+                    <span className="preview-sticky-text">
+                      Bạn đang trải nghiệm bài giảng xem thử miễn phí. Mở khóa
+                      toàn bộ {flatLectures.length} bài giảng bằng cách thanh
+                      toán khóa học.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-preview-checkout-now"
+                    onClick={() =>
+                      navigate(
+                        `/checkout/${course?.slug || course?._id || slug}`,
+                      )
+                    }
+                  >
+                    Thanh toán khóa học (
+                    {formatVND(
+                      course?.discountPrice && course.discountPrice > 0
+                        ? course.discountPrice
+                        : course?.price || 0,
+                    )}
+                    )
+                  </button>
+                </div>
+              )}
+
             {activeLecture ? (
-              activeLecture.lecture.type === 'DOCUMENT' ? (
+              !canAccessLecture(activeLecture.lecture) ? (
+                <div className="learning-paywall-screen">
+                  <div className="paywall-lock-badge">
+                    <IconlyLock size={44} color="#d97706" />
+                  </div>
+                  <span className="paywall-badge-pill">
+                    NỘI DUNG CÓ PHÍ • CẦN THANH TOÁN
+                  </span>
+                  <h2 className="paywall-title">
+                    Bài học yêu cầu thanh toán khóa học
+                  </h2>
+                  <p className="paywall-desc">
+                    Bài giảng <strong>"{activeLecture.lecture.title}"</strong>{' '}
+                    thuộc chương trình học tiêu chuẩn của khóa học{' '}
+                    <strong>"{course?.title}"</strong>. Vui lòng thanh toán học
+                    phí để mở khóa bài giảng này cùng toàn bộ video, tài liệu
+                    đính kèm, bài kiểm tra và chứng chỉ tốt nghiệp.
+                  </p>
+
+                  <div className="paywall-pricing-card">
+                    <div className="paywall-price-row">
+                      <span className="paywall-label">Học phí khóa học:</span>
+                      <div className="paywall-values">
+                        <span className="paywall-final-price">
+                          {formatVND(
+                            course?.discountPrice &&
+                              course.discountPrice > 0 &&
+                              course.discountPrice < course.price
+                              ? course.discountPrice
+                              : course?.price || 0,
+                          )}
+                        </span>
+                        {course?.discountPrice &&
+                          course.discountPrice > 0 &&
+                          course.discountPrice < course.price && (
+                            <span className="paywall-strike-price">
+                              {formatVND(course.price)}
+                            </span>
+                          )}
+                      </div>
+                    </div>
+                    <div className="paywall-features">
+                      <div className="paywall-feat-item">
+                        ✓ Truy cập trọn đời tất cả video bài giảng & tài liệu
+                      </div>
+                      <div className="paywall-feat-item">
+                        ✓ Bài tập kiểm tra trắc nghiệm AI với lời giải chi tiết
+                      </div>
+                      <div className="paywall-feat-item">
+                        ✓ Cấp chứng chỉ hoàn thành khóa học chính thức
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="paywall-btn-group">
+                    <button
+                      type="button"
+                      className="btn-paywall-enroll"
+                      onClick={() =>
+                        navigate(
+                          `/checkout/${course?.slug || course?._id || slug}`,
+                        )
+                      }
+                    >
+                      <span>Thanh toán khóa học ngay</span>
+                      <span>→</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-paywall-outline"
+                      onClick={() =>
+                        navigate(
+                          `/courses/${course?.slug || course?._id || slug}`,
+                        )
+                      }
+                    >
+                      Xem trang giới thiệu khóa học
+                    </button>
+                  </div>
+                </div>
+              ) : activeLecture.lecture.type === 'QUIZ' ? (
+                <QuizPlayer
+                  quizData={
+                    activeLecture.lecture
+                      .quizData as unknown as import('../../types/instructorCourse').QuizDataItem
+                  }
+                  lectureTitle={activeLecture.lecture.title}
+                  onCompleteQuiz={(_score, passed) => {
+                    if (currentLectureKey && passed) {
+                      toggleCompleteLecture(currentLectureKey);
+                    }
+                  }}
+                  onNextLecture={() => handleStepLecture(1)}
+                />
+              ) : activeLecture.lecture.type === 'DOCUMENT' ? (
                 activeLecture.lecture.contentUrl ? (
                   (() => {
                     const docViewUrl = getDocumentViewerUrl(
@@ -614,7 +745,9 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                   <span className="learning-badge badge-type">
                     {activeLecture?.lecture.type === 'DOCUMENT'
                       ? 'Tài liệu học tập'
-                      : 'Video bài giảng'}
+                      : activeLecture?.lecture.type === 'QUIZ'
+                        ? 'Bài kiểm tra AI'
+                        : 'Video bài giảng'}
                   </span>
                   {activeLecture?.lecture.durationMinutes ? (
                     <span className="learning-badge badge-duration">
@@ -658,7 +791,8 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                 className={`learning-tab-btn ${activeTab === 'discussion' ? 'active' : ''}`}
                 onClick={() => setActiveTab('discussion')}
               >
-                💬 Thảo luận bài học {discussionCount > 0 ? `(${discussionCount})` : ''}
+                💬 Thảo luận bài học{' '}
+                {discussionCount > 0 ? `(${discussionCount})` : ''}
               </button>
               <button
                 type="button"
@@ -724,10 +858,18 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                           navigate(`/checkout?courseId=${course._id}`);
                         }
                       }}
-                      onDiscussionCountChange={(count) => setDiscussionCount(count)}
+                      onDiscussionCountChange={(count) =>
+                        setDiscussionCount(count)
+                      }
                     />
                   ) : (
-                    <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
+                    <div
+                      style={{
+                        textAlign: 'center',
+                        padding: '30px 0',
+                        color: '#64748b',
+                      }}
+                    >
                       Vui lòng chọn một bài học để xem và tham gia thảo luận.
                     </div>
                   )}
@@ -752,7 +894,9 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                             navigator.clipboard.writeText(
                               activeLecture.lecture.transcript || '',
                             );
-                            alert('Đã sao chép transcript vào bộ nhớ tạm.');
+                            toast.success(
+                              'Đã sao chép transcript vào bộ nhớ tạm.',
+                            );
                           }}
                         >
                           Sao chép transcript
@@ -913,7 +1057,12 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                                   ) : isActive ? (
                                     <IconlyPlay size={15} color="#0056d2" />
                                   ) : unlocked ? (
-                                    lec.type === 'DOCUMENT' ? (
+                                    lec.type === 'QUIZ' ? (
+                                      <IconlySparkles
+                                        size={15}
+                                        color="#8b5cf6"
+                                      />
+                                    ) : lec.type === 'DOCUMENT' ? (
                                       <IconlyDocument
                                         size={15}
                                         color="#94a3b8"
@@ -932,10 +1081,52 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                                   </span>
                                   <div className="lecture-item-meta">
                                     <span className="meta-type">
-                                      {lec.type === 'DOCUMENT'
-                                        ? 'Tài liệu'
-                                        : 'Video'}
+                                      {lec.type === 'QUIZ'
+                                        ? 'Kiểm tra AI'
+                                        : lec.type === 'DOCUMENT'
+                                          ? 'Tài liệu'
+                                          : 'Video'}
                                     </span>
+                                    {lec.type === 'QUIZ' &&
+                                      lec.quizData?.availableFrom &&
+                                      new Date() <
+                                        new Date(
+                                          lec.quizData.availableFrom,
+                                        ) && (
+                                        <span
+                                          style={{
+                                            background: '#ede9fe',
+                                            color: '#7c3aed',
+                                            padding: '1px 6px',
+                                            borderRadius: '4px',
+                                            fontSize: '10px',
+                                            fontWeight: 600,
+                                            marginLeft: '4px',
+                                          }}
+                                        >
+                                          Chưa mở
+                                        </span>
+                                      )}
+                                    {lec.type === 'QUIZ' &&
+                                      lec.quizData?.availableUntil &&
+                                      new Date() >
+                                        new Date(
+                                          lec.quizData.availableUntil,
+                                        ) && (
+                                        <span
+                                          style={{
+                                            background: '#fee2e2',
+                                            color: '#dc2626',
+                                            padding: '1px 6px',
+                                            borderRadius: '4px',
+                                            fontSize: '10px',
+                                            fontWeight: 600,
+                                            marginLeft: '4px',
+                                          }}
+                                        >
+                                          Đóng cổng
+                                        </span>
+                                      )}
                                     {lec.durationMinutes ? (
                                       <span className="meta-dot">
                                         • {lec.durationMinutes}m
@@ -994,7 +1185,7 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                   navigate(`/checkout/${course.slug || course._id}`);
                 }}
               >
-                Đăng ký khóa học ngay
+                Thanh toán khóa học ngay
               </button>
             </div>
           </div>

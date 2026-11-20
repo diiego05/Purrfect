@@ -3,6 +3,7 @@ import type {
   InstructorCourse,
   InstructorStats,
   LectureItem,
+  LectureType,
 } from '../types/instructorCourse';
 import { parseApiJson } from '../utils/api';
 
@@ -109,7 +110,7 @@ export const uploadLectureMedia = async (
   id: string | undefined | null,
   payload: {
     lectureTitle: string;
-    type: 'VIDEO' | 'DOCUMENT';
+    type: LectureType;
     fileName: string;
     fileSize: number;
     durationMinutes: number;
@@ -251,4 +252,156 @@ export const transcribeLectureWithAI = async (
     },
   );
   return parseApiJson(res, 'Lỗi khi trích xuất transcript AI');
+};
+
+/**
+ * Lấy danh sách học viên ghi danh vào các khóa học của Giảng viên
+ */
+export const fetchInstructorStudents = async (params?: {
+  courseId?: string;
+  search?: string;
+  paymentMethod?: string;
+  page?: number;
+  limit?: number;
+}): Promise<import('../types/instructorCourse').InstructorStudentsResponse> => {
+  const query = new URLSearchParams();
+  if (params?.courseId) query.append('courseId', params.courseId);
+  if (params?.search) query.append('search', params.search);
+  if (params?.paymentMethod)
+    query.append('paymentMethod', params.paymentMethod);
+  if (params?.page) query.append('page', String(params.page));
+  if (params?.limit) query.append('limit', String(params.limit));
+
+  const url = `${API_BASE}/students${query.toString() ? `?${query.toString()}` : ''}`;
+  const res = await authFetch(url);
+  return parseApiJson(res, 'Lỗi khi tải danh sách học viên ghi danh');
+};
+
+/**
+ * Giảng viên ghi danh thủ công học viên mới vào khóa học
+ */
+export const enrollManualStudentApi = async (payload: {
+  studentName: string;
+  studentEmail: string;
+  studentPhone?: string;
+  courseId: string;
+  paymentMethod?: 'VNPAY' | 'FREE';
+  amount?: number;
+}): Promise<{ success: boolean; message: string }> => {
+  const res = await authFetch(`${API_BASE}/students/enroll-manual`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return parseApiJson(res, 'Lỗi khi ghi danh học viên thủ công');
+};
+
+/**
+ * Lấy danh sách học viên của 1 khóa học cụ thể
+ */
+export const fetchCourseStudentsApi = async (
+  courseId: string,
+  params?: {
+    search?: string;
+    paymentMethod?: string;
+    page?: number;
+    limit?: number;
+  },
+): Promise<import('../types/instructorCourse').InstructorStudentsResponse> => {
+  const query = new URLSearchParams();
+  if (params?.search) query.append('search', params.search);
+  if (params?.paymentMethod)
+    query.append('paymentMethod', params.paymentMethod);
+  if (params?.page) query.append('page', String(params.page));
+  if (params?.limit) query.append('limit', String(params.limit));
+
+  const url = `${API_BASE}/${courseId}/students${query.toString() ? `?${query.toString()}` : ''}`;
+  const res = await authFetch(url);
+  return parseApiJson(res, 'Lỗi khi tải danh sách học viên của khóa học');
+};
+
+/**
+ * Giảng viên chặn hoặc mở chặn quyền học của học viên trong khóa học
+ */
+export const toggleBlockStudentApi = async (payload: {
+  enrollmentId?: string;
+  studentId?: string;
+  courseId?: string;
+  isBlocked: boolean;
+}): Promise<{
+  success: boolean;
+  message: string;
+  data?: { isBlocked: boolean };
+}> => {
+  const res = await authFetch(`${API_BASE}/students/toggle-block`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return parseApiJson(res, 'Lỗi khi thay đổi trạng thái chặn học viên');
+};
+
+/**
+ * Giảng viên xóa học viên ra khỏi khóa học
+ */
+export const removeStudentFromCourseApi = async (payload: {
+  enrollmentId?: string;
+  studentId?: string;
+  courseId?: string;
+}): Promise<{ success: boolean; message: string }> => {
+  const res = await authFetch(`${API_BASE}/students/remove`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return parseApiJson(res, 'Lỗi khi xóa học viên ra khỏi khóa học');
+};
+
+/**
+ * Thống kê giảng viên: Thống kê tổng khóa học đang có và tổng doanh thu từng tháng
+ */
+export const fetchInstructorStatisticsApi = async (): Promise<{
+  success: boolean;
+  data: {
+    coursesStats: {
+      totalCourses: number;
+      publishedCourses: number;
+      pendingCourses: number;
+      draftCourses: number;
+      disabledCourses: number;
+      totalStudentsCount: number;
+      totalEstimatedRevenue: number;
+      coursesList: Array<{
+        id: string;
+        title: string;
+        slug: string;
+        thumbnailUrl: string;
+        status: string;
+        level: string;
+        price: number;
+        discountPrice?: number;
+        totalStudents: number;
+        sectionsCount: number;
+        lecturesCount: number;
+        badge: string;
+        createdAt: string;
+        revenue: number;
+      }>;
+    };
+    revenueStats: {
+      year: number;
+      totalAccumulatedRevenue: number;
+      currentMonthRevenue: number;
+      lastMonthRevenue: number;
+      avgMonthlyRevenue: number;
+      monthlyBreakdown: Array<{
+        monthNumber: number;
+        monthLabel: string;
+        year: number;
+        revenue: number;
+        ordersCount: number;
+        enrollmentsCount: number;
+      }>;
+    };
+  };
+}> => {
+  const res = await authFetch(`${API_BASE}/statistics`);
+  return parseApiJson(res, 'Lỗi khi tải dữ liệu thống kê');
 };

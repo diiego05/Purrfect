@@ -1,6 +1,7 @@
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartWishlistProvider } from './context/CartWishlistContext';
 import { ChatbotProvider } from './context/ChatbotContext';
+import { ToastProvider } from './context/ToastContext';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { HomeCourses } from './components/Courses/HomeCourses';
@@ -28,6 +29,8 @@ import { PlaylistsPage } from './components/Playlist/PlaylistsPage';
 import { PlaylistDetailPage } from './components/Playlist/PlaylistDetailPage';
 import { InstructorLayout } from './components/Instructor/InstructorLayout';
 import { InstructorCoursesPage } from './components/Instructor/InstructorCoursesPage';
+import { InstructorStudentsPage } from './components/Instructor/InstructorStudentsPage';
+import { InstructorStatisticsPage } from './components/Instructor/InstructorStatisticsPage';
 import { BannerCarousel } from './components/Banner/BannerCarousel';
 import { ChatbotWidget } from './components/Chatbot/ChatbotWidget';
 import './App.css';
@@ -240,6 +243,32 @@ function MainRouter() {
 
   // Phân hệ Giảng viên (Instructor Dashboard) - Bảng điều khiển giống Admin (UC06)
   if (
+    normalizedPath === '/instructor/statistics' ||
+    normalizedPath === '/instructor/analytics' ||
+    normalizedPath === '/instructor/thong-ke'
+  ) {
+    return (
+      <InstructorLayout activeTab="analytics" pageTitle="Thống kê">
+        <InstructorStatisticsPage />
+      </InstructorLayout>
+    );
+  }
+
+  if (
+    normalizedPath === '/instructor/students' ||
+    normalizedPath === '/instructor/hoc-vien'
+  ) {
+    return (
+      <InstructorLayout
+        activeTab="students"
+        pageTitle="Quản lý học viên ghi danh"
+      >
+        <InstructorStudentsPage />
+      </InstructorLayout>
+    );
+  }
+
+  if (
     normalizedPath === '/instructor/courses' ||
     normalizedPath === '/instructor' ||
     normalizedPath === '/giang-vien/khoa-hoc' ||
@@ -338,14 +367,16 @@ function MainRouter() {
 
 function App() {
   return (
-    <AuthProvider>
-      <CartWishlistProvider>
-        <ChatbotProvider>
-          <MainRouter />
-          <ChatbotWidget />
-        </ChatbotProvider>
-      </CartWishlistProvider>
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <CartWishlistProvider>
+          <ChatbotProvider>
+            <MainRouter />
+            <ChatbotWidget />
+          </ChatbotProvider>
+        </CartWishlistProvider>
+      </AuthProvider>
+    </ToastProvider>
   );
 }
 

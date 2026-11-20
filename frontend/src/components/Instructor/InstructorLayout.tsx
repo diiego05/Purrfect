@@ -64,18 +64,18 @@ export const InstructorLayout: React.FC<InstructorLayoutProps> = ({
           <button
             type="button"
             className={`instructor-nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
-            onClick={() => navigate('/instructor/courses')}
+            onClick={() => navigate('/instructor/statistics')}
           >
             <div className="instructor-nav-icon">
               <IconlyGraph size={18} color="currentColor" />
             </div>
-            <span>Tổng quan KPI</span>
+            <span>Thống kê</span>
           </button>
 
           <button
             type="button"
             className={`instructor-nav-item ${activeTab === 'students' ? 'active' : ''}`}
-            onClick={() => navigate('/instructor/courses')}
+            onClick={() => navigate('/instructor/students')}
           >
             <div className="instructor-nav-icon">
               <IconlyUserGroup size={18} color="currentColor" />

@@ -177,16 +177,17 @@
 .btn-learning-exit {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   background: #fef2f2;
   color: #dc2626;
   border: 1px solid #fecaca;
   border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .btn-learning-exit:hover {
@@ -498,7 +499,15 @@
   flex-direction: column;
   gap: 16px;
   animation: fadeInTab 0.25s ease;
-  font-family: var(--font-primary, 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-family: var(
+    --font-primary,
+    'Be Vietnam Pro',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif
+  );
 }
 
 /* TRANSCRIPT PANE */
@@ -1013,6 +1022,209 @@
 
 .btn-learning-back:hover {
   background: #00409a;
+}
+
+/* ============================================================
+   PAYWALL SCREEN & PREVIEW BANNER (FOR PAID COURSES)
+   ============================================================ */
+.learning-preview-sticky-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #eff6ff;
+  border-bottom: 1.5px solid #bfdbfe;
+  padding: 12px 20px;
+  gap: 12px;
+}
+
+.preview-sticky-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: #1e40af;
+}
+
+.preview-sticky-tag {
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.preview-sticky-text {
+  line-height: 1.4;
+}
+
+.btn-preview-checkout-now {
+  background: #0056d2;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-preview-checkout-now:hover {
+  background: #00409a;
+}
+
+.learning-paywall-screen {
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  min-height: 480px;
+}
+
+.paywall-lock-badge {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #fef3c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.15);
+}
+
+.paywall-badge-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.paywall-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+}
+
+.paywall-desc {
+  max-width: 600px;
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.55;
+  margin: 0 0 24px 0;
+}
+
+.paywall-pricing-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.paywall-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.paywall-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.paywall-values {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.paywall-final-price {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #0056d2;
+}
+
+.paywall-strike-price {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.paywall-features {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.paywall-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-paywall-enroll {
+  background: #0056d2;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 13px 26px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 86, 210, 0.25);
+  transition: all 0.2s;
+}
+
+.btn-paywall-enroll:hover {
+  background: #00409a;
+  transform: translateY(-1px);
+}
+
+.btn-paywall-outline {
+  background: transparent;
+  color: #475569;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 13px 20px;
+  font-weight: 600;
+  font-size: 0.925rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-paywall-outline:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #1e293b;
 }
 
 /* RESPONSIVE */

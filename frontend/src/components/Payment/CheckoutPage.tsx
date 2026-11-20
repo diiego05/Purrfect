@@ -4,6 +4,7 @@ import { useCartWishlist } from '../../context/CartWishlistContext';
 import { fetchCourseBySlug } from '../../services/courseApi';
 import { paymentApi } from '../../services/paymentApi';
 import { formatVND } from '../../utils/format';
+import { toast } from '../../context/ToastContext';
 import {
   IconlyShield,
   IconlyAward,
@@ -44,6 +45,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [selectedBank, setSelectedBank] = useState<'NCB' | ''>('NCB');
 
   // Load single course if param is provided
   useEffect(() => {
@@ -108,10 +110,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
     }
   };
 
-  // Submit payment
+  // Submit payment: Chuyển hướng trực tiếp toàn trang sang Cổng VNPAY (không popup modal)
   const handleSubmitPayment = async () => {
     if (!isAuthenticated) {
       navigate('/login');
+      return;
+    }
+
+    const targetCourseId =
+      course?._id || course?.id || cartItems[0]?.courseId?._id;
+    if (!targetCourseId) {
+      setErrorMessage('Không tìm thấy thông tin khóa học để thanh toán.');
       return;
     }
 
@@ -119,43 +128,46 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
     setErrorMessage('');
 
     try {
-      const targetCourseId =
-        course?._id || course?.id || cartItems[0]?.courseId?._id;
-      if (!targetCourseId) {
-        setErrorMessage('Không tìm thấy thông tin khóa học để thanh toán.');
+      // 1. Khóa học miễn phí (hoặc coupon 100%)
+      if (currentFinalAmount <= 0) {
+        const res = await paymentApi.directCheckout({
+          courseId: targetCourseId,
+          couponCode: appliedCoupon?.code,
+          paymentMethod: 'FREE',
+        });
+        if (res.success) {
+          if (course?._id) removeFromCart(course._id);
+          toast.success(res.message || 'Đăng ký khóa học miễn phí thành công!');
+          navigate(`/learning/${course?.slug || targetCourseId}`);
+        } else {
+          setErrorMessage(res.message || 'Không thể đăng ký khóa học.');
+        }
         setIsSubmitting(false);
         return;
       }
 
+      // 2. Tạo phiên thanh toán và chuyển hướng sang Cổng VNPAY
       const res = await paymentApi.createPaymentUrl({
         courseId: targetCourseId,
         couponCode: appliedCoupon?.code,
+        paymentMethod: 'VNPAY',
+        bankCode: selectedBank || undefined,
       });
 
-      if (res.success) {
-        if (res.isFreeOrder) {
-          if (course?._id) removeFromCart(course._id);
-          alert(res.message || 'Đăng ký khóa học thành công!');
-          navigate('/payment/vnpay-return?vnp_ResponseCode=00');
-          return;
-        }
-
-        if (res.paymentUrl) {
-          window.location.href = res.paymentUrl;
-          return;
-        }
+      if (res.success && res.paymentUrl) {
+        if (course?._id) removeFromCart(course._id);
+        // Chuyển hướng trực tiếp sang VNPAY
+        window.location.href = res.paymentUrl;
+      } else {
+        setErrorMessage(
+          res.message || 'Không thể khởi tạo liên kết thanh toán VNPAY.',
+        );
+        setIsSubmitting(false);
       }
-
+    } catch (err) {
       setErrorMessage(
-        res.message || 'Không thể tạo phiên thanh toán. Vui lòng thử lại.',
+        err instanceof Error ? err.message : 'Lỗi kết nối tới cổng VNPAY.',
       );
-    } catch (err: unknown) {
-      setErrorMessage(
-        err instanceof Error
-          ? err.message
-          : 'Lỗi máy chủ trong quá trình khởi tạo thanh toán VNPAY.',
-      );
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -217,9 +229,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
         <div className="checkout-page-grid">
           {/* Cột trái: Thông tin khóa học & Phương thức thanh toán */}
           <div className="checkout-main-col">
-            {/* 1. Thông tin khóa học thanh toán */}
+            {/* Khóa học thanh toán */}
             <section className="checkout-section-card">
-              <h2 className="section-card-title">1. Khóa học thanh toán</h2>
+              <h2 className="section-card-title">Khóa học thanh toán</h2>
               {course ? (
                 <div className="checkout-course-preview">
                   <img
@@ -268,21 +280,81 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
               )}
             </section>
 
-            {/* 2. Phương thức thanh toán */}
+            {/* Phương thức thanh toán */}
             <section className="checkout-section-card">
-              <h2 className="section-card-title">2. Phương thức thanh toán</h2>
-              <div className="checkout-gateway-banner">
-                <div className="vnpay-badge-logo">VNPAY</div>
-                <div className="gateway-details">
-                  <div className="gateway-title">
-                    Cổng thanh toán điện tử VNPAY
+              <h2 className="section-card-title">Phương thức thanh toán</h2>
+
+              <div className="checkout-payment-methods">
+                <label
+                  className={`checkout-method-option ${selectedBank === 'NCB' ? 'active' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethodRadio"
+                    checked={selectedBank === 'NCB'}
+                    onChange={() => setSelectedBank('NCB')}
+                  />
+                  <div className="method-option-info">
+                    <div className="method-option-header">
+                      <strong>
+                        Thẻ ATM / Tài khoản ngân hàng (NCB Sandbox)
+                      </strong>
+                      <span className="badge-recommend">Thử nghiệm</span>
+                    </div>
+                    <p className="method-option-desc">
+                      Chuyển sang giao diện VNPAY chính thức để nhập thông tin
+                      thẻ test NCB
+                    </p>
                   </div>
-                  <div className="gateway-subtitle">
-                    Hỗ trợ quét mã VNPAY-QR, thẻ ATM nội địa & thẻ thanh toán
-                    quốc tế Visa/Mastercard
+                </label>
+
+                <label
+                  className={`checkout-method-option ${selectedBank === '' ? 'active' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethodRadio"
+                    checked={selectedBank === ''}
+                    onChange={() => setSelectedBank('')}
+                  />
+                  <div className="method-option-info">
+                    <div className="method-option-header">
+                      <strong>
+                        Cổng thanh toán VNPAY (Tất cả phương thức)
+                      </strong>
+                    </div>
+                    <p className="method-option-desc">
+                      Chọn phương thức trên cổng VNPAY: Quét mã QR, Thẻ nội địa,
+                      Thẻ quốc tế Visa/MasterCard
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {selectedBank === 'NCB' && (
+                <div className="vnpay-sandbox-card-info">
+                  <div className="info-title">
+                    💳 Thông tin thẻ thử nghiệm VNPAY Sandbox:
+                  </div>
+                  <div className="info-grid">
+                    <div>
+                      <span>Ngân hàng:</span> <strong>NCB</strong>
+                    </div>
+                    <div>
+                      <span>Số thẻ:</span> <strong>9704198526191432198</strong>
+                    </div>
+                    <div>
+                      <span>Tên chủ thẻ:</span> <strong>NGUYEN VAN A</strong>
+                    </div>
+                    <div>
+                      <span>Ngày phát hành:</span> <strong>07/15</strong>
+                    </div>
+                    <div>
+                      <span>Mã OTP:</span> <strong>123456</strong>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </section>
           </div>
 
@@ -367,9 +439,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
                 disabled={isSubmitting}
                 onClick={handleSubmitPayment}
               >
-                {isSubmitting
-                  ? 'Đang chuyển hướng VNPAY...'
-                  : 'Thanh toán qua VNPAY'}
+                {isSubmitting ? 'Đang chuyển hướng VNPAY...' : 'Thanh toán'}
               </button>
 
               <div className="checkout-trust-perks">

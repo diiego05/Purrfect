@@ -1,0 +1,451 @@
+/* Toast & Modal Notification System for Purrfect */
+
+/* Container for Top-Right Corner Toasts */
+.purr-toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  max-width: 420px;
+  width: calc(100vw - 48px);
+}
+
+/* Individual Toast Card */
+.purr-toast-card {
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px 18px 18px 16px;
+  box-shadow:
+    0 10px 25px -5px rgba(15, 23, 42, 0.12),
+    0 8px 10px -6px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  animation: purrToastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: all 0.25s ease;
+}
+
+.purr-toast-card:hover {
+  box-shadow:
+    0 14px 30px -5px rgba(15, 23, 42, 0.16),
+    0 10px 12px -6px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
+}
+
+.purr-toast-card.closing {
+  animation: purrToastFadeOut 0.25s ease forwards;
+}
+
+@keyframes purrToastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes purrToastFadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(30px) scale(0.9);
+  }
+}
+
+/* Type Variations */
+.purr-toast-card.purr-toast-success {
+  border-left: 4px solid #10b981;
+}
+
+.purr-toast-card.purr-toast-error {
+  border-left: 4px solid #ef4444;
+}
+
+.purr-toast-card.purr-toast-warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.purr-toast-card.purr-toast-info {
+  border-left: 4px solid #0056d2;
+}
+
+.purr-toast-card.purr-toast-ai {
+  border-left: 4px solid #7c3aed;
+  background: linear-gradient(135deg, #ffffff 80%, #fbf9ff 100%);
+}
+
+/* Icon Container */
+.purr-toast-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+
+.purr-toast-success .purr-toast-icon-wrap {
+  background: #ecfdf5;
+  color: #10b981;
+  border: 1px solid #a7f3d0;
+}
+
+.purr-toast-error .purr-toast-icon-wrap {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+
+.purr-toast-warning .purr-toast-icon-wrap {
+  background: #fffbeb;
+  color: #f59e0b;
+  border: 1px solid #fde68a;
+}
+
+.purr-toast-info .purr-toast-icon-wrap {
+  background: #eff6ff;
+  color: #0056d2;
+  border: 1px solid #bfdbfe;
+}
+
+.purr-toast-ai .purr-toast-icon-wrap {
+  background: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+}
+
+/* Text Content */
+.purr-toast-content {
+  flex: 1;
+  min-width: 0;
+  padding-right: 8px;
+}
+
+.purr-toast-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.purr-toast-message {
+  font-size: 13px;
+  color: #334155;
+  margin: 0;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* Close Button */
+.purr-toast-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  margin-top: -4px;
+  margin-right: -4px;
+}
+
+.purr-toast-close:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+/* Auto-dismiss progress bar */
+.purr-toast-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: #cbd5e1;
+  width: 100%;
+  transform-origin: left;
+}
+
+.purr-toast-success .purr-toast-progress-bar {
+  background: #10b981;
+}
+
+.purr-toast-error .purr-toast-progress-bar {
+  background: #ef4444;
+}
+
+.purr-toast-warning .purr-toast-progress-bar {
+  background: #f59e0b;
+}
+
+.purr-toast-info .purr-toast-progress-bar {
+  background: #0056d2;
+}
+
+.purr-toast-ai .purr-toast-progress-bar {
+  background: #7c3aed;
+}
+
+/* =========================================================================
+   Center Modal Notification (Thông báo giữa màn hình)
+   ========================================================================= */
+.purr-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 99999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: purrModalBackdropFadeIn 0.2s ease forwards;
+}
+
+@keyframes purrModalBackdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.purr-modal-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 460px;
+  padding: 28px 24px 22px 24px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  animation: purrModalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes purrModalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.purr-modal-icon-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.purr-modal-card.purr-modal-success .purr-modal-icon-badge {
+  background: #ecfdf5;
+  color: #10b981;
+  border: 2px solid #a7f3d0;
+}
+
+.purr-modal-card.purr-modal-error .purr-modal-icon-badge {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 2px solid #fecaca;
+}
+
+.purr-modal-card.purr-modal-warning .purr-modal-icon-badge {
+  background: #fffbeb;
+  color: #f59e0b;
+  border: 2px solid #fde68a;
+}
+
+.purr-modal-card.purr-modal-info .purr-modal-icon-badge {
+  background: #eff6ff;
+  color: #0056d2;
+  border: 2px solid #bfdbfe;
+}
+
+.purr-modal-card.purr-modal-ai .purr-modal-icon-badge {
+  background: #f5f3ff;
+  color: #7c3aed;
+  border: 2px solid #ddd6fe;
+}
+
+.purr-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.purr-modal-message {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+  white-space: pre-line;
+}
+
+.purr-modal-btn {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  border: none;
+  background: #0056d2;
+  color: #ffffff;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 86, 210, 0.25);
+}
+
+.purr-modal-btn:hover {
+  background: #0046b3;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 86, 210, 0.35);
+}
+
+.purr-modal-card.purr-modal-ai .purr-modal-btn {
+  background: #7c3aed;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+
+.purr-modal-card.purr-modal-ai .purr-modal-btn:hover {
+  background: #6d28d9;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+}
+
+/* =========================================================================
+   Center Confirmation Modal (Popup Xác nhận 2 nút: Xác nhận / Hủy)
+   ========================================================================= */
+.purr-modal-submessage {
+  font-size: 13px;
+  color: #475569;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: -10px 0 22px 0;
+  text-align: left;
+  line-height: 1.5;
+  border: 1px solid #e2e8f0;
+  white-space: pre-line;
+}
+
+.purr-modal-card.purr-modal-error .purr-modal-submessage {
+  background: #fef2f2;
+  border-color: #fee2e2;
+  color: #991b1b;
+}
+
+.purr-modal-card.purr-modal-warning .purr-modal-submessage {
+  background: #fffbeb;
+  border-color: #fef3c7;
+  color: #92400e;
+}
+
+.purr-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.purr-modal-btn-cancel {
+  flex: 1;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  transition: all 0.2s ease;
+}
+
+.purr-modal-btn-cancel:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.purr-modal-btn-confirm {
+  flex: 1;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  border: none;
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.purr-modal-btn-confirm.primary {
+  background: #0056d2;
+  box-shadow: 0 4px 12px rgba(0, 86, 210, 0.25);
+}
+
+.purr-modal-btn-confirm.primary:hover {
+  background: #0046b3;
+  box-shadow: 0 6px 16px rgba(0, 86, 210, 0.35);
+  transform: translateY(-1px);
+}
+
+.purr-modal-btn-confirm.danger {
+  background: #ef4444;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+.purr-modal-btn-confirm.danger:hover {
+  background: #dc2626;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
+  transform: translateY(-1px);
+}
+
+.purr-modal-btn-confirm.warning {
+  background: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+.purr-modal-btn-confirm.warning:hover {
+  background: #d97706;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35);
+  transform: translateY(-1px);
+}
+
+.purr-modal-btn-confirm.success {
+  background: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.purr-modal-btn-confirm.success:hover {
+  background: #059669;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+  transform: translateY(-1px);
+}

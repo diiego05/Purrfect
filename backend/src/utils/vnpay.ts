@@ -10,6 +10,18 @@ export interface VNPayUrlParams {
 }
 
 /**
+ * Chuẩn hóa số tiền khóa học sang Việt Nam Đồng (VND)
+ * Xử lý cả giá trị số VND thực tế và các dữ liệu cũ còn lưu dạng USD (< 1000)
+ */
+export const normalizePriceVND = (price?: number | null): number => {
+  if (!price || price <= 0) return 0;
+  if (price < 1000) {
+    return Math.round((price * 10000) / 50000) * 50000;
+  }
+  return Math.round(price);
+};
+
+/**
  * Định dạng thời gian theo múi giờ Việt Nam GMT+7 (YYYYMMDDHHmmss)
  */
 export const formatVNPayDate = (date: Date = new Date()): string => {
@@ -72,15 +84,18 @@ export const buildQueryString = (sortedObj: Record<string, string>): string => {
  * Tạo URL thanh toán VNPay có chữ ký HMAC SHA512
  */
 export const createVNPayPaymentUrl = (params: VNPayUrlParams): string => {
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   const vnpUrl =
     process.env.VNPAY_URL ||
     'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
-  const tmnCode = process.env.VNPAY_TMN_CODE || '';
-  const hashSecret = process.env.VNPAY_HASH_SECRET || '';
+
+  const tmnCode = process.env.VNPAY_TMN_CODE || 'CGXZLS0Z';
+  const hashSecret =
+    process.env.VNPAY_HASH_SECRET || 'XNBCJFAKAZQSGTARRLGCHVZWCIOIGSHN';
   const returnUrl =
     params.returnUrl ||
     process.env.VNPAY_RETURN_URL ||
-    'http://localhost:5173/payment/vnpay-return';
+    `${clientUrl}/payment/vnpay-return`;
 
   if (!tmnCode || !hashSecret) {
     throw new Error(
@@ -95,7 +110,9 @@ export const createVNPayPaymentUrl = (params: VNPayUrlParams): string => {
   const expireDate = formatVNPayDate(new Date(now.getTime() + 15 * 60 * 1000));
 
   // VNPay tính số tiền nhân 100 (Ví dụ: 100.000 VNĐ -> 10000000)
-  const vnpAmount = Math.round(params.amount * 100);
+  // Tự động chuẩn hóa số tiền về VND (nếu số tiền còn lưu dạng USD < 1000)
+  const normalizedAmount = normalizePriceVND(params.amount);
+  const vnpAmount = Math.round(normalizedAmount * 100);
 
   // Chuẩn hóa OrderInfo: Loại bỏ ký tự đặc biệt nguy hiểm
   const cleanOrderInfo = params.orderInfo
