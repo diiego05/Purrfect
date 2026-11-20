@@ -249,12 +249,26 @@ export const createPaymentUrl = async (
       req.socket.remoteAddress ||
       '127.0.0.1';
 
+    // Tự động phát hiện URL của frontend (Vercel hoặc Localhost)
+    const requestOrigin =
+      (req.headers.origin as string) || (req.headers.referer as string);
+    let dynamicReturnUrl: string | undefined;
+    if (requestOrigin) {
+      try {
+        const parsed = new URL(requestOrigin);
+        dynamicReturnUrl = `${parsed.origin}/payment/vnpay-return`;
+      } catch {
+        // bỏ qua nếu parse URL lỗi
+      }
+    }
+
     const paymentUrl = createVNPayPaymentUrl({
       orderCode,
       amount: finalAmount,
       orderInfo: `Thanh toan khoa hoc ${course.title}`,
       ipAddr,
       bankCode,
+      returnUrl: dynamicReturnUrl,
     });
 
     res.status(200).json({

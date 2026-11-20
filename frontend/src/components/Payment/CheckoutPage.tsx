@@ -45,7 +45,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [selectedBank, setSelectedBank] = useState<'NCB' | ''>('NCB');
+  const selectedBank = '';
 
   // Load single course if param is provided
   useEffect(() => {
@@ -285,76 +285,48 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
               <h2 className="section-card-title">Phương thức thanh toán</h2>
 
               <div className="checkout-payment-methods">
-                <label
-                  className={`checkout-method-option ${selectedBank === 'NCB' ? 'active' : ''}`}
-                >
+                <label className="checkout-method-option active">
                   <input
                     type="radio"
                     name="paymentMethodRadio"
-                    checked={selectedBank === 'NCB'}
-                    onChange={() => setSelectedBank('NCB')}
+                    checked={true}
+                    readOnly
                   />
                   <div className="method-option-info">
                     <div className="method-option-header">
-                      <strong>
-                        Thẻ ATM / Tài khoản ngân hàng (NCB Sandbox)
-                      </strong>
-                      <span className="badge-recommend">Thử nghiệm</span>
+                      <strong>Cổng thanh toán VNPAY</strong>
+                      <span className="badge-recommend">Chính thức</span>
                     </div>
                     <p className="method-option-desc">
-                      Chuyển sang giao diện VNPAY chính thức để nhập thông tin
-                      thẻ test NCB
-                    </p>
-                  </div>
-                </label>
-
-                <label
-                  className={`checkout-method-option ${selectedBank === '' ? 'active' : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethodRadio"
-                    checked={selectedBank === ''}
-                    onChange={() => setSelectedBank('')}
-                  />
-                  <div className="method-option-info">
-                    <div className="method-option-header">
-                      <strong>
-                        Cổng thanh toán VNPAY (Tất cả phương thức)
-                      </strong>
-                    </div>
-                    <p className="method-option-desc">
-                      Chọn phương thức trên cổng VNPAY: Quét mã QR, Thẻ nội địa,
-                      Thẻ quốc tế Visa/MasterCard
+                      Hỗ trợ quét mã VNPAY-QR, Thẻ nội địa (ATM), Internet
+                      Banking và Thẻ quốc tế Visa/MasterCard.
                     </p>
                   </div>
                 </label>
               </div>
 
-              {selectedBank === 'NCB' && (
-                <div className="vnpay-sandbox-card-info">
-                  <div className="info-title">
-                    💳 Thông tin thẻ thử nghiệm VNPAY Sandbox:
+              <div className="vnpay-sandbox-card-info">
+                <div className="info-title">
+                  💳 Thông tin thẻ thử nghiệm VNPAY Sandbox:
+                </div>
+                <div className="info-grid">
+                  <div>
+                    <span>Ngân hàng:</span> <strong>NCB</strong>
                   </div>
-                  <div className="info-grid">
-                    <div>
-                      <span>Ngân hàng:</span> <strong>NCB</strong>
-                    </div>
-                    <div>
-                      <span>Số thẻ:</span> <strong>9704198526191432198</strong>
-                    </div>
-                    <div>
-                      <span>Tên chủ thẻ:</span> <strong>NGUYEN VAN A</strong>
-                    </div>
-                    <div>
-                      <span>Ngày phát hành:</span> <strong>07/15</strong>
-                    </div>
-                    <div>
-                      <span>Mã OTP:</span> <strong>123456</strong>
-                    </div>
+                  <div>
+                    <span>Số thẻ:</span> <strong>9704198526191432198</strong>
+                  </div>
+                  <div>
+                    <span>Tên chủ thẻ:</span> <strong>NGUYEN VAN A</strong>
+                  </div>
+                  <div>
+                    <span>Ngày phát hành:</span> <strong>07/15</strong>
+                  </div>
+                  <div>
+                    <span>Mã OTP:</span> <strong>123456</strong>
                   </div>
                 </div>
-              )}
+              </div>
             </section>
           </div>
 
