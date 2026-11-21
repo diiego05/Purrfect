@@ -1,3 +1,4 @@
+import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartWishlistProvider } from './context/CartWishlistContext';
 import { ChatbotProvider } from './context/ChatbotContext';
@@ -17,6 +18,8 @@ import { CartPage } from './components/Cart/CartPage';
 import { WishlistPage } from './components/Wishlist/WishlistPage';
 import { CheckoutPage } from './components/Payment/CheckoutPage';
 import { VNPayReturnPage } from './components/Payment/VNPayReturnPage';
+import { PurchaseHistoryPage } from './components/Payment/PurchaseHistoryPage';
+import { MyCoursesPage } from './components/Courses/MyCoursesPage';
 import { NotFound } from './components/NotFound/NotFound';
 import { AdminLayout } from './components/Admin/AdminLayout';
 import { CategoryManagement } from './components/Admin/CategoryManagement/CategoryManagement';
@@ -24,6 +27,7 @@ import SystemConfigManagement from './components/Admin/SystemConfig/SystemConfig
 import CouponManagement from './components/Admin/CouponManagement/CouponManagement';
 import { UserManagement } from './components/Admin/UserManagement/UserManagement';
 import { CourseApprovalManagement } from './components/Admin/CourseApproval/CourseApprovalManagement';
+import { AdminRefundManagement } from './components/Admin/RefundManagement/AdminRefundManagement';
 import { ProfilePage } from './components/Profile/ProfilePage';
 import { PlaylistsPage } from './components/Playlist/PlaylistsPage';
 import { PlaylistDetailPage } from './components/Playlist/PlaylistDetailPage';
@@ -245,6 +249,41 @@ function MainRouter() {
     );
   }
 
+  // Trang Lịch sử mua hàng & Yêu cầu hoàn tiền (/purchase-history, /orders, /lich-su-mua-hang) - UC30
+  if (
+    normalizedPath === '/purchase-history' ||
+    normalizedPath === '/orders' ||
+    normalizedPath === '/lich-su-mua-hang' ||
+    normalizedPath === '/don-hang'
+  ) {
+    return (
+      <div className="app-layout">
+        <Header />
+        <main className="main-content">
+          <PurchaseHistoryPage />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Trang Khóa học của tôi (/my-courses, /khoa-hoc-cua-toi, /my-learning)
+  if (
+    normalizedPath === '/my-courses' ||
+    normalizedPath === '/khoa-hoc-cua-toi' ||
+    normalizedPath === '/my-learning'
+  ) {
+    return (
+      <div className="app-layout">
+        <Header />
+        <main className="main-content">
+          <MyCoursesPage />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   // Phân hệ Giảng viên (Instructor Dashboard) - Bảng điều khiển giống Admin (UC06)
   if (
     normalizedPath === '/instructor/statistics' ||
@@ -335,10 +374,7 @@ function MainRouter() {
 
   if (normalizedPath === '/admin/system-configs') {
     return (
-      <AdminLayout
-        activeTab="system-configs"
-        pageTitle="Cấu hình hệ thống & Banner"
-      >
+      <AdminLayout activeTab="system-configs" pageTitle="Cấu hình hệ thống">
         <SystemConfigManagement />
       </AdminLayout>
     );
@@ -348,6 +384,20 @@ function MainRouter() {
     return (
       <AdminLayout activeTab="users" pageTitle="Quản lý người dùng & Tài khoản">
         <UserManagement />
+      </AdminLayout>
+    );
+  }
+
+  // Quản lý Hoàn tiền & Rút tiền (UC33)
+  if (
+    normalizedPath === '/admin/refunds' ||
+    normalizedPath === '/admin/withdrawals' ||
+    normalizedPath === '/admin/hoan-tien' ||
+    normalizedPath === '/admin/rut-tien'
+  ) {
+    return (
+      <AdminLayout activeTab="refunds" pageTitle="Quản lý Hoàn tiền & Rút tiền">
+        <AdminRefundManagement />
       </AdminLayout>
     );
   }
@@ -387,16 +437,18 @@ function MainRouter() {
 
 function App() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <CartWishlistProvider>
-          <ChatbotProvider>
-            <MainRouter />
-            <ChatbotWidget />
-          </ChatbotProvider>
-        </CartWishlistProvider>
-      </AuthProvider>
-    </ToastProvider>
+    <LanguageProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <CartWishlistProvider>
+            <ChatbotProvider>
+              <MainRouter />
+              <ChatbotWidget />
+            </ChatbotProvider>
+          </CartWishlistProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </LanguageProvider>
   );
 }
 

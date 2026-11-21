@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import type { Course } from '../../types/course';
+import { useLanguage } from '../../context/LanguageContext';
 import { CourseCard } from './CourseCard';
 
 interface CourseSectionProps {
@@ -19,6 +20,8 @@ export const CourseSection: FC<CourseSectionProps> = ({
   onCourseClick,
   sectionId,
 }) => {
+  const { language } = useLanguage();
+
   if (!courses || courses.length === 0) {
     return null;
   }
@@ -31,7 +34,7 @@ export const CourseSection: FC<CourseSectionProps> = ({
           {subtitle && <p className="course-section-subtitle">{subtitle}</p>}
         </div>
         <a href={viewAllLink} className="course-section-view-all">
-          <span>Xem tất cả</span>
+          <span>{language === 'vi' ? 'Xem tất cả' : 'View All'}</span>
           <svg
             width="16"
             height="16"

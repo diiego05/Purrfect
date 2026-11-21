@@ -6,7 +6,6 @@ import {
 } from '../../services/courseApi';
 import { paymentApi } from '../../services/paymentApi';
 import { useAuth } from '../../context/AuthContext';
-import { useChatbot } from '../../context/ChatbotContext';
 import {
   IconlyPlay,
   IconlyDocument,
@@ -36,11 +35,11 @@ interface ActiveLectureState {
 
 export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
   const { navigate, isAuthenticated, user, currentPath } = useAuth();
-  const { askWithPrompt } = useChatbot();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isEnrolled, setIsEnrolled] = useState<boolean>(false);
+  const [refundStatus, setRefundStatus] = useState<string | null>(null);
   const [activeLecture, setActiveLecture] = useState<ActiveLectureState | null>(
     null,
   );
@@ -51,7 +50,7 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
     Record<string, boolean>
   >({});
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'discussion' | 'transcript' | 'ai'
+    'overview' | 'discussion' | 'transcript'
   >('overview');
   const [discussionCount, setDiscussionCount] = useState<number>(0);
   const [showLockedModal, setShowLockedModal] = useState<CourseLecture | null>(
@@ -109,6 +108,8 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
               if (res && res.isEnrolled) {
                 enrolled = true;
                 setIsEnrolled(true);
+              } else if (res && res.refundStatus) {
+                setRefundStatus(res.refundStatus);
               }
             } catch {
               // Ignore enrollment check failure
@@ -351,10 +352,6 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
     return url;
   };
 
-  const handleAskPurrfectAI = (promptText: string) => {
-    askWithPrompt(promptText);
-  };
-
   if (loading) {
     return (
       <div className="learning-page-loading">
@@ -505,6 +502,49 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
         {/* CỘT TRÁI: VIDEO / TÀI LIỆU STAGE & NỘI DUNG CHI TIẾT */}
         <main className="learning-main-stage">
           <div className="learning-player-wrapper">
+            {/* Banner cảnh báo BR30.2: Tạm khóa do yêu cầu hoàn tiền đang chờ duyệt */}
+            {refundStatus === 'REFUND_PENDING' && !isOwnerOrAdmin && (
+              <div
+                style={{
+                  background: '#fffbeb',
+                  border: '1px solid #fde68a',
+                  color: '#92400e',
+                  padding: '12px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  borderRadius: '8px',
+                  marginBottom: '10px',
+                }}
+              >
+                <span>
+                  ⚠️ <strong>Quyền truy cập phòng học tạm thời bị khóa:</strong>{' '}
+                  Đơn hàng của bạn đang có yêu cầu hoàn tiền chờ Admin xét duyệt
+                  (BR30.2).
+                </span>
+                <button
+                  type="button"
+                  style={{
+                    background: '#d97706',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '6px 14px',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onClick={() => navigate('/purchase-history')}
+                >
+                  Xem Lịch sử mua hàng
+                </button>
+              </div>
+            )}
+
             {/* Banner thông báo xem thử miễn phí */}
             {activeLecture &&
               activeLecture.lecture.isPreview &&
@@ -761,20 +801,6 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                   )}
                 </div>
               </div>
-
-              {/* Phím tắt Trợ lý AI */}
-              <button
-                type="button"
-                className="btn-learning-ask-ai"
-                onClick={() =>
-                  handleAskPurrfectAI(
-                    `Em đang học bài "${activeLecture?.lecture.title || course.title}" thuộc khóa "${course.title}". Hãy giải thích tóm tắt ý chính của bài giảng này giúp em.`,
-                  )
-                }
-              >
-                <IconlySparkles size={16} color="#ffffff" />
-                <span>Hỏi trợ lý AI về bài này</span>
-              </button>
             </div>
 
             {/* TAB CONTROLS */}
@@ -791,7 +817,7 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                 className={`learning-tab-btn ${activeTab === 'discussion' ? 'active' : ''}`}
                 onClick={() => setActiveTab('discussion')}
               >
-                💬 Thảo luận bài học{' '}
+                Thảo luận bài học{' '}
                 {discussionCount > 0 ? `(${discussionCount})` : ''}
               </button>
               <button
@@ -799,14 +825,7 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                 className={`learning-tab-btn ${activeTab === 'transcript' ? 'active' : ''}`}
                 onClick={() => setActiveTab('transcript')}
               >
-                Phụ đề & Transcript AI
-              </button>
-              <button
-                type="button"
-                className={`learning-tab-btn ${activeTab === 'ai' ? 'active' : ''}`}
-                onClick={() => setActiveTab('ai')}
-              >
-                Trợ lý RAG thông minh
+                Phụ đề bài giảng
               </button>
             </div>
 
@@ -883,9 +902,7 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                       <div className="transcript-box-header">
                         <div className="transcript-header-title">
                           <IconlyDocument size={16} color="#0056d2" />
-                          <span>
-                            Transcript phụ đề trích xuất tự động cho AI RAG:
-                          </span>
+                          <span>Nội dung phụ đề bài giảng:</span>
                         </div>
                         <button
                           type="button"
@@ -912,66 +929,11 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                         Bài giảng này chưa có phụ đề hoặc transcript tự động.
                       </p>
                       <p className="text-muted">
-                        Hệ thống sẽ tự động trích xuất phụ đề khi giảng viên cập
-                        nhật video có giọng nói rõ ràng.
+                        Hệ thống sẽ cập nhật phụ đề khi giảng viên hoàn tất xử
+                        lý bài giảng.
                       </p>
                     </div>
                   )}
-                </div>
-              )}
-
-              {activeTab === 'ai' && (
-                <div className="tab-pane-ai">
-                  <div className="learning-ai-intro">
-                    <div className="ai-intro-heading">
-                      <IconlySparkles size={18} color="#a855f7" />
-                      <h4>Trợ lý học tập AI Purrfect (RAG Engine)</h4>
-                    </div>
-                    <p>
-                      Trợ lý AI được huấn luyện dựa trên chính video, transcript
-                      và giáo trình của bài học này để trả lời thắc mắc chính
-                      xác theo từng mốc thời gian.
-                    </p>
-                  </div>
-
-                  <div className="learning-ai-prompts">
-                    <span className="prompts-label">Gợi ý câu hỏi nhanh:</span>
-                    <div className="prompts-grid">
-                      <button
-                        type="button"
-                        className="prompt-chip"
-                        onClick={() =>
-                          handleAskPurrfectAI(
-                            `Tóm tắt 3 ý quan trọng nhất trong bài học "${activeLecture?.lecture.title}" này.`,
-                          )
-                        }
-                      >
-                        Tóm tắt 3 ý cốt lõi của bài học
-                      </button>
-                      <button
-                        type="button"
-                        className="prompt-chip"
-                        onClick={() =>
-                          handleAskPurrfectAI(
-                            `Giải thích các thuật ngữ chuyên môn xuất hiện trong bài "${activeLecture?.lecture.title}".`,
-                          )
-                        }
-                      >
-                        Giải thích các thuật ngữ chuyên môn
-                      </button>
-                      <button
-                        type="button"
-                        className="prompt-chip"
-                        onClick={() =>
-                          handleAskPurrfectAI(
-                            `Tạo 3 câu hỏi trắc nghiệm kiểm tra kiến thức bài học "${activeLecture?.lecture.title}" kèm đáp án.`,
-                          )
-                        }
-                      >
-                        Tạo 3 câu hỏi ôn tập có lời giải
-                      </button>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>

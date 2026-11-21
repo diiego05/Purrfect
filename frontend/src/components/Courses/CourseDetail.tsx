@@ -232,8 +232,8 @@ export const CourseDetail: FC<CourseDetailProps> = ({ slug }) => {
               </p>
               <p>
                 Người học sẽ được tiếp cận với hệ thống bài giảng video chất
-                lượng cao, bài kiểm tra đánh giá năng lực tự động và đặc biệt là
-                hệ thống Trợ lý ảo AI (RAG) hỗ trợ giải đáp 24/7.
+                lượng cao, bài kiểm tra đánh giá năng lực tự động và diễn đàn
+                thảo luận giải đáp thắc mắc chuyên sâu.
               </p>
             </div>
           </section>

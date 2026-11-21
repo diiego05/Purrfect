@@ -69,20 +69,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setCurrentPath('/');
       }
 
-      const activeToken = urlToken || getAccessToken();
-      if (activeToken) {
-        try {
-          const res = await authApi.getMe();
-          if (res.success && res.user) {
-            setUser(res.user);
-          } else {
-            clearTokens();
-            setToken(null);
-            setUser(null);
+      // Luôn kiểm tra phiên đăng nhập qua HttpOnly Cookie gửi kèm tự động
+      try {
+        const res = await authApi.getMe();
+        if (res.success && res.user) {
+          setUser(res.user);
+          const validToken = res.accessToken || res.token;
+          if (validToken) {
+            setToken(validToken);
+            setTokens(validToken);
           }
-        } catch (err) {
-          console.error('Failed to authenticate token:', err);
+        } else {
+          clearTokens();
+          setToken(null);
+          setUser(null);
         }
+      } catch {
+        clearTokens();
+        setToken(null);
+        setUser(null);
       }
       setIsLoading(false);
     };

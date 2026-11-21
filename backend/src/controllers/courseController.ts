@@ -5,6 +5,8 @@ import cloudinary from '../config/cloudinary';
 import { Course, ICourse } from '../models/Course';
 import { Category } from '../models/Category';
 import { Skill } from '../models/Skill';
+import Order from '../models/Order';
+import { UserInteraction } from '../models/UserInteraction';
 import { AuthRequest } from '../middlewares/auth';
 import {
   getPersonalizedRecommendations,
@@ -408,8 +410,19 @@ export const initialCourses = [
   },
 ];
 
+let hasSeededCourses = false;
+
 export const seedCoursesIfEmpty = async () => {
+  if (hasSeededCourses) return;
+  if (mongoose.connection.readyState !== 1) return;
+
   try {
+    const courseCount = await Course.countDocuments();
+    if (courseCount >= initialCourses.length) {
+      hasSeededCourses = true;
+      return;
+    }
+
     const categoryMap: Record<string, string> = {};
     for (const cat of initialCategories) {
       let existingCat = await Category.findOne({ slug: cat.slug });
@@ -479,6 +492,7 @@ export const seedCoursesIfEmpty = async () => {
       { level: { $exists: false } },
       { $set: { level: 'Beginner' } },
     );
+    hasSeededCourses = true;
   } catch (error) {
     console.error('[CourseController] seedCoursesIfEmpty error:', error);
   }
@@ -873,5 +887,161 @@ export const streamLectureDocument = async (
       message: 'Không thể tải tài liệu bài giảng',
       error: error instanceof Error ? error.message : error,
     });
+  }
+};
+
+/**
+ * GET /api/courses/my-courses
+ * Lấy danh sách khóa học mà người dùng đã mua hoặc đăng ký học
+ */
+export const getMyEnrolledCourses = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Vui lòng đăng nhập.' });
+      return;
+    }
+
+    // 1. Tìm các đơn hàng của user có status: 'PAID' hoặc 'REFUND_PENDING'
+    const orders = await Order.find({
+      userId,
+      status: { $in: ['PAID', 'REFUND_PENDING'] },
+    }).sort({ createdAt: -1 });
+
+    // 2. Tìm các tương tác ENROLL (khóa học miễn phí ghi danh trực tiếp)
+    const enrollInteractions = await UserInteraction.find({
+      userId,
+      actionType: 'ENROLL',
+    }).sort({ createdAt: -1 });
+
+    // Tổng hợp danh sách courseId duy nhất
+    const courseOrderMap = new Map<
+      string,
+      { status: string; enrolledAt: Date }
+    >();
+    orders.forEach((o) => {
+      const cId = o.courseId?.toString();
+      if (cId && !courseOrderMap.has(cId)) {
+        courseOrderMap.set(cId, { status: o.status, enrolledAt: o.createdAt });
+      }
+    });
+
+    enrollInteractions.forEach((ei) => {
+      const cId = ei.courseId?.toString();
+      if (cId && !courseOrderMap.has(cId)) {
+        courseOrderMap.set(cId, { status: 'PAID', enrolledAt: ei.createdAt });
+      }
+    });
+
+    const courseIds = Array.from(courseOrderMap.keys()).filter((id) =>
+      mongoose.Types.ObjectId.isValid(id),
+    );
+
+    // 3. Lấy thông tin chi tiết các khóa học
+    const courses = await Course.find({ _id: { $in: courseIds } })
+      .populate('instructorId', 'fullName avatarUrl email')
+      .populate('categoryId', 'name slug')
+      .lean();
+
+    // 4. Lấy tiến độ học từ UserInteraction
+    const progressInteractions = await UserInteraction.find({
+      userId,
+      courseId: { $in: courseIds },
+      actionType: 'PROGRESS',
+    }).lean();
+
+    // Group progress theo courseId
+    const courseCompletedLecturesMap = new Map<string, Set<string>>();
+    progressInteractions.forEach((pi) => {
+      const cId = pi.courseId?.toString();
+      if (!cId) return;
+      const meta = (pi.metadata || {}) as Record<string, any>;
+      if (meta.action === 'ENTER_LEARNING_ROOM') return;
+
+      const isCompleted =
+        meta.isCompleted === true ||
+        meta.completed === true ||
+        meta.action === 'COMPLETED_LECTURE' ||
+        (typeof meta.watchPercent === 'number' && meta.watchPercent >= 80) ||
+        (typeof meta.progressPercent === 'number' &&
+          meta.progressPercent >= 80);
+
+      if (isCompleted) {
+        if (!courseCompletedLecturesMap.has(cId)) {
+          courseCompletedLecturesMap.set(cId, new Set<string>());
+        }
+        const set = courseCompletedLecturesMap.get(cId)!;
+        if (meta.lectureId) {
+          set.add(String(meta.lectureId));
+        } else if (
+          meta.sectionIndex !== undefined &&
+          meta.lectureIndex !== undefined
+        ) {
+          set.add(`${meta.sectionIndex}-${meta.lectureIndex}`);
+        } else if (meta.lectureTitle) {
+          set.add(String(meta.lectureTitle));
+        }
+      }
+    });
+
+    // 5. Tính toán tiến độ từng khóa học
+    const result = courses.map((course: any) => {
+      const cId = course._id.toString();
+      const orderInfo = courseOrderMap.get(cId) || {
+        status: 'PAID',
+        enrolledAt: course.createdAt,
+      };
+
+      let totalLectures = 0;
+      if (Array.isArray(course.sections)) {
+        course.sections.forEach((sec: any) => {
+          if (Array.isArray(sec.lectures)) {
+            totalLectures += sec.lectures.length;
+          }
+        });
+      }
+      if (totalLectures === 0) totalLectures = 1;
+
+      const completedSet =
+        courseCompletedLecturesMap.get(cId) || new Set<string>();
+      const completedCount = completedSet.size;
+      const progressPercent = Math.min(
+        100,
+        Math.round((completedCount / totalLectures) * 100),
+      );
+
+      return {
+        _id: course._id,
+        title: course.title,
+        slug: course.slug,
+        thumbnailUrl: course.thumbnailUrl,
+        instructor: course.instructorId,
+        category: course.categoryId,
+        level: course.level,
+        durationText: course.durationText,
+        enrolledAt: orderInfo.enrolledAt,
+        accessStatus: orderInfo.status, // 'PAID' or 'REFUND_PENDING'
+        totalLectures,
+        completedLectures: completedCount,
+        progressPercent,
+        isCompleted: progressPercent >= 100,
+      };
+    });
+
+    // Sắp xếp theo ngày đăng ký mới nhất lên đầu
+    result.sort(
+      (a: any, b: any) =>
+        new Date(b.enrolledAt).getTime() - new Date(a.enrolledAt).getTime(),
+    );
+
+    res.json({ success: true, courses: result });
+  } catch (error) {
+    console.error('Lỗi lấy danh sách khóa học của tôi:', error);
+    res
+      .status(500)
+      .json({ success: false, message: 'Lỗi server khi tải khóa học.' });
   }
 };

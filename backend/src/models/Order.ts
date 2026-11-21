@@ -1,6 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export type OrderStatus = 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED';
+export type OrderStatus =
+  'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'REFUND_PENDING' | 'REFUNDED';
 export type PaymentMethod =
   'VNPAY' | 'FREE' | 'DIRECT' | 'BANK_TRANSFER' | 'MOCK';
 
@@ -72,7 +73,14 @@ const orderSchema = new Schema<IOrder>(
     },
     status: {
       type: String,
-      enum: ['PENDING', 'PAID', 'FAILED', 'CANCELLED'],
+      enum: [
+        'PENDING',
+        'PAID',
+        'FAILED',
+        'CANCELLED',
+        'REFUND_PENDING',
+        'REFUNDED',
+      ],
       default: 'PENDING',
       index: true,
     },

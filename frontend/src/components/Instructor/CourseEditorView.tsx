@@ -29,7 +29,6 @@ import {
   IconlyTimeCircle,
   IconlyAiChip,
   IconlyClose,
-  IconlySparkles,
 } from '../Onboarding/IconlyIcons';
 import { formatVND } from '../../utils/format';
 import { toast } from '../../context/ToastContext';
@@ -236,7 +235,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
     setErrorMsg('');
   };
 
-  // Mở trình tạo Quiz bằng AI cho Chương học
+  // Mở trình tạo Quiz cho Chương học hoặc Bài giảng
   const handleOpenAiQuizForSection = (
     sectionIndex: number,
     specificLecture?: LectureItem,
@@ -244,16 +243,20 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
     setAddingLectureSectionIdx(null);
     setAddingQuizSectionIdx(sectionIndex);
     if (specificLecture) {
+      const cleanTitle = specificLecture.title.replace(/\.[^/.]+$/, '').trim();
       setQuizPresetContext({
-        topic: `Kiểm tra: ${specificLecture.title}`,
-        content: specificLecture.transcript || specificLecture.title,
+        topic: `Kiểm tra: ${cleanTitle}`,
+        content: specificLecture.transcript || '',
       });
     } else {
       const sec = sections[sectionIndex];
+      const validTranscripts = (sec.lectures || [])
+        .map((l) => l.transcript)
+        .filter((t): t is string => Boolean(t && t.trim()))
+        .join('\n\n');
       setQuizPresetContext({
         topic: `Kiểm tra: ${sec.title || `Chương ${sectionIndex + 1}`}`,
-        content:
-          sec.lectures?.map((l) => l.transcript || l.title).join('\n') || '',
+        content: validTranscripts,
       });
     }
     setErrorMsg('');
@@ -1121,9 +1124,9 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                             gap: '6px',
                           }}
                           onClick={() => handleOpenAiQuizForSection(secIdx)}
-                          title="Dùng AI tự động tạo bài kiểm tra trắc nghiệm và tự luận cho chương này"
+                          title="Tạo bài kiểm tra trắc nghiệm & tự luận cho chương này"
                         >
-                          <span>Soạn Quiz bằng AI</span>
+                          <span>Tạo Quiz cho chương</span>
                         </button>
 
                         <button
@@ -1290,7 +1293,6 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                           fontWeight: 600,
                                         }}
                                       >
-                                        ✨{' '}
                                         {lecture.quizData?.questions?.length ||
                                           0}{' '}
                                         câu hỏi trắc nghiệm & tự luận
@@ -1382,7 +1384,6 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                       }
                                     }}
                                   >
-                                    <IconlySparkles size={13} color="#7c3aed" />
                                     <span>
                                       {activeQuizLoc?.secIdx === secIdx &&
                                       activeQuizLoc?.lecIdx === lecIdx
@@ -1418,14 +1419,6 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                       )
                                     }
                                   >
-                                    <IconlyAiChip
-                                      size={13}
-                                      color={
-                                        lecture.transcript
-                                          ? '#c084fc'
-                                          : '#94a3b8'
-                                      }
-                                    />
                                     <span>
                                       {activeTranscriptLoc?.secIdx === secIdx &&
                                       activeTranscriptLoc?.lecIdx === lecIdx
@@ -1460,7 +1453,6 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                     }
                                     title="Dùng AI đọc bài học này để soạn bài kiểm tra"
                                   >
-                                    <IconlySparkles size={12} color="#7c3aed" />
                                     <span>Tạo Quiz</span>
                                   </button>
                                 )}
@@ -1962,12 +1954,10 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                               activeQuizLoc?.lecIdx === lecIdx && (
                                 <div style={{ margin: '4px 0 10px 0' }}>
                                   <AiQuizGenerator
-                                    defaultTopic={lecture.title}
-                                    defaultContent={
-                                      sections[secIdx]?.lectures
-                                        ?.map((l) => l.transcript || l.title)
-                                        .join('\n') || ''
-                                    }
+                                    defaultTopic={lecture.title
+                                      .replace(/\.[^/.]+$/, '')
+                                      .trim()}
+                                    defaultContent={lecture.transcript || ''}
                                     initialQuizData={lecture.quizData}
                                     onSaveQuiz={async (updatedQuiz) => {
                                       const updated = [...sections];
@@ -2181,14 +2171,11 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                           <div style={{ marginTop: '6px' }}>
                             <AiQuizGenerator
                               defaultTopic={
-                                newLectureTitle ||
-                                `Bài kiểm tra Chương ${secIdx + 1}`
+                                newLectureTitle
+                                  .replace(/\.[^/.]+$/, '')
+                                  .trim() || `Bài kiểm tra Chương ${secIdx + 1}`
                               }
-                              defaultContent={
-                                sections[secIdx]?.lectures
-                                  ?.map((l) => l.transcript || l.title)
-                                  .join('\n') || ''
-                              }
+                              defaultContent=""
                               initialQuizData={editingQuizData || undefined}
                               onSaveQuiz={(quizData) => {
                                 setEditingQuizData(quizData);

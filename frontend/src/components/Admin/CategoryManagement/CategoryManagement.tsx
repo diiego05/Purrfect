@@ -21,26 +21,6 @@ import {
 } from '../../Onboarding/IconlyIcons';
 import './CategoryManagement.css';
 
-// Preset icon thường dùng cho các lĩnh vực giáo dục & e-learning
-const ICON_PRESETS = [
-  '💻',
-  '🎨',
-  '💼',
-  '🤖',
-  '🌐',
-  '📈',
-  '🧘',
-  '📚',
-  '🚀',
-  '🎯',
-  '🔒',
-  '📱',
-  '⚡',
-  '💡',
-  '🏆',
-  '🔬',
-];
-
 interface ToastMessage {
   id: string;
   type: 'success' | 'error';
@@ -93,8 +73,7 @@ export const CategoryManagement: React.FC = () => {
   // Form states
   const [formName, setFormName] = useState<string>('');
   const [formSlug, setFormSlug] = useState<string>('');
-  const [formParentId, setFormParentId] = useState<string>('');
-  const [formIcon, setFormIcon] = useState<string>('💻');
+  const [formIcon, setFormIcon] = useState<string>('');
   const [formDescription, setFormDescription] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
   const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
@@ -204,13 +183,12 @@ export const CategoryManagement: React.FC = () => {
   }, [categories]);
 
   // Mở modal Thêm mới
-  const handleOpenCreateModal = (presetParentId?: string) => {
+  const handleOpenCreateModal = () => {
     setModalMode('create');
     setEditingCategory(null);
     setFormName('');
     setFormSlug('');
-    setFormParentId(presetParentId || '');
-    setFormIcon('💻');
+    setFormIcon('');
     setFormDescription('');
     setFormError(null);
     setIsModalOpen(true);
@@ -222,8 +200,7 @@ export const CategoryManagement: React.FC = () => {
     setEditingCategory(cat);
     setFormName(cat.name);
     setFormSlug(cat.slug);
-    setFormParentId(cat.parentId || '');
-    setFormIcon(cat.icon || '💻');
+    setFormIcon(cat.icon || '');
     setFormDescription(cat.description || '');
     setFormError(null);
     setIsModalOpen(true);
@@ -261,7 +238,7 @@ export const CategoryManagement: React.FC = () => {
           name: formName.trim(),
           slug: cleanSlug,
           description: formDescription.trim(),
-          parentId: formParentId || null,
+          parentId: null,
           icon: formIcon,
         };
 
@@ -278,7 +255,7 @@ export const CategoryManagement: React.FC = () => {
           name: formName.trim(),
           slug: cleanSlug,
           description: formDescription.trim(),
-          parentId: formParentId || null,
+          parentId: editingCategory.parentId || null,
           icon: formIcon,
         };
 
@@ -621,7 +598,7 @@ export const CategoryManagement: React.FC = () => {
                 <th style={{ width: '22%' }}>Đường dẫn tĩnh (Slug)</th>
                 <th style={{ width: '18%' }}>Cấp bậc / Danh mục cha</th>
                 <th style={{ width: '12%', textAlign: 'center' }}>Khóa học</th>
-                <th style={{ width: '13%', textAlign: 'right' }}>Thao tác</th>
+                <th style={{ width: '13%', textAlign: 'right' }}></th>
               </tr>
             </thead>
             <tbody>
@@ -711,16 +688,6 @@ export const CategoryManagement: React.FC = () => {
                             className="cat-table-actions"
                             style={{ justifyContent: 'flex-end' }}
                           >
-                            <button
-                              type="button"
-                              className="btn-icon-action edit"
-                              title="Thêm danh mục con cho danh mục này"
-                              onClick={() =>
-                                handleOpenCreateModal(rootNode._id)
-                              }
-                            >
-                              <IconlyPlus size={15} color="currentColor" />
-                            </button>
                             <button
                               type="button"
                               className="btn-icon-action edit"
@@ -1020,64 +987,6 @@ export const CategoryManagement: React.FC = () => {
                     Slug là duy nhất toàn hệ thống, hiển thị trên thanh URL:
                     /categories/{formSlug || 'slug-danh-muc'}
                   </span>
-                </div>
-
-                {/* Danh mục cha */}
-                <div className="form-group">
-                  <label className="form-label">Danh mục cha (Cấp bậc)</label>
-                  <select
-                    className="form-select"
-                    value={formParentId}
-                    onChange={(e) => setFormParentId(e.target.value)}
-                  >
-                    <option value="">-- Danh mục gốc (Không có cha) --</option>
-                    {categories
-                      // Không cho phép chọn chính mình làm cha
-                      .filter(
-                        (c) =>
-                          !editingCategory || c._id !== editingCategory._id,
-                      )
-                      .map((c) => (
-                        <option key={c._id} value={c._id}>
-                          {c.name} ({c.slug})
-                        </option>
-                      ))}
-                  </select>
-                  <span className="form-hint">
-                    Chọn danh mục cha để nhóm danh mục này thành phân ngành con
-                    lồng nhau.
-                  </span>
-                </div>
-
-                {/* Biểu tượng (Icon) */}
-                <div className="form-group">
-                  <label className="form-label">Biểu tượng (Icon)</label>
-                  <div className="slug-input-wrapper">
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Emoji hoặc tên icon..."
-                      value={formIcon}
-                      onChange={(e) => setFormIcon(e.target.value)}
-                      style={{
-                        maxWidth: '100px',
-                        textAlign: 'center',
-                        fontSize: '1.25rem',
-                      }}
-                    />
-                    <div className="icon-preset-selector">
-                      {ICON_PRESETS.map((icon) => (
-                        <button
-                          key={icon}
-                          type="button"
-                          className={`icon-preset-btn ${formIcon === icon ? 'selected' : ''}`}
-                          onClick={() => setFormIcon(icon)}
-                        >
-                          {icon}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
                 {/* Mô tả */}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCartWishlist } from '../../context/CartWishlistContext';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { formatVND } from '../../utils/format';
 import {
   IconlyHeart,
@@ -12,8 +13,8 @@ import './WishlistPage.css';
 
 export const WishlistPage: React.FC = () => {
   const { wishlistItems, wishlistCount, toggleWishlist } = useCartWishlist();
-
   const { navigate } = useAuth();
+  const { language } = useLanguage();
 
   const handleGoToCourse = (slug: string) => {
     navigate(`/courses/${slug}`);
@@ -28,20 +29,22 @@ export const WishlistPage: React.FC = () => {
             className="wishlist-breadcrumb-link"
             onClick={() => navigate('/')}
           >
-            Trang chủ
+            {language === 'vi' ? 'Trang chủ' : 'Home'}
           </span>
           <span className="wishlist-breadcrumb-separator">/</span>
           <span className="wishlist-breadcrumb-current">
-            Khóa học yêu thích
+            {language === 'vi' ? 'Khóa học yêu thích' : 'My Wishlist'}
           </span>
         </nav>
 
         {/* Page Header */}
         <header className="wishlist-page-header">
           <div className="wishlist-page-title-group">
-            <h1 className="wishlist-page-title">Khóa học yêu thích</h1>
+            <h1 className="wishlist-page-title">
+              {language === 'vi' ? 'Khóa học yêu thích' : 'My Wishlist'}
+            </h1>
             <span className="wishlist-page-count-badge">
-              {wishlistCount} khóa học
+              {wishlistCount} {language === 'vi' ? 'khóa học' : 'courses'}
             </span>
           </div>
         </header>
@@ -51,17 +54,24 @@ export const WishlistPage: React.FC = () => {
             <div className="wishlist-page-empty-icon-circle">
               <IconlyHeart size={56} color="#e11d48" />
             </div>
-            <h2>Chưa có khóa học yêu thích nào</h2>
+            <h2>
+              {language === 'vi'
+                ? 'Chưa có khóa học yêu thích nào'
+                : 'Your wishlist is empty'}
+            </h2>
             <p>
-              Nhấn biểu tượng trái tim ở bất kỳ khóa học nào bạn quan tâm để lưu
-              vào danh sách và tiện theo dõi học tập sau này!
+              {language === 'vi'
+                ? 'Nhấn biểu tượng trái tim ở bất kỳ khóa học nào bạn quan tâm để lưu vào danh sách và tiện theo dõi học tập sau này!'
+                : 'Click the heart icon on any course you find interesting to save it to your wishlist!'}
             </p>
             <button
               type="button"
               className="wishlist-page-explore-btn"
               onClick={() => navigate('/')}
             >
-              Khám phá khóa học ngay
+              {language === 'vi'
+                ? 'Khám phá khóa học ngay'
+                : 'Browse Courses Now'}
             </button>
           </div>
         ) : (
@@ -98,7 +108,11 @@ export const WishlistPage: React.FC = () => {
                     <button
                       type="button"
                       className="wishlist-remove-fav-btn"
-                      title="Bỏ khỏi danh sách yêu thích"
+                      title={
+                        language === 'vi'
+                          ? 'Bỏ khỏi danh sách yêu thích'
+                          : 'Remove from wishlist'
+                      }
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleWishlist(c);
@@ -153,13 +167,17 @@ export const WishlistPage: React.FC = () => {
                         className="wishlist-buy-now-btn"
                         onClick={() => navigate(`/checkout/${c.slug || c._id}`)}
                       >
-                        Học ngay
+                        {language === 'vi' ? 'Học ngay' : 'Enroll Now'}
                       </button>
 
                       <button
                         type="button"
                         className="wishlist-delete-btn"
-                        title="Xóa khỏi yêu thích"
+                        title={
+                          language === 'vi'
+                            ? 'Xóa khỏi yêu thích'
+                            : 'Remove from wishlist'
+                        }
                         onClick={() => toggleWishlist(c)}
                       >
                         <IconlyDelete size={16} color="#94a3b8" />
@@ -175,3 +193,5 @@ export const WishlistPage: React.FC = () => {
     </div>
   );
 };
+
+export default WishlistPage;

@@ -413,7 +413,7 @@ export const UserManagement: React.FC = () => {
                   <th style={{ width: '16%' }}>Vai trò phân quyền</th>
                   <th style={{ width: '14%' }}>Trạng thái</th>
                   <th style={{ width: '12%' }}>Ngày tham gia</th>
-                  <th style={{ width: '8%', textAlign: 'right' }}>Thao tác</th>
+                  <th style={{ width: '8%', textAlign: 'right' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -539,10 +539,7 @@ export const UserManagement: React.FC = () => {
         >
           <div className="user-modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="user-modal-header">
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <IconlyPlus size={20} color="#3b82f6" />
-                <span>Thêm tài khoản người dùng mới</span>
-              </h3>
+              <h3>Thêm tài khoản người dùng mới</h3>
               <button
                 type="button"
                 className="user-modal-close"

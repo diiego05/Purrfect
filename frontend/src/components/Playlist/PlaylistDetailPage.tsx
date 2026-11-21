@@ -569,27 +569,6 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
             </span>
           </div>
 
-          {/* Bảng thông báo quyền hạn người học */}
-          {!playlist.isOwner ? (
-            <div className="playlist-role-notice info">
-              <span>
-                💡 <strong>Gợi ý:</strong> Bạn đang xem playlist công khai của
-                tác giả{' '}
-                <strong>{playlist.userId?.fullName || 'Cộng đồng'}</strong>.
-                Nhấn "Theo dõi" để lưu lại vào mục cá nhân và thuận tiện học tập
-                theo lộ trình chuẩn.
-              </span>
-            </div>
-          ) : (
-            <div className="playlist-role-notice owner">
-              <span>
-                ⚡ <strong>Quyền quản lý:</strong> Bạn có thể sử dụng các nút
-                mũi tên (↑ / ↓) để sắp xếp lại thứ tự ưu tiên học tập hoặc biểu
-                tượng thùng rác để gỡ bớt khóa học.
-              </span>
-            </div>
-          )}
-
           {/* Danh sách các khóa học */}
           <div className="playlist-courses-stack">
             {!playlist.courses || playlist.courses.length === 0 ? (

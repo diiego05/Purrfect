@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   IconlyDiscovery,
   IconlyPlay,
@@ -8,7 +9,9 @@ import {
 
 export const Hero: FC = () => {
   const { user, isAuthenticated, navigate } = useAuth();
-  const displayName = user?.fullName?.trim() || 'bạn';
+  const { language } = useLanguage();
+  const displayName =
+    user?.fullName?.trim() || (language === 'vi' ? 'bạn' : 'there');
 
   // Kiểm tra tài khoản đã đăng nhập nhưng chưa hoàn thành Onboarding (bỏ qua khảo sát)
   const hasSkippedOnboarding = Boolean(
@@ -32,8 +35,17 @@ export const Hero: FC = () => {
         {/* Left Column: Content */}
         <div className="hero-content">
           <h1 className="hero-title">
-            Chào mừng <span className="text-highlight">{displayName}</span> quay
-            trở lại <span className="text-highlight">Purrfect</span>
+            {language === 'vi' ? (
+              <>
+                Chào mừng <span className="text-highlight">{displayName}</span>{' '}
+                quay trở lại <span className="text-highlight">Purrfect</span>
+              </>
+            ) : (
+              <>
+                Welcome <span className="text-highlight">{displayName}</span>{' '}
+                back to <span className="text-highlight">Purrfect</span>
+              </>
+            )}
           </h1>
 
           {hasSkippedOnboarding ? (
@@ -41,16 +53,32 @@ export const Hero: FC = () => {
             <div className="hero-onboarding-prompt">
               <div className="hero-onboarding-badge">
                 <IconlyDiscovery size={16} color="#0056d2" />
-                <span>Chưa hoàn thành định hướng học tập</span>
+                <span>
+                  {language === 'vi'
+                    ? 'Chưa hoàn thành định hướng học tập'
+                    : 'Learning direction incomplete'}
+                </span>
               </div>
               <h2 className="hero-onboarding-heading">
-                Thiết lập lộ trình học tập cá nhân hóa của bạn
+                {language === 'vi'
+                  ? 'Thiết lập lộ trình học tập cá nhân hóa của bạn'
+                  : 'Set up your personalized learning path'}
               </h2>
               <p className="hero-onboarding-text">
-                Bạn đã bỏ qua phần khảo sát mục tiêu. Hãy dành{' '}
-                <strong>1 phút</strong> để Purrfect thấu hiểu định hướng nghề
-                nghiệp và gợi ý danh sách khóa học phù hợp nhất dành riêng cho
-                bạn!
+                {language === 'vi' ? (
+                  <>
+                    Bạn đã bỏ qua phần khảo sát mục tiêu. Hãy dành{' '}
+                    <strong>1 phút</strong> để Purrfect thấu hiểu định hướng
+                    nghề nghiệp và gợi ý danh sách khóa học phù hợp nhất dành
+                    riêng cho bạn!
+                  </>
+                ) : (
+                  <>
+                    You skipped the goals survey. Take <strong>1 minute</strong>{' '}
+                    to help Purrfect understand your career path and recommend
+                    the most relevant courses tailored for you!
+                  </>
+                )}
               </p>
               <div className="hero-onboarding-cta-row">
                 <button
@@ -59,7 +87,11 @@ export const Hero: FC = () => {
                   onClick={() => navigate('/onboarding')}
                 >
                   <IconlyDiscovery size={18} color="#ffffff" />
-                  <span>Khảo sát định hướng ngay</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Khảo sát định hướng ngay'
+                      : 'Take Survey Now'}
+                  </span>
                   <svg
                     width="16"
                     height="16"
@@ -79,21 +111,35 @@ export const Hero: FC = () => {
                   className="hero-onboarding-btn-secondary"
                   onClick={handleExploreCourses}
                 >
-                  Khám phá tất cả khóa học
+                  {language === 'vi'
+                    ? 'Khám phá tất cả khóa học'
+                    : 'Browse all courses'}
                 </button>
               </div>
               <div className="hero-onboarding-perks">
                 <div className="perk-item">
                   <IconlyTick size={14} color="#16a34a" />
-                  <span>Đề xuất khóa học chuẩn mục tiêu</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Đề xuất khóa học chuẩn mục tiêu'
+                      : 'Goal-aligned course recommendations'}
+                  </span>
                 </div>
                 <div className="perk-item">
                   <IconlyTick size={14} color="#16a34a" />
-                  <span>Cá nhân hóa kỹ năng & trình độ</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Cá nhân hóa kỹ năng & trình độ'
+                      : 'Personalized by skill and level'}
+                  </span>
                 </div>
                 <div className="perk-item">
                   <IconlyTick size={14} color="#16a34a" />
-                  <span>Chỉ mất 1 phút thực hiện</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Chỉ mất 1 phút thực hiện'
+                      : 'Takes only 1 minute'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -101,9 +147,13 @@ export const Hero: FC = () => {
             /* Giao diện mặc định khi đã hoàn thành hoặc khách vãng lai */
             <div className="hero-default-content">
               <p className="hero-description">
-                {isAuthenticated
-                  ? 'Lộ trình học tập của bạn đã được cá nhân hóa. Khám phá các khóa học chất lượng cao từ các chuyên gia hàng đầu ngay bên dưới!'
-                  : 'Nền tảng học trực tuyến chất lượng cao với hàng trăm khóa học thực chiến từ chuyên gia hàng đầu. Khám phá ngay để bứt phá sự nghiệp!'}
+                {language === 'vi'
+                  ? isAuthenticated
+                    ? 'Lộ trình học tập của bạn đã được cá nhân hóa. Khám phá các khóa học chất lượng cao từ các chuyên gia hàng đầu ngay bên dưới!'
+                    : 'Nền tảng học trực tuyến chất lượng cao với hàng trăm khóa học thực chiến từ chuyên gia hàng đầu. Khám phá ngay để bứt phá sự nghiệp!'
+                  : isAuthenticated
+                    ? 'Your personalized learning path is ready. Discover high-quality courses taught by top industry experts below!'
+                    : 'High-quality online learning platform with hundreds of real-world courses from top experts. Start learning today to boost your career!'}
               </p>
               <div className="hero-actions">
                 <button
@@ -112,14 +162,18 @@ export const Hero: FC = () => {
                   onClick={handleExploreCourses}
                 >
                   <IconlyPlay size={18} color="#ffffff" />
-                  <span>Khám phá khóa học</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Khám phá khóa học'
+                      : 'Explore Courses'}
+                  </span>
                   <svg
                     width="16"
                     height="16"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
@@ -132,10 +186,18 @@ export const Hero: FC = () => {
                     type="button"
                     className="btn-trial-lesson"
                     onClick={() => navigate('/onboarding')}
-                    title="Khảo sát lại để cập nhật mục tiêu & kỹ năng mới"
+                    title={
+                      language === 'vi'
+                        ? 'Khảo sát lại để cập nhật mục tiêu & kỹ năng mới'
+                        : 'Update your goals & skill preferences'
+                    }
                   >
                     <IconlyDiscovery size={16} color="#0056d2" />
-                    <span>Cập nhật lại định hướng</span>
+                    <span>
+                      {language === 'vi'
+                        ? 'Cập nhật lại định hướng'
+                        : 'Update Learning Goals'}
+                    </span>
                   </button>
                 )}
               </div>

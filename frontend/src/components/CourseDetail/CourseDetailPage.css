@@ -112,6 +112,48 @@
   cursor: pointer;
 }
 
+/* Price Tag in Hero Banner */
+.banner-price-tag {
+  margin-bottom: 20px;
+}
+
+.banner-price-free {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #059669;
+  letter-spacing: -0.5px;
+}
+
+.banner-price-values {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.banner-current-price {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+}
+
+.banner-original-price {
+  font-size: 1.15rem;
+  color: #94a3b8;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.banner-discount-badge {
+  background: #fee2e2;
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
 /* CTA Group */
 .banner-cta-group {
   display: flex;
@@ -144,6 +186,27 @@
 .btn-banner-enroll.enrolled {
   background-color: #059669;
   box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+}
+
+.btn-banner-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #eff6ff;
+  color: #0056d2;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 12px 22px;
+  border-radius: 6px;
+  border: 1.5px solid #bfdbfe;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-banner-preview:hover {
+  background-color: #dbeafe;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
 }
 
 .btn-banner-cart {
@@ -343,20 +406,19 @@
   color: #475569;
 }
 
-/* 3. NỘI DUNG CHI TIẾT RIÊNG BIỆT (KHÁC BIỆT 100%) */
+/* 3. NỘI DUNG CHI TIẾT (FULL WIDTH RỘNG RÃI & CÂN ĐỐI) */
 .course-main-content-layout {
-  max-width: 1200px;
-  margin: 44px auto 0 auto;
+  max-width: 1120px;
+  margin: 40px auto 60px auto;
   padding: 0 24px;
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 40px;
-  align-items: start;
+  display: block;
+  width: 100%;
 }
 
-/* Cột Trái: Main Content */
+/* Cột Trái: Main Content - Trải rộng 100% */
 .content-left-column {
   min-width: 0;
+  width: 100%;
 }
 
 /* Purrfect Tabs */
@@ -1346,14 +1408,8 @@
     display: none;
   }
   .course-main-content-layout {
-    grid-template-columns: 1fr;
-  }
-  .content-right-sidebar {
-    order: -1;
-    margin-bottom: 20px;
-  }
-  .sticky-enrollment-card {
-    position: static;
+    margin-top: 24px;
+    padding: 0 16px;
   }
 }
 

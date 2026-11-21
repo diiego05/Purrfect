@@ -532,7 +532,7 @@ export const PlaylistsPage: React.FC = () => {
               <span>Khám phá & Bộ sưu tập khóa học</span>
             </div>
             <h1 className="playlists-main-title">
-              Bộ sưu tập & Lộ trình khóa học (Playlists)
+              Bộ sưu tập & Lộ trình khóa học
             </h1>
             <p className="playlists-main-desc">
               Khám phá các playlist công khai do giảng viên và cộng đồng học
@@ -564,9 +564,6 @@ export const PlaylistsPage: React.FC = () => {
             }}
           >
             <span>Khám phá Playlist công khai</span>
-            <span className="playlists-tab-counter">
-              {publicPlaylists.length}
-            </span>
           </button>
 
           <button
@@ -582,11 +579,6 @@ export const PlaylistsPage: React.FC = () => {
             }}
           >
             <span>Playlist của tôi</span>
-            {isAuthenticated && (
-              <span className="playlists-tab-counter">
-                {myCreatedPlaylists.length + myFollowedPlaylists.length}
-              </span>
-            )}
           </button>
         </div>
 
@@ -775,14 +767,14 @@ export const PlaylistsPage: React.FC = () => {
               className={`my-subtab-btn ${mySubtab === 'created' ? 'active' : ''}`}
               onClick={() => setMySubtab('created')}
             >
-              Playlist tôi đã tạo ({myCreatedPlaylists.length})
+              Playlist tôi đã tạo
             </button>
             <button
               type="button"
               className={`my-subtab-btn ${mySubtab === 'followed' ? 'active' : ''}`}
               onClick={() => setMySubtab('followed')}
             >
-              Playlist đang theo dõi ({myFollowedPlaylists.length})
+              Playlist đang theo dõi
             </button>
           </div>
 
@@ -921,17 +913,6 @@ export const PlaylistsPage: React.FC = () => {
           {/* Subtab 2: Playlist đang theo dõi */}
           {mySubtab === 'followed' && (
             <>
-              {/* Notice BR29.3 */}
-              <div className="playlist-notice-banner">
-                <IconlyHeart size={20} color="#1e40af" />
-                <span>
-                  <strong>Lưu ý:</strong> Đối với các danh sách phát công khai
-                  do người khác biên soạn, bạn có quyền theo dõi để lưu vào danh
-                  sách cá nhân và xem khóa học, không có quyền chỉnh sửa tên hay
-                  thêm bớt nội dung gốc.
-                </span>
-              </div>
-
               {loading ? (
                 <div className="playlist-loading-state">
                   <div className="playlist-spinner" />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useCartWishlist } from '../../context/CartWishlistContext';
 import { fetchCourseBySlug } from '../../services/courseApi';
 import { paymentApi } from '../../services/paymentApi';
@@ -20,6 +21,7 @@ interface CheckoutPageProps {
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
   const { navigate, isAuthenticated } = useAuth();
+  const { t, language } = useLanguage();
   const {
     cartItems,
     totalAmount: cartTotalAmount,
@@ -209,29 +211,33 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
             className="checkout-breadcrumb-link"
             onClick={() => navigate('/')}
           >
-            Trang chủ
+            {language === 'vi' ? 'Trang chủ' : 'Home'}
           </span>
           <span className="checkout-breadcrumb-separator">/</span>
           <span
             className="checkout-breadcrumb-link"
             onClick={() => navigate('/cart')}
           >
-            Giỏ hàng
+            {t('nav_cart', 'Giỏ hàng')}
           </span>
           <span className="checkout-breadcrumb-separator">/</span>
           <span className="checkout-breadcrumb-current">
-            Thanh toán đơn hàng
+            {t('checkout_title', 'Thanh toán đơn hàng')}
           </span>
         </nav>
 
-        <h1 className="checkout-page-heading">Thanh toán đơn hàng</h1>
+        <h1 className="checkout-page-heading">
+          {t('checkout_title', 'Thanh toán đơn hàng')}
+        </h1>
 
         <div className="checkout-page-grid">
           {/* Cột trái: Thông tin khóa học & Phương thức thanh toán */}
           <div className="checkout-main-col">
             {/* Khóa học thanh toán */}
             <section className="checkout-section-card">
-              <h2 className="section-card-title">Khóa học thanh toán</h2>
+              <h2 className="section-card-title">
+                {t('checkout_courses', 'Khóa học thanh toán')}
+              </h2>
               {course ? (
                 <div className="checkout-course-preview">
                   <img
@@ -262,7 +268,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
               ) : (
                 <div className="checkout-cart-items-preview">
                   <p className="checkout-items-count-text">
-                    Đơn hàng gồm <strong>{cartItems.length} khóa học</strong>:
+                    {language === 'vi' ? (
+                      <>
+                        Đơn hàng gồm{' '}
+                        <strong>{cartItems.length} khóa học</strong>:
+                      </>
+                    ) : (
+                      <>
+                        Order contains{' '}
+                        <strong>{cartItems.length} courses</strong>:
+                      </>
+                    )}
                   </p>
                   <ul className="checkout-cart-preview-list">
                     {cartItems.map((item) => (
@@ -282,7 +298,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
 
             {/* Phương thức thanh toán */}
             <section className="checkout-section-card">
-              <h2 className="section-card-title">Phương thức thanh toán</h2>
+              <h2 className="section-card-title">
+                {t('checkout_payment_method', 'Phương thức thanh toán')}
+              </h2>
 
               <div className="checkout-payment-methods">
                 <label className="checkout-method-option active">
@@ -294,38 +312,21 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
                   />
                   <div className="method-option-info">
                     <div className="method-option-header">
-                      <strong>Cổng thanh toán VNPAY</strong>
-                      <span className="badge-recommend">Chính thức</span>
+                      <strong>
+                        {t('checkout_vnpay_official', 'Cổng thanh toán VNPAY')}
+                      </strong>
+                      <span className="badge-recommend">
+                        {t('checkout_vnpay_badge', 'Chính thức')}
+                      </span>
                     </div>
                     <p className="method-option-desc">
-                      Hỗ trợ quét mã VNPAY-QR, Thẻ nội địa (ATM), Internet
-                      Banking và Thẻ quốc tế Visa/MasterCard.
+                      {t(
+                        'checkout_vnpay_desc',
+                        'Hỗ trợ quét mã VNPAY-QR, Thẻ nội địa (ATM), Internet Banking và Thẻ quốc tế Visa/MasterCard.',
+                      )}
                     </p>
                   </div>
                 </label>
-              </div>
-
-              <div className="vnpay-sandbox-card-info">
-                <div className="info-title">
-                  💳 Thông tin thẻ thử nghiệm VNPAY Sandbox:
-                </div>
-                <div className="info-grid">
-                  <div>
-                    <span>Ngân hàng:</span> <strong>NCB</strong>
-                  </div>
-                  <div>
-                    <span>Số thẻ:</span> <strong>9704198526191432198</strong>
-                  </div>
-                  <div>
-                    <span>Tên chủ thẻ:</span> <strong>NGUYEN VAN A</strong>
-                  </div>
-                  <div>
-                    <span>Ngày phát hành:</span> <strong>07/15</strong>
-                  </div>
-                  <div>
-                    <span>Mã OTP:</span> <strong>123456</strong>
-                  </div>
-                </div>
               </div>
             </section>
           </div>
@@ -333,7 +334,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
           {/* Cột phải: Tóm tắt chi phí & Nút thanh toán */}
           <aside className="checkout-summary-col">
             <div className="checkout-summary-box">
-              <h2 className="summary-box-title">Chi tiết thanh toán</h2>
+              <h2 className="summary-box-title">
+                {t('checkout_summary_title', 'Chi tiết thanh toán')}
+              </h2>
 
               {/* Nhập mã giảm giá */}
               <form
@@ -341,13 +344,16 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
                 onSubmit={handleApplyCoupon}
               >
                 <label className="coupon-form-label">
-                  Mã ưu đãi / Giảm giá
+                  {t('checkout_coupon_label', 'MÃ GIẢM GIÁ (NẾU CÓ)')}
                 </label>
                 <div className="coupon-input-group">
                   <input
                     type="text"
                     className="coupon-text-input"
-                    placeholder="NHẬP MÃ GIẢM GIÁ..."
+                    placeholder={t(
+                      'checkout_coupon_placeholder',
+                      'Nhập mã voucher / giảm giá',
+                    )}
                     value={couponCode}
                     onChange={(e) =>
                       setCouponCode(e.target.value.toUpperCase())
@@ -358,7 +364,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
                     className="coupon-apply-btn"
                     disabled={!couponCode.trim() || isCheckingCoupon}
                   >
-                    {isCheckingCoupon ? '...' : 'Áp dụng'}
+                    {isCheckingCoupon
+                      ? '...'
+                      : t('checkout_coupon_apply', 'Áp dụng')}
                   </button>
                 </div>
                 {couponFeedback && (
@@ -370,13 +378,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
 
               <div className="summary-breakdown">
                 <div className="breakdown-line">
-                  <span>Học phí niêm yết:</span>
+                  <span>{t('checkout_subtotal', 'Tạm tính:')}</span>
                   <span>{formatVND(originalPrice)}</span>
                 </div>
 
                 {appliedCoupon && appliedCoupon.discountAmount > 0 && (
                   <div className="breakdown-line discount-line">
-                    <span>Mã giảm giá:</span>
+                    <span>{t('checkout_discount', 'Giảm giá:')}</span>
                     <span>- {formatVND(appliedCoupon.discountAmount)}</span>
                   </div>
                 )}
@@ -384,7 +392,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
                 <div className="breakdown-divider" />
 
                 <div className="breakdown-total-line">
-                  <span>Tổng thanh toán:</span>
+                  <span>{t('checkout_total', 'Tổng thanh toán:')}</span>
                   <span className="total-highlight">
                     {formatVND(currentFinalAmount)}
                   </span>
@@ -411,21 +419,37 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
                 disabled={isSubmitting}
                 onClick={handleSubmitPayment}
               >
-                {isSubmitting ? 'Đang chuyển hướng VNPAY...' : 'Thanh toán'}
+                {isSubmitting
+                  ? language === 'vi'
+                    ? 'Đang chuyển hướng VNPAY...'
+                    : 'Redirecting to VNPAY...'
+                  : t('checkout_btn_pay', 'Thanh toán ngay qua VNPAY')}
               </button>
 
               <div className="checkout-trust-perks">
                 <div className="trust-perk-item">
                   <IconlyShield size={17} color="#059669" />
-                  <span>Hoàn tiền 100% trong 7 ngày</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Hoàn tiền 100% trong 14 ngày'
+                      : '100% Refund within 14 days'}
+                  </span>
                 </div>
                 <div className="trust-perk-item">
                   <IconlyAward size={17} color="#2563eb" />
-                  <span>Cấp chứng chỉ tốt nghiệp xác thực</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Cấp chứng chỉ tốt nghiệp xác thực'
+                      : 'Verified Certificate of Completion'}
+                  </span>
                 </div>
                 <div className="trust-perk-item">
                   <IconlyTimeCircle size={17} color="#d97706" />
-                  <span>Truy cập trọn đời trên mọi thiết bị</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Truy cập trọn đời trên mọi thiết bị'
+                      : 'Lifetime Access on all Devices'}
+                  </span>
                 </div>
               </div>
             </div>

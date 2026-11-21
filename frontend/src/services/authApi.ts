@@ -7,23 +7,33 @@ import { parseJsonSafe } from '../utils/api';
 
 const API_BASE = '/api/auth';
 
-export const getAccessToken = () =>
-  localStorage.getItem('purr_access_token') ||
-  localStorage.getItem('purr_token');
-export const getRefreshToken = () => localStorage.getItem('purr_refresh_token');
+// Token được lưu trong bộ nhớ ứng dụng (Memory) trong phiên làm việc hiện tại
+// Không lưu token vào localStorage để tăng cường bảo mật chống XSS.
+// Token chính được lưu và truyền tự động qua HttpOnly Cookie.
+let memoryToken: string | null = null;
 
-export const setTokens = (accessToken: string, refreshToken?: string) => {
-  localStorage.setItem('purr_access_token', accessToken);
-  localStorage.setItem('purr_token', accessToken); // backward compatibility
-  if (refreshToken) {
-    localStorage.setItem('purr_refresh_token', refreshToken);
+const clearLocalStorageTokens = () => {
+  try {
+    localStorage.removeItem('purr_access_token');
+    localStorage.removeItem('purr_token');
+    localStorage.removeItem('purr_refresh_token');
+  } catch {
+    // Bỏ qua lỗi storage trong các môi trường giới hạn quyền
   }
 };
 
+export const getAccessToken = () => memoryToken;
+export const getRefreshToken = () => undefined;
+
+export const setTokens = (accessToken: string, _refreshToken?: string) => {
+  memoryToken = accessToken;
+  void _refreshToken;
+  clearLocalStorageTokens();
+};
+
 export const clearTokens = () => {
-  localStorage.removeItem('purr_access_token');
-  localStorage.removeItem('purr_token');
-  localStorage.removeItem('purr_refresh_token');
+  memoryToken = null;
+  clearLocalStorageTokens();
 };
 
 export const authFetch = async (
@@ -39,33 +49,39 @@ export const authFetch = async (
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  let res = await fetch(url, { ...options, headers });
+  const fetchOptions: RequestInit = {
+    ...options,
+    headers,
+    credentials: 'include', // Luôn gửi kèm HttpOnly Cookie tự động
+  };
 
-  // If 401 Unauthorized, try refreshing token using refreshToken
-  if (res.status === 401) {
-    const refreshToken = getRefreshToken();
-    if (refreshToken) {
-      try {
-        const refreshRes = await fetch(`${API_BASE}/refresh-token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        });
-        const refreshData = await parseJsonSafe<{
-          success?: boolean;
-          accessToken?: string;
-        }>(refreshRes, 'Không thể làm mới phiên đăng nhập');
-        if (refreshRes.ok && refreshData.success && refreshData.accessToken) {
-          setTokens(refreshData.accessToken);
-          // Retry original request with new token
-          headers.set('Authorization', `Bearer ${refreshData.accessToken}`);
-          res = await fetch(url, { ...options, headers });
-        } else {
-          clearTokens();
-        }
-      } catch {
+  let res = await fetch(url, fetchOptions);
+
+  // Nếu 401 Unauthorized, tự động gọi refresh token qua HttpOnly Cookie
+  if (
+    res.status === 401 &&
+    !url.includes('/refresh-token') &&
+    !url.includes('/login')
+  ) {
+    try {
+      const refreshRes = await fetch(`${API_BASE}/refresh-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const refreshData = await parseJsonSafe<{
+        success?: boolean;
+        accessToken?: string;
+      }>(refreshRes, 'Không thể làm mới phiên đăng nhập');
+      if (refreshRes.ok && refreshData.success && refreshData.accessToken) {
+        setTokens(refreshData.accessToken);
+        headers.set('Authorization', `Bearer ${refreshData.accessToken}`);
+        res = await fetch(url, { ...fetchOptions, headers });
+      } else {
         clearTokens();
       }
+    } catch {
+      clearTokens();
     }
   }
 
@@ -78,19 +94,25 @@ export const authApi = {
     const res = await fetch(`${API_BASE}/check-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email }),
     });
     return parseJsonSafe<CheckEmailResponse>(res, 'Lỗi kiểm tra email');
   },
 
-  // 2. Đăng nhập (nhận accessToken 7 ngày và refreshToken 30 ngày)
+  // 2. Đăng nhập (nhận HttpOnly Cookie + accessToken)
   async login(email: string, password: string): Promise<AuthResponse> {
     const res = await fetch(`${API_BASE}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, password }),
     });
-    return parseJsonSafe<AuthResponse>(res, 'Lỗi đăng nhập');
+    const data = await parseJsonSafe<AuthResponse>(res, 'Lỗi đăng nhập');
+    if (data.success && (data.accessToken || data.token)) {
+      setTokens(data.accessToken || data.token || '');
+    }
+    return data;
   },
 
   // 3. Đăng ký & Kích hoạt tài khoản bằng OTP
@@ -109,9 +131,17 @@ export const authApi = {
     const res = await fetch(`${API_BASE}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(payload),
     });
-    return parseJsonSafe<AuthResponse>(res, 'Lỗi đăng ký tài khoản');
+    const result = await parseJsonSafe<AuthResponse>(
+      res,
+      'Lỗi đăng ký tài khoản',
+    );
+    if (result.success && (result.accessToken || result.token)) {
+      setTokens(result.accessToken || result.token || '');
+    }
+    return result;
   },
 
   // 4. Gửi lại OTP khi đăng ký (giới hạn tối đa 3 lần)
@@ -121,6 +151,7 @@ export const authApi = {
     const res = await fetch(`${API_BASE}/resend-register-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email }),
     });
     return parseJsonSafe(res, 'Không thể gửi lại mã OTP');
@@ -134,6 +165,7 @@ export const authApi = {
     const res = await fetch(`${API_BASE}/verify-register-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, otp }),
     });
     return parseJsonSafe(res, 'Lỗi xác thực mã OTP');
@@ -144,6 +176,7 @@ export const authApi = {
     const res = await fetch(`${API_BASE}/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email }),
     });
     return parseJsonSafe<ForgotPasswordResponse>(
@@ -160,6 +193,7 @@ export const authApi = {
     const res = await fetch(`${API_BASE}/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, otp }),
     });
     return parseJsonSafe(res, 'Lỗi xác thực mã OTP');
@@ -174,6 +208,7 @@ export const authApi = {
     const res = await fetch(`${API_BASE}/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, otp, newPassword }),
     });
     return parseJsonSafe<AuthResponse>(res, 'Không thể đặt lại mật khẩu');
@@ -200,7 +235,9 @@ export const authApi = {
     url?: string;
     message?: string;
   }> {
-    const res = await fetch(`${API_BASE}/google/url`);
+    const res = await fetch(`${API_BASE}/google/url`, {
+      credentials: 'include',
+    });
     return parseJsonSafe(res, 'Không thể lấy liên kết đăng nhập Google');
   },
 

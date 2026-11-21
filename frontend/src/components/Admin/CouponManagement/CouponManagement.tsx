@@ -683,7 +683,7 @@ export default function CouponManagement() {
                 <th>Tiến độ sử dụng</th>
                 <th>Thời gian hiệu lực</th>
                 <th>Trạng thái</th>
-                <th>Thao tác</th>
+                <th style={{ width: '8%' }}></th>
               </tr>
             </thead>
             <tbody>

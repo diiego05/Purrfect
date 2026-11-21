@@ -40,6 +40,38 @@ const generateTokens = async (userId: string, email: string, role: string) => {
   return { accessToken, refreshToken };
 };
 
+const isProduction = process.env.NODE_ENV === 'production';
+export const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: 'lax' as const,
+  path: '/',
+};
+
+export const setAuthCookies = (
+  res: Response,
+  accessToken: string,
+  refreshToken?: string,
+) => {
+  res.cookie('accessToken', accessToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+  if (refreshToken) {
+    res.cookie('refreshToken', refreshToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+  }
+};
+
+export const clearAuthCookies = (res: Response) => {
+  res.clearCookie('accessToken', COOKIE_OPTIONS);
+  res.clearCookie('refreshToken', COOKIE_OPTIONS);
+  res.clearCookie('purr_access_token', COOKIE_OPTIONS);
+  res.clearCookie('purr_refresh_token', COOKIE_OPTIONS);
+};
+
 // 1. Kiểm tra Email: Nếu đã có -> Chuyển sang Login; Nếu chưa có -> Tự động gửi OTP REGISTER
 export const checkEmail = async (
   req: Request,
@@ -306,6 +338,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       user.role,
     );
 
+    setAuthCookies(res, accessToken, refreshToken);
+
     res.json({
       success: true,
       message: 'Đăng nhập thành công',
@@ -402,6 +436,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       newUser.role,
     );
 
+    setAuthCookies(res, accessToken, refreshToken);
+
     res.status(201).json({
       success: true,
       message: 'Đăng ký tài khoản thành công',
@@ -432,7 +468,8 @@ export const refreshTokenHandler = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken =
+      req.body.refreshToken || (req as any).cookies?.refreshToken;
     if (!refreshToken) {
       res.status(400).json({ success: false, message: 'Thiếu refresh token' });
       return;
@@ -471,6 +508,8 @@ export const refreshTokenHandler = async (
       secret,
       { expiresIn: '7d' },
     );
+
+    setAuthCookies(res, newAccessToken);
 
     res.json({
       success: true,
@@ -714,6 +753,8 @@ export const setGooglePassword = async (
       user.role,
     );
 
+    setAuthCookies(res, accessToken, refreshToken);
+
     res.json({
       success: true,
       message: 'Tạo mật khẩu thành công! Đang đăng nhập...',
@@ -931,12 +972,15 @@ export const updateProfile = async (
 // 10. Đăng xuất
 export const logout = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken =
+      req.body?.refreshToken || (req as any).cookies?.refreshToken;
     if (refreshToken) {
       await RefreshToken.deleteOne({ token: refreshToken });
     }
+    clearAuthCookies(res);
     res.json({ success: true, message: 'Đăng xuất thành công' });
   } catch {
+    clearAuthCookies(res);
     res.json({ success: true, message: 'Đăng xuất thành công' });
   }
 };
@@ -1097,6 +1141,8 @@ export const handleGoogleCallback = async (
       user.email,
       user.role,
     );
+
+    setAuthCookies(res, accessToken, refreshToken);
 
     res.redirect(
       `${clientUrl}/login?token=${accessToken}&refreshToken=${refreshToken}&email=${encodeURIComponent(user.email)}`,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCartWishlist } from '../../context/CartWishlistContext';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { formatVND } from '../../utils/format';
 import {
   IconlyBuy,
@@ -17,6 +18,7 @@ export const CartPage: React.FC = () => {
     useCartWishlist();
 
   const { navigate } = useAuth();
+  const { language } = useLanguage();
 
   const handleCheckoutAll = () => {
     if (cartItems.length > 0 && cartItems[0]?.courseId) {
@@ -37,58 +39,78 @@ export const CartPage: React.FC = () => {
         {/* Breadcrumb */}
         <nav className="cart-breadcrumb" aria-label="Breadcrumb">
           <span className="cart-breadcrumb-link" onClick={() => navigate('/')}>
-            Trang chủ
+            {language === 'vi' ? 'Trang chủ' : 'Home'}
           </span>
           <span className="cart-breadcrumb-separator">/</span>
-          <span className="cart-breadcrumb-current">Giỏ hàng của bạn</span>
+          <span className="cart-breadcrumb-current">
+            {language === 'vi' ? 'Giỏ hàng của bạn' : 'Your Shopping Cart'}
+          </span>
         </nav>
 
         {/* Page Header */}
         <header className="cart-page-header">
           <div className="cart-page-title-group">
-            <h1 className="cart-page-title">Giỏ hàng của bạn</h1>
-            <span className="cart-page-count-badge">{cartCount} khóa học</span>
+            <h1 className="cart-page-title">
+              {language === 'vi' ? 'Giỏ hàng của bạn' : 'Your Shopping Cart'}
+            </h1>
+            <span className="cart-page-count-badge">
+              {cartCount} {language === 'vi' ? 'khóa học' : 'courses'}
+            </span>
           </div>
-          {cartItems.length > 0 && (
+
+          {cartCount > 0 && (
             <button
               type="button"
-              className="cart-page-clear-all-btn"
+              className="cart-page-clear-btn"
               onClick={clearCart}
+              title={
+                language === 'vi'
+                  ? 'Xóa toàn bộ giỏ hàng'
+                  : 'Clear all cart items'
+              }
             >
               <IconlyDelete size={16} color="#ef4444" />
-              <span>Xóa tất cả</span>
+              <span>{language === 'vi' ? 'Xóa tất cả' : 'Clear All'}</span>
             </button>
           )}
         </header>
 
+        {/* Main Content Area */}
         {cartItems.length === 0 ? (
+          /* Empty State */
           <div className="cart-page-empty-state">
             <div className="cart-page-empty-icon-circle">
-              <IconlyBuy size={56} color="#94a3b8" />
+              <IconlyBuy size={56} color="#0056d2" />
             </div>
-            <h2>Giỏ hàng của bạn đang trống</h2>
+            <h2>
+              {language === 'vi'
+                ? 'Giỏ hàng của bạn đang trống'
+                : 'Your shopping cart is empty'}
+            </h2>
             <p>
-              Bạn chưa có khóa học nào trong giỏ hàng. Hãy khám phá hàng trăm
-              khóa học chất lượng cao trên Purrfect để bắt đầu hành trình nâng
-              cao kỹ năng!
+              {language === 'vi'
+                ? 'Hãy khám phá hàng trăm khóa học hấp dẫn và bổ sung vào giỏ hàng để bắt đầu hành trình nâng cao kỹ năng của bạn ngay hôm nay!'
+                : 'Explore hundreds of practical courses and add them to your cart to level up your career today!'}
             </p>
             <button
               type="button"
               className="cart-page-explore-btn"
               onClick={() => navigate('/')}
             >
-              Khám phá khóa học ngay
+              {language === 'vi'
+                ? 'Khám phá khóa học ngay'
+                : 'Browse Courses Now'}
             </button>
           </div>
         ) : (
-          <div className="cart-page-layout-grid">
+          /* Cart List & Summary Layout */
+          <div className="cart-page-grid-layout">
             {/* Cột trái: Danh sách khóa học */}
             <div className="cart-page-items-col">
-              <ul className="cart-page-list">
+              <ul className="cart-page-items-list">
                 {cartItems.map((item) => {
                   const c = item.courseId;
                   if (!c) return null;
-                  const courseId = c._id || c.id || '';
                   const hasDiscount =
                     c.discountPrice &&
                     c.discountPrice > 0 &&
@@ -97,6 +119,7 @@ export const CartPage: React.FC = () => {
                     ? (c.discountPrice as number)
                     : c.price;
 
+                  const courseId = c._id || c.id || '';
                   const instructorName =
                     typeof c.instructorId === 'object' && c.instructorId?.name
                       ? c.instructorId.name
@@ -108,7 +131,7 @@ export const CartPage: React.FC = () => {
                       className="cart-page-item-card"
                     >
                       <div
-                        className="cart-page-item-thumb-box"
+                        className="cart-page-item-thumb"
                         onClick={() => handleGoToCourse(c.slug)}
                       >
                         <img
@@ -131,7 +154,8 @@ export const CartPage: React.FC = () => {
                           </h3>
 
                           <p className="cart-page-item-instructor">
-                            Giảng viên: <span>{instructorName}</span>
+                            {language === 'vi' ? 'Giảng viên:' : 'Instructor:'}{' '}
+                            <span>{instructorName}</span>
                           </p>
 
                           <div className="cart-page-item-meta-tags">
@@ -173,7 +197,9 @@ export const CartPage: React.FC = () => {
                             onClick={() => removeFromCart(courseId)}
                           >
                             <IconlyDelete size={15} color="#ef4444" />
-                            <span>Xóa khỏi giỏ</span>
+                            <span>
+                              {language === 'vi' ? 'Xóa khỏi giỏ' : 'Remove'}
+                            </span>
                           </button>
                         </div>
                       </div>
@@ -186,15 +212,23 @@ export const CartPage: React.FC = () => {
             {/* Cột phải: Bảng thanh toán tổng quan */}
             <aside className="cart-page-summary-col">
               <div className="cart-page-summary-card">
-                <h2 className="summary-card-title">Tóm tắt đơn hàng</h2>
+                <h2 className="summary-card-title">
+                  {language === 'vi' ? 'Tóm tắt đơn hàng' : 'Order Summary'}
+                </h2>
 
                 <div className="summary-price-line">
-                  <span className="summary-label">Số lượng khóa học:</span>
+                  <span className="summary-label">
+                    {language === 'vi'
+                      ? 'Số lượng khóa học:'
+                      : 'Courses count:'}
+                  </span>
                   <span className="summary-value">{cartCount}</span>
                 </div>
 
                 <div className="summary-price-line">
-                  <span className="summary-label">Tổng học phí:</span>
+                  <span className="summary-label">
+                    {language === 'vi' ? 'Tổng học phí:' : 'Subtotal:'}
+                  </span>
                   <span className="summary-value">
                     {formatVND(totalAmount)}
                   </span>
@@ -203,7 +237,9 @@ export const CartPage: React.FC = () => {
                 <div className="summary-divider" />
 
                 <div className="summary-total-line">
-                  <span className="summary-total-label">Tổng thanh toán:</span>
+                  <span className="summary-total-label">
+                    {language === 'vi' ? 'Tổng thanh toán:' : 'Total Amount:'}
+                  </span>
                   <span className="summary-total-price">
                     {formatVND(totalAmount)}
                   </span>
@@ -214,29 +250,35 @@ export const CartPage: React.FC = () => {
                   className="cart-page-checkout-btn"
                   onClick={handleCheckoutAll}
                 >
-                  Tiến hành thanh toán
+                  {language === 'vi'
+                    ? 'Tiến hành thanh toán'
+                    : 'Proceed to Checkout'}
                 </button>
 
                 <p className="cart-checkout-subnote">
-                  Thanh toán an toàn qua cổng VNPAY / Thẻ ATM & Thẻ quốc tế
+                  {language === 'vi'
+                    ? 'Bằng việc tiếp tục, bạn đồng ý với Điều khoản dịch vụ và Chính sách hoàn tiền của Purrfect.'
+                    : 'By proceeding, you agree to Purrfect Terms of Service and Refund Policy.'}
                 </p>
 
-                <div className="cart-page-perks-box">
-                  <h4 className="perks-box-title">Cam kết từ Purrfect:</h4>
-                  <ul className="perks-box-list">
-                    <li>
-                      <IconlyShield size={16} color="#059669" />
-                      <span>Bảo đảm hoàn tiền 100% trong 7 ngày</span>
-                    </li>
-                    <li>
-                      <IconlyAward size={16} color="#2563eb" />
-                      <span>Chứng chỉ tốt nghiệp xác thực sau hoàn thành</span>
-                    </li>
-                    <li>
-                      <IconlyTimeCircle size={16} color="#d97706" />
-                      <span>Truy cập bài giảng và tài nguyên trọn đời</span>
-                    </li>
-                  </ul>
+                {/* Trust Badges */}
+                <div className="cart-trust-badges">
+                  <div className="trust-badge-item">
+                    <IconlyShield size={16} color="#16a34a" />
+                    <span>
+                      {language === 'vi'
+                        ? 'Bảo mật thanh toán VNPAY SSL'
+                        : 'VNPAY SSL Secure Payment'}
+                    </span>
+                  </div>
+                  <div className="trust-badge-item">
+                    <IconlyAward size={16} color="#0056d2" />
+                    <span>
+                      {language === 'vi'
+                        ? 'Cấp chứng chỉ tốt nghiệp xác thực'
+                        : 'Verified Certificate on Completion'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </aside>
@@ -246,3 +288,5 @@ export const CartPage: React.FC = () => {
     </div>
   );
 };
+
+export default CartPage;

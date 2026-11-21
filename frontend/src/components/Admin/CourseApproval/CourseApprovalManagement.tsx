@@ -430,7 +430,7 @@ export const CourseApprovalManagement: React.FC = () => {
                   <th>Đề cương</th>
                   <th>Học phí</th>
                   <th>Trạng thái</th>
-                  <th style={{ textAlign: 'right' }}>Thao tác</th>
+                  <th style={{ textAlign: 'right' }}></th>
                 </tr>
               </thead>
               <tbody>

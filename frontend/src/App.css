@@ -473,6 +473,19 @@
   font-weight: 700;
 }
 
+.desktop-lang-switcher {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin: 0 4px;
+}
+
+@media (max-width: 900px) {
+  .desktop-lang-switcher {
+    display: none;
+  }
+}
+
 .lang-divider {
   color: #d1d5db;
   font-size: 12px;

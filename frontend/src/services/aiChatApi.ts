@@ -45,6 +45,7 @@ export const aiChatApi = {
       const response = await fetch(`${API_BASE}/chat/stream`, {
         method: 'POST',
         headers,
+        credentials: 'include',
         body: JSON.stringify({ message }),
       });
 

@@ -498,7 +498,7 @@ export const InstructorStudentsPage: React.FC = () => {
                     <th>Hình thức & Học phí</th>
                     <th>Tiến độ học tập</th>
                     <th>Trạng thái</th>
-                    <th>Thao tác</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>

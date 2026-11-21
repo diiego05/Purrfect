@@ -1,15 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import type {
   QuizDataItem,
   QuizQuestionItem,
 } from '../../types/instructorCourse';
 import { aiQuizApi } from '../../services/aiQuizApi';
-import {
-  IconlySparkles,
-  IconlyTick,
-  IconlyDelete,
-  IconlyClose,
-} from '../Onboarding/IconlyIcons';
+import { IconlyDelete, IconlyClose } from '../Onboarding/IconlyIcons';
 import { toast } from '../../context/ToastContext';
 
 interface AiQuizGeneratorProps {
@@ -19,6 +14,8 @@ interface AiQuizGeneratorProps {
   onSaveQuiz: (quizData: QuizDataItem) => void;
   onCancel: () => void;
 }
+
+type QuizMode = 'ai' | 'manual' | 'import';
 
 const getDaysInMonth = (year: number, month: number) => {
   return new Date(year, month, 0).getDate();
@@ -390,7 +387,6 @@ const DateTimeSchedulePicker: React.FC<ScheduleDatePickerProps> = ({
             </div>
           </div>
 
-          {/* Dòng tóm tắt ngày giờ tháng năm & Phím chọn nhanh */}
           <div
             style={{
               display: 'flex',
@@ -466,6 +462,256 @@ const DateTimeSchedulePicker: React.FC<ScheduleDatePickerProps> = ({
   );
 };
 
+// State-machine CSV Parser hỗ trợ dấu ngoặc kép, dấu chấm phẩy, dấu phẩy và xuống dòng
+function parseCsv(text: string): string[][] {
+  const clean = text.replace(/^\uFEFF/, '');
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentField = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < clean.length; i++) {
+    const char = clean[i];
+    const nextChar = clean[i + 1];
+
+    if (char === '"') {
+      if (insideQuotes && nextChar === '"') {
+        currentField += '"';
+        i++;
+      } else {
+        insideQuotes = !insideQuotes;
+      }
+    } else if ((char === ',' || char === ';') && !insideQuotes) {
+      currentRow.push(currentField.trim());
+      currentField = '';
+    } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+      if (char === '\r' && nextChar === '\n') {
+        i++;
+      }
+      currentRow.push(currentField.trim());
+      if (currentRow.some((f) => f.length > 0)) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentField = '';
+    } else {
+      currentField += char;
+    }
+  }
+
+  if (currentField.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentField.trim());
+    if (currentRow.some((f) => f.length > 0)) {
+      rows.push(currentRow);
+    }
+  }
+
+  return rows;
+}
+
+// Chuyển đổi bảng CSV thành danh sách QuizQuestionItem
+function parseCsvToQuizQuestions(text: string): QuizQuestionItem[] {
+  const rows = parseCsv(text);
+  if (rows.length === 0) return [];
+
+  const firstRowStr = rows[0].join(' ').toLowerCase();
+  const hasHeader =
+    firstRowStr.includes('loại') ||
+    firstRowStr.includes('câu hỏi') ||
+    firstRowStr.includes('type') ||
+    firstRowStr.includes('question');
+  const dataRows = hasHeader ? rows.slice(1) : rows;
+
+  const result: QuizQuestionItem[] = [];
+
+  dataRows.forEach((cols, idx) => {
+    if (cols.length < 2) return;
+    const typeCol = (cols[0] || '').toUpperCase();
+    const isEssay =
+      typeCol.includes('TỰ LUẬN') ||
+      typeCol.includes('TU LUAN') ||
+      typeCol.includes('ESSAY');
+    const questionText = cols[1] || '';
+    if (!questionText.trim()) return;
+
+    if (isEssay) {
+      result.push({
+        id: `imported_essay_${Date.now()}_${idx}`,
+        type: 'ESSAY',
+        question: questionText.trim(),
+        sampleAnswer: cols[6] || '',
+        explanation: cols[7] || '',
+        points: Number(cols[8]) || 20,
+      });
+    } else {
+      const optA = cols[2] || '';
+      const optB = cols[3] || '';
+      const optC = cols[4] || '';
+      const optD = cols[5] || '';
+      const options = [optA, optB, optC, optD].filter((o) => Boolean(o.trim()));
+      const finalOptions =
+        options.length >= 2
+          ? options
+          : ['Phương án A', 'Phương án B', 'Phương án C', 'Phương án D'];
+
+      const rawAns = (cols[6] || '').trim().toUpperCase();
+      let correctIdx = 0;
+      if (rawAns === 'A' || rawAns === '1') correctIdx = 0;
+      else if (rawAns === 'B' || rawAns === '2') correctIdx = 1;
+      else if (rawAns === 'C' || rawAns === '3') correctIdx = 2;
+      else if (rawAns === 'D' || rawAns === '4') correctIdx = 3;
+      else if (!isNaN(Number(rawAns))) {
+        correctIdx = Math.max(
+          0,
+          Math.min(Number(rawAns), finalOptions.length - 1),
+        );
+      }
+
+      result.push({
+        id: `imported_mc_${Date.now()}_${idx}`,
+        type: 'MULTIPLE_CHOICE',
+        question: questionText.trim(),
+        options: finalOptions,
+        correctAnswer: correctIdx,
+        explanation: cols[7] || '',
+        points: Number(cols[8]) || 10,
+      });
+    }
+  });
+
+  return result;
+}
+
+// Phân tích JSON thành câu hỏi
+function parseJsonToQuizQuestions(text: string): QuizQuestionItem[] {
+  const data = JSON.parse(text);
+  const rawList = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.questions)
+      ? data.questions
+      : [];
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return rawList.map((item: any, idx: number) => {
+    const isEssay =
+      String(item.type).toUpperCase() === 'ESSAY' ||
+      String(item.type).toUpperCase().includes('TỰ LUẬN');
+
+    if (isEssay) {
+      return {
+        id: item.id || `imported_json_essay_${Date.now()}_${idx}`,
+        type: 'ESSAY' as const,
+        question: String(item.question || `Câu hỏi tự luận ${idx + 1}`),
+        sampleAnswer: item.sampleAnswer ? String(item.sampleAnswer) : '',
+        explanation: String(item.explanation || ''),
+        points: typeof item.points === 'number' ? item.points : 20,
+      };
+    }
+
+    const opts = Array.isArray(item.options)
+      ? item.options.map(String)
+      : ['Phương án A', 'Phương án B', 'Phương án C', 'Phương án D'];
+
+    let correct = 0;
+    if (typeof item.correctAnswer === 'number') {
+      correct = item.correctAnswer;
+    } else if (typeof item.correctAnswer === 'string') {
+      const up = item.correctAnswer.trim().toUpperCase();
+      if (up === 'A') correct = 0;
+      else if (up === 'B') correct = 1;
+      else if (up === 'C') correct = 2;
+      else if (up === 'D') correct = 3;
+      else if (!isNaN(Number(up))) correct = Number(up);
+    }
+
+    return {
+      id: item.id || `imported_json_mc_${Date.now()}_${idx}`,
+      type: 'MULTIPLE_CHOICE' as const,
+      question: String(item.question || `Câu hỏi ${idx + 1}`),
+      options: opts,
+      correctAnswer: Math.max(0, Math.min(correct, opts.length - 1)),
+      explanation: String(item.explanation || ''),
+      points: typeof item.points === 'number' ? item.points : 10,
+    };
+  });
+}
+
+// Phân tích văn bản thô dạng câu hỏi A B C D
+function parseTextToQuizQuestions(text: string): QuizQuestionItem[] {
+  const clean = text.replace(/^\uFEFF/, '').trim();
+  if (!clean) return [];
+
+  const blocks = clean
+    .split(/\n\s*\n/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+  const result: QuizQuestionItem[] = [];
+
+  blocks.forEach((block, idx) => {
+    const lines = block
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (lines.length === 0) return;
+
+    const qText = lines[0]
+      .replace(/^(Câu\s*\d+[\s:.-]*|\d+[\s:.-]+)/i, '')
+      .trim();
+    const optList: { text: string; isCorrect: boolean }[] = [];
+    let explanation = '';
+
+    for (let j = 1; j < lines.length; j++) {
+      const line = lines[j];
+      const matchOpt = line.match(/^([A-D])[.:)]\s*(.*)$/i);
+      const matchExp = line.match(
+        /^(Giải thích|Lưu ý|Explanation|Ghi chú)[:\s]*(.*)$/i,
+      );
+
+      if (matchExp) {
+        explanation = matchExp[2].trim();
+      } else if (matchOpt) {
+        let optText = matchOpt[2].trim();
+        const isCorrect =
+          optText.endsWith('*') ||
+          line.toLowerCase().includes('(đúng)') ||
+          line.toLowerCase().includes('(correct)');
+        if (optText.endsWith('*')) optText = optText.slice(0, -1).trim();
+        optText = optText.replace(/\((đúng|correct)\)/gi, '').trim();
+        optList.push({
+          text: optText,
+          isCorrect,
+        });
+      }
+    }
+
+    if (optList.length >= 2) {
+      let correctIdx = optList.findIndex((o) => o.isCorrect);
+      if (correctIdx === -1) correctIdx = 0;
+
+      result.push({
+        id: `imported_text_mc_${Date.now()}_${idx}`,
+        type: 'MULTIPLE_CHOICE',
+        question: qText || lines[0],
+        options: optList.map((o) => o.text),
+        correctAnswer: correctIdx,
+        explanation,
+        points: 10,
+      });
+    } else {
+      result.push({
+        id: `imported_text_essay_${Date.now()}_${idx}`,
+        type: 'ESSAY',
+        question: qText || lines[0],
+        sampleAnswer: lines.slice(1).join('\n'),
+        explanation,
+        points: 20,
+      });
+    }
+  });
+
+  return result;
+}
+
 export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
   initialQuizData,
   defaultTopic,
@@ -473,11 +719,16 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
   onSaveQuiz,
   onCancel,
 }) => {
+  // Chế độ tạo quiz: 'ai' | 'manual' | 'import'
+  const [activeMode, setActiveMode] = useState<QuizMode>('ai');
+
   // Config state
   const [topic, setTopic] = useState<string>(
     initialQuizData?.title || defaultTopic || '',
   );
   const [content, setContent] = useState<string>(defaultContent);
+  const [uploadedDocName, setUploadedDocName] = useState<string>('');
+
   const [mcCount, setMcCount] = useState<number>(4);
   const [essayCount, setEssayCount] = useState<number>(1);
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>(
@@ -506,12 +757,225 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
     initialQuizData?.questions || [],
   );
 
-  // Sinh câu hỏi bằng AI
+  // Import state
+  const [importMode, setImportMode] = useState<'replace' | 'append'>('replace');
+  const [pasteText, setPasteText] = useState<string>('');
+
+  // Refs cho các input tải file
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const quizFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Xử lý nạp file tài liệu cho AI
+  const handleDocFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = (event.target?.result as string) || '';
+      setContent(text);
+      setUploadedDocName(file.name);
+      toast.success(
+        `Đã nạp tài liệu từ file "${file.name}" (${text.length} ký tự).`,
+        'Nạp tài liệu thành công',
+      );
+    };
+    reader.onerror = () => {
+      toast.error('Không thể đọc file tài liệu này.', 'Lỗi đọc file');
+    };
+    reader.readAsText(file, 'utf-8');
+    e.target.value = '';
+  };
+
+  // Tải file mẫu CSV (Excel UTF-8 có BOM)
+  const handleDownloadSampleCsv = () => {
+    const sampleCsvContent =
+      '\uFEFFLoại câu,Câu hỏi,Phương án A,Phương án B,Phương án C,Phương án D,Đáp án đúng,Giải thích,Điểm\r\n' +
+      'TRẮC NGHIỆM,Phương thức nào trong React được sử dụng để quản lý trạng thái cục bộ của component?,useEffect,useState,useContext,useReducer,B,useState là hook cơ bản để khai báo state trong functional component.,10\r\n' +
+      'TRẮC NGHIỆM,Giao thức bảo mật SSL/TLS hoạt động ở tầng nào trong mô hình OSI?,Tầng mạng (Network),Tầng liên kết (Data Link),Tầng phiên / Tầng ứng dụng,Tầng vật lý (Physical),C,SSL/TLS mã hóa dữ liệu truyền tải bảo mật qua mạng internet.,10\r\n' +
+      'TỰ LUẬN,Trình bày khái niệm RESTful API và 4 phương thức HTTP phổ biến nhất?,,,,,"RESTful API là chuẩn kiến trúc web: GET (đọc dữ liệu), POST (tạo mới), PUT (cập nhật), DELETE (xóa).",Nêu đủ định nghĩa và 4 phương thức HTTP.,20\r\n';
+
+    const blob = new Blob([sampleCsvContent], {
+      type: 'text/csv;charset=utf-8;',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mau_cau_hoi_quiz_purrfect.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Tải file mẫu JSON
+  const handleDownloadSampleJson = () => {
+    const sampleJsonData = [
+      {
+        type: 'MULTIPLE_CHOICE',
+        question:
+          'Phương thức nào trong React được sử dụng để quản lý trạng thái cục bộ của component?',
+        options: ['useEffect', 'useState', 'useContext', 'useReducer'],
+        correctAnswer: 1,
+        explanation:
+          'useState là hook cơ bản để khai báo state trong functional component.',
+        points: 10,
+      },
+      {
+        type: 'MULTIPLE_CHOICE',
+        question:
+          'Giao thức bảo mật SSL/TLS hoạt động ở tầng nào trong mô hình OSI?',
+        options: [
+          'Tầng mạng (Network)',
+          'Tầng liên kết (Data Link)',
+          'Tầng phiên / Tầng ứng dụng',
+          'Tầng vật lý (Physical)',
+        ],
+        correctAnswer: 2,
+        explanation: 'SSL/TLS mã hóa dữ liệu truyền tải bảo mật qua mạng.',
+        points: 10,
+      },
+      {
+        type: 'ESSAY',
+        question:
+          'Trình bày khái niệm RESTful API và 4 phương thức HTTP phổ biến nhất?',
+        sampleAnswer:
+          'RESTful API là chuẩn kiến trúc web: GET (đọc dữ liệu), POST (tạo mới), PUT (cập nhật), DELETE (xóa).',
+        explanation: 'Nêu đủ định nghĩa và 4 phương thức HTTP.',
+        points: 20,
+      },
+    ];
+
+    const blob = new Blob([JSON.stringify(sampleJsonData, null, 2)], {
+      type: 'application/json;charset=utf-8;',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mau_cau_hoi_quiz_purrfect.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Xử lý nạp tệp câu hỏi (.csv, .json, .txt)
+  const handleImportQuizFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const rawText = (event.target?.result as string) || '';
+      let parsed: QuizQuestionItem[] = [];
+
+      const lowerName = file.name.toLowerCase();
+      try {
+        if (lowerName.endsWith('.csv')) {
+          parsed = parseCsvToQuizQuestions(rawText);
+        } else if (lowerName.endsWith('.json')) {
+          parsed = parseJsonToQuizQuestions(rawText);
+        } else {
+          parsed = parseTextToQuizQuestions(rawText);
+        }
+
+        if (parsed.length === 0) {
+          toast.warning(
+            'Không tìm thấy câu hỏi hợp lệ trong file. Vui lòng kiểm tra định dạng hoặc tải file mẫu.',
+            'Không có câu hỏi',
+          );
+          return;
+        }
+
+        if (importMode === 'replace') {
+          setQuestions(parsed);
+        } else {
+          setQuestions((prev) => [...prev, ...parsed]);
+        }
+
+        toast.success(
+          `Đã nạp thành công ${parsed.length} câu hỏi từ tệp "${file.name}".`,
+          'Nhập câu hỏi thành công',
+        );
+      } catch (err) {
+        console.error('Lỗi phân tích file câu hỏi:', err);
+        toast.error('Lỗi khi phân tích nội dung file câu hỏi.', 'Lỗi nạp file');
+      }
+    };
+
+    reader.onerror = () => {
+      toast.error('Không thể đọc tệp tin này.', 'Lỗi đọc tệp');
+    };
+    reader.readAsText(file, 'utf-8');
+    e.target.value = '';
+  };
+
+  // Xử lý phân tích văn bản dán
+  const handleParsePasteText = () => {
+    if (!pasteText.trim()) {
+      toast.warning(
+        'Vui lòng dán nội dung câu hỏi vào khung trước khi nạp.',
+        'Chưa có nội dung',
+      );
+      return;
+    }
+
+    let parsed: QuizQuestionItem[] = [];
+    try {
+      if (
+        pasteText.trim().startsWith('[') ||
+        pasteText.trim().startsWith('{')
+      ) {
+        parsed = parseJsonToQuizQuestions(pasteText);
+      } else if (
+        pasteText.includes(',') &&
+        (pasteText.toLowerCase().includes('trắc nghiệm') ||
+          pasteText.toLowerCase().includes('câu hỏi'))
+      ) {
+        parsed = parseCsvToQuizQuestions(pasteText);
+      } else {
+        parsed = parseTextToQuizQuestions(pasteText);
+      }
+
+      if (parsed.length === 0) {
+        toast.warning(
+          'Không nhận diện được câu hỏi nào từ văn bản. Hãy kiểm tra định dạng hoặc xem mẫu bên dưới.',
+          'Không có câu hỏi',
+        );
+        return;
+      }
+
+      if (importMode === 'replace') {
+        setQuestions(parsed);
+      } else {
+        setQuestions((prev) => [...prev, ...parsed]);
+      }
+
+      toast.success(
+        `Đã nạp thành công ${parsed.length} câu hỏi từ nội dung dán!`,
+        'Nạp câu hỏi thành công',
+      );
+      setPasteText('');
+    } catch (err) {
+      console.error('Lỗi phân tích văn bản câu hỏi:', err);
+      toast.error('Lỗi khi phân tích định dạng văn bản.', 'Lỗi định dạng');
+    }
+  };
+
+  // Sinh câu hỏi bằng AI từ tài liệu
   const handleGenerate = async () => {
     if (!topic.trim()) {
       toast.warning(
         'Vui lòng nhập chủ đề bài kiểm tra trước khi tạo câu hỏi.',
         'Chủ đề trống',
+      );
+      return;
+    }
+
+    if (!content.trim() || content.trim().length < 20) {
+      toast.warning(
+        'Vui lòng dán hoặc tải lên tài liệu kiến thức (bài giảng, giáo trình, slide tóm tắt) để AI đọc và trích xuất câu hỏi chuẩn xác.',
+        'Thiếu tài liệu bài học',
       );
       return;
     }
@@ -522,7 +986,7 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
     try {
       const res = await aiQuizApi.generateQuiz({
         topic: topic.trim(),
-        content: content.trim() || undefined,
+        content: content.trim(),
         multipleChoiceCount: mcCount,
         essayCount,
         difficulty,
@@ -537,9 +1001,13 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
           setNotice(res.message);
         } else {
           setNotice(
-            `AI đã sinh thành công ${res.data.questions?.length || 0} câu hỏi bám sát chủ đề!`,
+            `AI đã đọc tài liệu và sinh thành công ${res.data.questions?.length || 0} câu hỏi bám sát kiến thức!`,
           );
         }
+        toast.success(
+          `AI đã sinh thành công ${res.data.questions?.length || 0} câu hỏi từ tài liệu.`,
+          'Sinh câu hỏi thành công',
+        );
       } else {
         toast.error(
           res.message || 'Không thể tạo câu hỏi lúc này.',
@@ -549,7 +1017,7 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
     } catch (err) {
       console.error('Lỗi gọi AI sinh đề:', err);
       toast.error(
-        'Lỗi khi gọi Trợ lý AI. Vui lòng thử lại sau.',
+        'Lỗi khi kết nối Trợ lý AI. Vui lòng kiểm tra lại tài liệu và thử lại sau.',
         'Lỗi kết nối AI',
       );
     } finally {
@@ -589,12 +1057,19 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
     setQuestions(questions.filter((_, i) => i !== idx));
   };
 
+  // Xóa toàn bộ câu hỏi
+  const handleClearAllQuestions = () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ câu hỏi hiện tại?')) {
+      setQuestions([]);
+    }
+  };
+
   // Thêm câu trắc nghiệm thủ công
   const handleAddManualMC = () => {
     const newQ: QuizQuestionItem = {
       id: `manual_mc_${Date.now()}`,
       type: 'MULTIPLE_CHOICE',
-      question: 'Nhập câu hỏi trắc nghiệm mới...',
+      question: 'Nhập nội dung câu hỏi trắc nghiệm...',
       options: ['Phương án A', 'Phương án B', 'Phương án C', 'Phương án D'],
       correctAnswer: 0,
       explanation: 'Giải thích tại sao phương án này đúng...',
@@ -608,7 +1083,7 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
     const newQ: QuizQuestionItem = {
       id: `manual_essay_${Date.now()}`,
       type: 'ESSAY',
-      question: 'Nhập câu hỏi tự luận mới...',
+      question: 'Nhập nội dung câu hỏi tự luận...',
       sampleAnswer: 'Đáp án mẫu hoặc các ý chính cần đạt...',
       explanation: 'Tiêu chí chấm điểm cụ thể...',
       points: 20,
@@ -616,11 +1091,11 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
     setQuestions([...questions, newQ]);
   };
 
-  // Lưu lại vào khóa học
+  // Lưu lại vào bài học / chương
   const handleSave = () => {
     if (questions.length === 0) {
       toast.warning(
-        'Vui lòng tạo ít nhất 1 câu hỏi trước khi lưu bài kiểm tra.',
+        'Vui lòng tạo hoặc nhập ít nhất 1 câu hỏi trước khi lưu bài kiểm tra.',
         'Chưa có câu hỏi',
       );
       return;
@@ -638,17 +1113,35 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
     });
   };
 
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+
   return (
     <div
       style={{
         background: '#ffffff',
-        border: '1px solid #e2e8f0',
+        border: '1px solid #cbd5e1',
         borderRadius: '12px',
         padding: '20px',
         marginTop: '10px',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
       }}
     >
+      {/* Hidden file inputs */}
+      <input
+        type="file"
+        ref={docInputRef}
+        accept=".txt,.md,.json,.csv"
+        onChange={handleDocFileUpload}
+        style={{ display: 'none' }}
+      />
+      <input
+        type="file"
+        ref={quizFileInputRef}
+        accept=".csv,.json,.txt"
+        onChange={handleImportQuizFile}
+        style={{ display: 'none' }}
+      />
+
       {/* Header */}
       <div
         style={{
@@ -660,21 +1153,7 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
           marginBottom: '16px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '28px',
-              height: '28px',
-              borderRadius: '8px',
-              background: '#f5f3ff',
-              color: '#7c3aed',
-            }}
-          >
-            <IconlySparkles size={16} color="#7c3aed" />
-          </span>
+        <div>
           <h4
             style={{
               margin: 0,
@@ -683,8 +1162,12 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
               color: '#0f172a',
             }}
           >
-            Trợ lý AI Soạn đề kiểm tra (Trắc nghiệm & Tự luận)
+            Thiết lập Đề kiểm tra (Quiz) & Câu hỏi
           </h4>
+          <span style={{ fontSize: '12px', color: '#64748b' }}>
+            Hỗ trợ tạo bằng AI từ tài liệu, tự soạn bằng tay hoặc import từ file
+            Excel/CSV/JSON
+          </span>
         </div>
         <button
           type="button"
@@ -695,227 +1178,704 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
             cursor: 'pointer',
             color: '#64748b',
           }}
-          title="Đóng bảng AI"
+          title="Đóng bảng đề thi"
         >
           <IconlyClose size={16} color="currentColor" />
         </button>
       </div>
 
-      {/* Configuration Form */}
+      {/* Mode Switcher Tabs */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '14px',
-          background: '#f8fafc',
-          padding: '16px',
-          borderRadius: '10px',
-          border: '1px solid #e2e8f0',
+          display: 'flex',
+          background: '#f1f5f9',
+          padding: '4px',
+          borderRadius: '8px',
+          gap: '4px',
           marginBottom: '16px',
         }}
       >
-        <div style={{ gridColumn: 'span 2' }}>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              color: '#334155',
-              marginBottom: '5px',
-            }}
-          >
-            Chủ đề bài kiểm tra *
-          </label>
-          <input
-            type="text"
-            className="editor-form-input"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Ví dụ: Nguyên tắc bảo mật và xác thực JWT trong Node.js"
-            style={{ background: '#ffffff' }}
-          />
-        </div>
-
-        <div style={{ gridColumn: 'span 2' }}>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              color: '#334155',
-              marginBottom: '5px',
-            }}
-          >
-            Nội dung tóm tắt / Transcript kiến thức cần ra đề (Tùy chọn)
-          </label>
-          <textarea
-            className="editor-form-input"
-            rows={3}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Dán nội dung bài học, transcript video hoặc các ý trọng tâm vào đây để AI bám sát đề thi..."
-            style={{ background: '#ffffff', resize: 'vertical' }}
-          />
-        </div>
-
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              color: '#334155',
-              marginBottom: '5px',
-            }}
-          >
-            Số câu trắc nghiệm
-          </label>
-          <select
-            className="editor-form-input"
-            value={mcCount}
-            onChange={(e) => setMcCount(Number(e.target.value))}
-            style={{ background: '#ffffff' }}
-          >
-            <option value={2}>2 câu trắc nghiệm</option>
-            <option value={3}>3 câu trắc nghiệm</option>
-            <option value={4}>4 câu trắc nghiệm (Chuẩn)</option>
-            <option value={5}>5 câu trắc nghiệm</option>
-            <option value={8}>8 câu trắc nghiệm</option>
-            <option value={10}>10 câu trắc nghiệm</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              color: '#334155',
-              marginBottom: '5px',
-            }}
-          >
-            Số câu tự luận ngắn
-          </label>
-          <select
-            className="editor-form-input"
-            value={essayCount}
-            onChange={(e) => setEssayCount(Number(e.target.value))}
-            style={{ background: '#ffffff' }}
-          >
-            <option value={0}>Không có tự luận (100% trắc nghiệm)</option>
-            <option value={1}>1 câu tự luận ngắn (Khuyến nghị)</option>
-            <option value={2}>2 câu tự luận</option>
-            <option value={3}>3 câu tự luận</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              color: '#334155',
-              marginBottom: '5px',
-            }}
-          >
-            Độ khó
-          </label>
-          <select
-            className="editor-form-input"
-            value={difficulty}
-            onChange={(e) =>
-              setDifficulty(e.target.value as 'Easy' | 'Medium' | 'Hard')
-            }
-            style={{ background: '#ffffff' }}
-          >
-            <option value="Easy">Cơ bản (Dễ)</option>
-            <option value="Medium">Trung bình (Chuẩn)</option>
-            <option value="Hard">Nâng cao (Phân hóa cao)</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              color: '#334155',
-              marginBottom: '5px',
-            }}
-          >
-            Điểm tối thiểu để Đạt (%)
-          </label>
-          <input
-            type="number"
-            min={10}
-            max={100}
-            className="editor-form-input"
-            value={passingScore}
-            onChange={(e) => setPassingScore(Number(e.target.value))}
-            style={{ background: '#ffffff' }}
-          />
-        </div>
-
-        {/* Thiết lập Hẹn ngày giờ tháng năm & Thời lượng làm bài */}
-        <div
+        <button
+          type="button"
+          onClick={() => setActiveMode('ai')}
           style={{
-            gridColumn: 'span 2',
-            background: '#ffffff',
-            border: '1px solid #cbd5e1',
-            borderRadius: '8px',
-            padding: '14px',
-            marginTop: '2px',
+            flex: 1,
+            padding: '8px 12px',
+            fontSize: '12.5px',
+            fontWeight: activeMode === 'ai' ? 700 : 500,
+            borderRadius: '6px',
+            border: 'none',
+            cursor: 'pointer',
+            background: activeMode === 'ai' ? '#ffffff' : 'transparent',
+            color: activeMode === 'ai' ? '#7c3aed' : '#475569',
+            boxShadow:
+              activeMode === 'ai' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.15s ease',
           }}
         >
+          Tạo bằng AI từ tài liệu
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveMode('manual')}
+          style={{
+            flex: 1,
+            padding: '8px 12px',
+            fontSize: '12.5px',
+            fontWeight: activeMode === 'manual' ? 700 : 500,
+            borderRadius: '6px',
+            border: 'none',
+            cursor: 'pointer',
+            background: activeMode === 'manual' ? '#ffffff' : 'transparent',
+            color: activeMode === 'manual' ? '#7c3aed' : '#475569',
+            boxShadow:
+              activeMode === 'manual' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          Tự soạn bằng tay (Thủ công)
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveMode('import')}
+          style={{
+            flex: 1,
+            padding: '8px 12px',
+            fontSize: '12.5px',
+            fontWeight: activeMode === 'import' ? 700 : 500,
+            borderRadius: '6px',
+            border: 'none',
+            cursor: 'pointer',
+            background: activeMode === 'import' ? '#ffffff' : 'transparent',
+            color: activeMode === 'import' ? '#7c3aed' : '#475569',
+            boxShadow:
+              activeMode === 'import' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          Import file câu hỏi
+        </button>
+      </div>
+
+      {/* TAB 1: TẠO BẰNG AI TỪ TÀI LIỆU */}
+      {activeMode === 'ai' && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '14px',
+            background: '#f8fafc',
+            padding: '16px',
+            borderRadius: '10px',
+            border: '1px solid #e2e8f0',
+            marginBottom: '16px',
+          }}
+        >
+          <div style={{ gridColumn: 'span 2' }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                color: '#334155',
+                marginBottom: '5px',
+              }}
+            >
+              Chủ đề bài kiểm tra *
+            </label>
+            <input
+              type="text"
+              className="editor-form-input"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="Ví dụ: Kiểm tra kiến thức Chương 1: Kiến trúc và nguyên lý cơ bản"
+              style={{ background: '#ffffff' }}
+            />
+          </div>
+
+          <div style={{ gridColumn: 'span 2' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '6px',
+                flexWrap: 'wrap',
+                gap: '8px',
+              }}
+            >
+              <label
+                style={{
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  color: '#334155',
+                }}
+              >
+                Tài liệu / Nội dung kiến thức để AI đọc và trích xuất câu hỏi *
+              </label>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                {uploadedDocName && (
+                  <span
+                    style={{
+                      fontSize: '11.5px',
+                      color: '#059669',
+                      background: '#ecfdf5',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      border: '1px solid #a7f3d0',
+                    }}
+                  >
+                    Đã nạp: {uploadedDocName}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => docInputRef.current?.click()}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '11.5px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    background: '#ffffff',
+                    color: '#334155',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Tải tệp tài liệu lên (.txt, .md, .csv)
+                </button>
+              </div>
+            </div>
+
+            <textarea
+              className="editor-form-input"
+              rows={5}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Dán nội dung giáo trình, tóm tắt bài giảng, slide bài dạy hoặc nhấn nút tải tệp tài liệu lên ở góc trên. AI sẽ bám sát tuyệt đối vào tài liệu này để ra đề, không tự suy diễn nếu không có căn cứ."
+              style={{ background: '#ffffff', resize: 'vertical' }}
+            />
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: '4px',
+                fontSize: '11.5px',
+                color: '#64748b',
+              }}
+            >
+              <span>
+                Ký tự: {content.length} | Ước tính: {wordCount} từ
+              </span>
+              <span>
+                Khuyến nghị: Cung cấp từ 100 từ trở lên để AI sinh câu hỏi sâu
+                sát nhất.
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                color: '#334155',
+                marginBottom: '5px',
+              }}
+            >
+              Số câu trắc nghiệm
+            </label>
+            <select
+              className="editor-form-input"
+              value={mcCount}
+              onChange={(e) => setMcCount(Number(e.target.value))}
+              style={{ background: '#ffffff' }}
+            >
+              <option value={2}>2 câu trắc nghiệm</option>
+              <option value={3}>3 câu trắc nghiệm</option>
+              <option value={4}>4 câu trắc nghiệm (Chuẩn)</option>
+              <option value={5}>5 câu trắc nghiệm</option>
+              <option value={8}>8 câu trắc nghiệm</option>
+              <option value={10}>10 câu trắc nghiệm</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                color: '#334155',
+                marginBottom: '5px',
+              }}
+            >
+              Số câu tự luận ngắn
+            </label>
+            <select
+              className="editor-form-input"
+              value={essayCount}
+              onChange={(e) => setEssayCount(Number(e.target.value))}
+              style={{ background: '#ffffff' }}
+            >
+              <option value={0}>Không có tự luận (100% trắc nghiệm)</option>
+              <option value={1}>1 câu tự luận ngắn (Khuyến nghị)</option>
+              <option value={2}>2 câu tự luận</option>
+              <option value={3}>3 câu tự luận</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                color: '#334155',
+                marginBottom: '5px',
+              }}
+            >
+              Độ khó
+            </label>
+            <select
+              className="editor-form-input"
+              value={difficulty}
+              onChange={(e) =>
+                setDifficulty(e.target.value as 'Easy' | 'Medium' | 'Hard')
+              }
+              style={{ background: '#ffffff' }}
+            >
+              <option value="Easy">Cơ bản (Dễ)</option>
+              <option value="Medium">Trung bình (Chuẩn)</option>
+              <option value="Hard">Nâng cao (Phân hóa cao)</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                color: '#334155',
+                marginBottom: '5px',
+              }}
+            >
+              Điểm tối thiểu để Đạt (%)
+            </label>
+            <input
+              type="number"
+              min={10}
+              max={100}
+              className="editor-form-input"
+              value={passingScore}
+              onChange={(e) => setPassingScore(Number(e.target.value))}
+              style={{ background: '#ffffff' }}
+            />
+          </div>
+
+          <div
+            style={{
+              gridColumn: 'span 2',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              marginTop: '4px',
+            }}
+          >
+            <button
+              type="button"
+              className="btn-create-course"
+              onClick={handleGenerate}
+              disabled={loading}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: '#7c3aed',
+                padding: '8px 20px',
+              }}
+            >
+              <span>
+                {loading
+                  ? 'AI đang phân tích tài liệu & soạn câu hỏi...'
+                  : 'Tạo câu hỏi ngay với AI'}
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: TỰ SOẠN BẰNG TAY (THỦ CÔNG) */}
+      {activeMode === 'manual' && (
+        <div
+          style={{
+            background: '#f8fafc',
+            padding: '16px',
+            borderRadius: '10px',
+            border: '1px solid #e2e8f0',
+            marginBottom: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+          }}
+        >
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                color: '#334155',
+                marginBottom: '5px',
+              }}
+            >
+              Chủ đề bài kiểm tra *
+            </label>
+            <input
+              type="text"
+              className="editor-form-input"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="Ví dụ: Bài kiểm tra trắc nghiệm tổng hợp Chương 1"
+              style={{ background: '#ffffff' }}
+            />
+          </div>
+
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               flexWrap: 'wrap',
-              gap: '12px',
-              marginBottom: isScheduled ? '12px' : '0',
+              gap: '10px',
+              padding: '12px',
+              background: '#ffffff',
+              borderRadius: '8px',
+              border: '1px dashed #cbd5e1',
             }}
           >
+            <div>
+              <span
+                style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#0f172a',
+                }}
+              >
+                Tự biên soạn câu hỏi theo ý muốn
+              </span>
+              <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                Thêm từng câu hỏi trắc nghiệm hoặc tự luận, tùy chỉnh đáp án và
+                barem điểm trực tiếp.
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                className="btn-create-course"
+                onClick={handleAddManualMC}
+                style={{
+                  fontSize: '12px',
+                  padding: '6px 14px',
+                  background: '#2563eb',
+                }}
+              >
+                + Thêm câu trắc nghiệm
+              </button>
+              <button
+                type="button"
+                className="btn-create-course"
+                onClick={handleAddManualEssay}
+                style={{
+                  fontSize: '12px',
+                  padding: '6px 14px',
+                  background: '#7c3aed',
+                }}
+              >
+                + Thêm câu tự luận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: IMPORT FILE CÂU HỎI */}
+      {activeMode === 'import' && (
+        <div
+          style={{
+            background: '#f8fafc',
+            padding: '16px',
+            borderRadius: '10px',
+            border: '1px solid #e2e8f0',
+            marginBottom: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+          }}
+        >
+          <div>
             <label
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '13px',
+                display: 'block',
+                fontSize: '12.5px',
                 fontWeight: 600,
-                color: '#0f172a',
-                cursor: 'pointer',
+                color: '#334155',
+                marginBottom: '5px',
               }}
             >
-              <input
-                type="checkbox"
-                checked={isScheduled}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setIsScheduled(checked);
-                  if (!checked) {
-                    setAvailableFrom('');
-                    setAvailableUntil('');
-                  } else if (!availableFrom) {
-                    const now = new Date();
-                    const fromIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T08:00`;
-                    setAvailableFrom(fromIso);
-                  }
-                }}
+              Chủ đề bài kiểm tra *
+            </label>
+            <input
+              type="text"
+              className="editor-form-input"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="Ví dụ: Đề thi đánh giá năng lực nhập từ file"
+              style={{ background: '#ffffff' }}
+            />
+          </div>
+
+          {/* Hàng tải file mẫu & Chọn chế độ ghi đè / nối tiếp */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '10px',
+              padding: '10px 12px',
+              background: '#ffffff',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span
                 style={{
-                  width: '16px',
-                  height: '16px',
-                  accentColor: '#7c3aed',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#334155',
+                }}
+              >
+                Tải file mẫu chuẩn:
+              </span>
+              <button
+                type="button"
+                onClick={handleDownloadSampleCsv}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  border: '1px solid #10b981',
+                  background: '#ecfdf5',
+                  color: '#065f46',
                   cursor: 'pointer',
                 }}
-              />
-              <span>Hẹn ngày giờ tháng năm tổ chức bài kiểm tra</span>
-            </label>
+              >
+                Tải file mẫu CSV (Excel UTF-8)
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadSampleJson}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#334155',
+                  cursor: 'pointer',
+                }}
+              >
+                Tải file mẫu JSON
+              </button>
+            </div>
 
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <label
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  color: '#334155',
+                  cursor: 'pointer',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="importMode"
+                  checked={importMode === 'replace'}
+                  onChange={() => setImportMode('replace')}
+                />
+                <span>Ghi đè câu hỏi cũ</span>
+              </label>
+              <label
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  color: '#334155',
+                  cursor: 'pointer',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="importMode"
+                  checked={importMode === 'append'}
+                  onChange={() => setImportMode('append')}
+                />
+                <span>Thêm nối tiếp</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Vùng chọn file từ máy tính */}
+          <div
+            onClick={() => quizFileInputRef.current?.click()}
+            style={{
+              border: '2px dashed #cbd5e1',
+              borderRadius: '8px',
+              padding: '16px',
+              textAlign: 'center',
+              background: '#ffffff',
+              cursor: 'pointer',
+              transition: 'border-color 0.2s',
+            }}
+          >
+            <span
+              style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#2563eb',
+                marginBottom: '4px',
+              }}
+            >
+              Bấm vào đây để chọn tệp câu hỏi (.csv, .json, .txt)
+            </span>
+            <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+              Hệ thống tự động nhận diện dạng trắc nghiệm (A, B, C, D) và tự
+              luận từ file
+            </span>
+          </div>
+
+          {/* Vùng dán văn bản nhanh */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#334155',
+                marginBottom: '4px',
+              }}
+            >
+              Hoặc dán nhanh danh sách câu hỏi văn bản:
+            </label>
+            <textarea
+              className="editor-form-input"
+              rows={4}
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              placeholder={`1. Đâu là thư viện giao diện người dùng phổ biến nhất hiện nay?\nA. React*\nB. Linux\nC. MySQL\nD. Docker\nGiải thích: React là thư viện JavaScript xây dựng UI do Meta phát triển.\n\n2. Trình bày sự khác biệt giữa state và props trong React?`}
+              style={{ background: '#ffffff', resize: 'vertical' }}
+            />
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                marginTop: '6px',
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleParsePasteText}
+                style={{
+                  padding: '6px 14px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: '#0284c7',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                }}
+              >
+                Phân tích & Nạp câu hỏi từ văn bản
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* THIẾT LẬP CHUNG: THỜI GIAN, ĐIỂM ĐẠT & LỊCH THI */}
+      <div
+        style={{
+          background: '#ffffff',
+          border: '1px solid #cbd5e1',
+          borderRadius: '8px',
+          padding: '14px',
+          marginBottom: '16px',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            marginBottom: isScheduled ? '12px' : '0',
+          }}
+        >
+          <label
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#0f172a',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={isScheduled}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setIsScheduled(checked);
+                if (!checked) {
+                  setAvailableFrom('');
+                  setAvailableUntil('');
+                } else if (!availableFrom) {
+                  const now = new Date();
+                  const fromIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T08:00`;
+                  setAvailableFrom(fromIso);
+                }
+              }}
+              style={{
+                width: '16px',
+                height: '16px',
+                accentColor: '#7c3aed',
+                cursor: 'pointer',
+              }}
+            />
+            <span>Hẹn ngày giờ tháng năm tổ chức bài kiểm tra</span>
+          </label>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div
               style={{
                 display: 'inline-flex',
@@ -942,7 +1902,7 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
                 }
                 className="editor-form-input"
                 style={{
-                  width: '80px',
+                  width: '70px',
                   padding: '4px 8px',
                   textAlign: 'center',
                 }}
@@ -951,92 +1911,93 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
                 phút (Đồng hồ đếm ngược)
               </span>
             </div>
-          </div>
 
-          {isScheduled ? (
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: '12px',
-                paddingTop: '10px',
-                borderTop: '1px dashed #e2e8f0',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
               }}
             >
-              <DateTimeSchedulePicker
-                title="Thời điểm mở đề (Bắt đầu):"
-                value={availableFrom}
-                onChange={setAvailableFrom}
-                emptyNotice="Mở đề tự do (Học viên vào thi ngay khi khóa học được xuất bản)"
-              />
-
-              <DateTimeSchedulePicker
-                title="Hạn chót vào làm bài (Đóng cổng thi):"
-                value={availableUntil}
-                onChange={setAvailableUntil}
-                emptyNotice="Mở cổng tự do (Bài thi luôn mở quyền truy cập)"
-              />
-              <p
+              <span
                 style={{
-                  margin: '6px 0 0',
-                  fontSize: '12px',
-                  color: '#0369a1',
-                  background: '#f0f9ff',
-                  border: '1px solid #bae6fd',
-                  borderRadius: '6px',
-                  padding: '6px 10px',
-                  gridColumn: '1 / -1',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  color: '#334155',
                 }}
               >
-                💡 <strong>Quy chế thi:</strong> Hạn chót chỉ áp dụng để đóng
-                cổng truy cập. Học viên chỉ cần vào thi trước hạn chót này sẽ
-                được làm trọn vẹn đủ {timeLimitMinutes} phút.
-              </p>
+                Điểm Đạt:
+              </span>
+              <input
+                type="number"
+                min={10}
+                max={100}
+                value={passingScore}
+                onChange={(e) => setPassingScore(Number(e.target.value))}
+                className="editor-form-input"
+                style={{
+                  width: '60px',
+                  padding: '4px 6px',
+                  textAlign: 'center',
+                }}
+              />
+              <span style={{ fontSize: '12px', color: '#64748b' }}>%</span>
             </div>
-          ) : (
-            <p
-              style={{
-                margin: '4px 0 0 24px',
-                fontSize: '12px',
-                color: '#64748b',
-              }}
-            >
-              Mặc định không hẹn lịch: Học viên có thể vào làm bài kiểm tra bất
-              cứ lúc nào.
-            </p>
-          )}
+          </div>
         </div>
 
-        <div
-          style={{
-            gridColumn: 'span 2',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '10px',
-            marginTop: '4px',
-          }}
-        >
-          <button
-            type="button"
-            className="btn-create-course"
-            onClick={handleGenerate}
-            disabled={loading}
+        {isScheduled ? (
+          <div
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: '#7c3aed',
-              padding: '8px 20px',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '12px',
+              paddingTop: '10px',
+              borderTop: '1px dashed #e2e8f0',
             }}
           >
-            <IconlySparkles size={16} color="#ffffff" />
-            <span>
-              {loading
-                ? 'AI đang phân tích & soạn câu hỏi...'
-                : '✨ Tạo câu hỏi ngay với AI'}
-            </span>
-          </button>
-        </div>
+            <DateTimeSchedulePicker
+              title="Thời điểm mở đề (Bắt đầu):"
+              value={availableFrom}
+              onChange={setAvailableFrom}
+              emptyNotice="Mở đề tự do (Học viên vào thi ngay khi khóa học được xuất bản)"
+            />
+
+            <DateTimeSchedulePicker
+              title="Hạn chót vào làm bài (Đóng cổng thi):"
+              value={availableUntil}
+              onChange={setAvailableUntil}
+              emptyNotice="Mở cổng tự do (Bài thi luôn mở quyền truy cập)"
+            />
+            <p
+              style={{
+                margin: '6px 0 0',
+                fontSize: '12px',
+                color: '#0369a1',
+                background: '#f0f9ff',
+                border: '1px solid #bae6fd',
+                borderRadius: '6px',
+                padding: '6px 10px',
+                gridColumn: '1 / -1',
+              }}
+            >
+              <strong>Lưu ý quy chế thi:</strong> Hạn chót chỉ áp dụng để đóng
+              cổng truy cập. Học viên chỉ cần vào thi trước hạn chót này sẽ được
+              làm trọn vẹn đủ {timeLimitMinutes} phút.
+            </p>
+          </div>
+        ) : (
+          <p
+            style={{
+              margin: '4px 0 0 24px',
+              fontSize: '12px',
+              color: '#64748b',
+            }}
+          >
+            Mặc định không hẹn lịch: Học viên có thể vào làm bài kiểm tra bất cứ
+            lúc nào.
+          </p>
+        )}
       </div>
 
       {/* Thông báo AI */}
@@ -1056,53 +2017,131 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
         </div>
       )}
 
-      {/* Danh sách câu hỏi sau khi sinh hoặc chỉnh sửa */}
-      {questions.length > 0 && (
-        <div>
-          <div
+      {/* DANH SÁCH CÂU HỎI */}
+      <div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '12px',
+          }}
+        >
+          <h5
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '12px',
+              margin: 0,
+              fontSize: '14px',
+              fontWeight: 700,
+              color: '#0f172a',
             }}
           >
-            <h5
-              style={{
-                margin: 0,
-                fontSize: '14px',
-                fontWeight: 700,
-                color: '#0f172a',
-              }}
+            Danh sách câu hỏi đề thi ({questions.length} câu)
+          </h5>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn-action-secondary"
+              style={{ fontSize: '12px', padding: '4px 10px' }}
+              onClick={handleAddManualMC}
             >
-              Danh sách câu hỏi ({questions.length} câu)
-            </h5>
-            <div style={{ display: 'flex', gap: '8px' }}>
+              + Thêm trắc nghiệm
+            </button>
+            <button
+              type="button"
+              className="btn-action-secondary"
+              style={{ fontSize: '12px', padding: '4px 10px' }}
+              onClick={handleAddManualEssay}
+            >
+              + Thêm tự luận
+            </button>
+            {questions.length > 0 && (
               <button
                 type="button"
-                className="btn-action-secondary"
-                style={{ fontSize: '12px', padding: '4px 10px' }}
-                onClick={handleAddManualMC}
+                onClick={handleClearAllQuestions}
+                style={{
+                  fontSize: '12px',
+                  padding: '4px 8px',
+                  background: 'none',
+                  border: '1px solid #fecaca',
+                  color: '#dc2626',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
               >
-                + Thêm trắc nghiệm
+                Xóa tất cả câu hỏi
+              </button>
+            )}
+          </div>
+        </div>
+
+        {questions.length === 0 ? (
+          <div
+            style={{
+              padding: '24px',
+              textAlign: 'center',
+              border: '1px dashed #cbd5e1',
+              borderRadius: '8px',
+              background: '#f8fafc',
+              color: '#64748b',
+              fontSize: '13px',
+            }}
+          >
+            <p style={{ margin: '0 0 10px 0' }}>
+              Chưa có câu hỏi nào trong đề thi.
+            </p>
+            <p
+              style={{
+                margin: '0 0 14px 0',
+                fontSize: '12px',
+                color: '#94a3b8',
+              }}
+            >
+              Hãy chọn tab <strong>Tạo bằng AI từ tài liệu</strong>,{' '}
+              <strong>Tự soạn bằng tay</strong> hoặc{' '}
+              <strong>Import file câu hỏi</strong> ở trên để nạp câu hỏi vào đề.
+            </p>
+            <div
+              style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}
+            >
+              <button
+                type="button"
+                onClick={handleAddManualMC}
+                style={{
+                  padding: '6px 14px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  cursor: 'pointer',
+                }}
+              >
+                + Thêm trắc nghiệm ngay
               </button>
               <button
                 type="button"
-                className="btn-action-secondary"
-                style={{ fontSize: '12px', padding: '4px 10px' }}
                 onClick={handleAddManualEssay}
+                style={{
+                  padding: '6px 14px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  cursor: 'pointer',
+                }}
               >
-                + Thêm tự luận
+                + Thêm tự luận ngay
               </button>
             </div>
           </div>
-
+        ) : (
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
               gap: '14px',
-              maxHeight: '450px',
+              maxHeight: '480px',
               overflowY: 'auto',
               paddingRight: '4px',
             }}
@@ -1158,20 +2197,61 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
                         {isMC ? 'Trắc nghiệm (4 lựa chọn)' : 'Tự luận'}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteQuestion(qIdx)}
+
+                    <div
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#ef4444',
-                        padding: '2px 6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
                       }}
-                      title="Xóa câu hỏi này"
                     >
-                      <IconlyDelete size={14} color="currentColor" />
-                    </button>
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>
+                          Điểm:
+                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={q.points || (isMC ? 10 : 20)}
+                          onChange={(e) =>
+                            handleUpdateQuestion(
+                              qIdx,
+                              'points',
+                              Number(e.target.value),
+                            )
+                          }
+                          style={{
+                            width: '45px',
+                            padding: '2px 4px',
+                            fontSize: '11.5px',
+                            textAlign: 'center',
+                            borderRadius: '4px',
+                            border: '1px solid #cbd5e1',
+                          }}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteQuestion(qIdx)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#ef4444',
+                          padding: '2px 6px',
+                        }}
+                        title="Xóa câu hỏi này"
+                      >
+                        <IconlyDelete size={14} color="currentColor" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Nội dung câu hỏi */}
@@ -1294,7 +2374,7 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
                     </div>
                   )}
 
-                  {/* Lời giải thích từ AI */}
+                  {/* Lời giải thích */}
                   <div>
                     <label
                       style={{
@@ -1305,8 +2385,7 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
                         marginBottom: '3px',
                       }}
                     >
-                      💡 Lời giải thích của AI (Hiển thị sau khi học viên nộp
-                      bài):
+                      Lời giải thích (Hiển thị sau khi học viên nộp bài):
                     </label>
                     <input
                       type="text"
@@ -1330,8 +2409,8 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Footer Actions */}
       <div
@@ -1363,7 +2442,6 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
             padding: '8px 20px',
           }}
         >
-          <IconlyTick size={16} color="#ffffff" />
           <span>Lưu bộ câu hỏi vào bài học</span>
         </button>
       </div>

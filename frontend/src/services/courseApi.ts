@@ -120,6 +120,7 @@ export const fetchHomeCourses = async (
 
     const res = await fetch(`${API_BASE}/home`, {
       headers,
+      credentials: 'include',
     });
 
     if (!res.ok) {
@@ -159,6 +160,7 @@ export const recordCourseInteraction = async (data: {
     await fetch(`${API_BASE}/interactions`, {
       method: 'POST',
       headers,
+      credentials: 'include',
       body: JSON.stringify(data),
     });
   } catch {
@@ -412,3 +414,46 @@ const getFallbackCourses = (): HomeCoursesData => ({
     },
   ],
 });
+
+export interface EnrolledCourseItem {
+  _id: string;
+  title: string;
+  slug: string;
+  thumbnailUrl?: string;
+  instructor?: {
+    _id: string;
+    fullName: string;
+    avatarUrl?: string;
+    email: string;
+  };
+  category?: {
+    _id: string;
+    name: string;
+    slug: string;
+  };
+  level?: string;
+  durationText?: string;
+  enrolledAt: string;
+  accessStatus: 'PAID' | 'REFUND_PENDING';
+  totalLectures: number;
+  completedLectures: number;
+  progressPercent: number;
+  isCompleted: boolean;
+}
+
+export const fetchMyEnrolledCourses = async (): Promise<{
+  success: boolean;
+  courses: EnrolledCourseItem[];
+}> => {
+  const token = getAccessToken();
+  const res = await fetch(`${API_BASE}/my-courses`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: 'include',
+  });
+  return parseJsonSafe<{ success: boolean; courses: EnrolledCourseItem[] }>(
+    res,
+    'Lỗi khi tải danh sách khóa học của tôi',
+  );
+};

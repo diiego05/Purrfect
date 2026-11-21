@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, type FC } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useCartWishlist } from '../context/CartWishlistContext';
 import { useChatbot } from '../context/ChatbotContext';
 import {
@@ -22,13 +23,12 @@ import {
   IconlyLogout,
   IconlyDocument,
   IconlySparkles,
+  IconlyTimeCircle,
 } from './Onboarding/IconlyIcons';
 
 export const Header: FC = () => {
+  const { language, setLanguage } = useLanguage();
   const [searchValue, setSearchValue] = useState('');
-  const [language, setLanguage] = useState<'vi' | 'en'>(() => {
-    return (localStorage.getItem('preferred_lang') as 'vi' | 'en') || 'vi';
-  });
   const [exploreOpen, setExploreOpen] = useState(false);
   const [tempClosed, setTempClosed] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -69,7 +69,6 @@ export const Header: FC = () => {
 
   const handleLanguageChange = (lang: 'vi' | 'en') => {
     setLanguage(lang);
-    localStorage.setItem('preferred_lang', lang);
   };
 
   const handleExploreMouseEnter = () => {
@@ -764,6 +763,29 @@ export const Header: FC = () => {
                         {language === 'vi'
                           ? 'Playlist của tôi'
                           : 'My Playlists'}
+                      </span>
+                    </a>
+                    <a
+                      href="/purchase-history"
+                      className="dropdown-link"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontWeight: 600,
+                        color: '#1e293b',
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setAvatarMenuOpen(false);
+                        navigate('/purchase-history');
+                      }}
+                    >
+                      <IconlyTimeCircle size={16} color="#0056d2" />
+                      <span>
+                        {language === 'vi'
+                          ? 'Lịch sử mua hàng'
+                          : 'Purchase History'}
                       </span>
                     </a>
                     <div className="dropdown-separator" />

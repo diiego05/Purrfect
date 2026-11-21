@@ -381,7 +381,7 @@ export const CourseStudentsModal: React.FC<CourseStudentsModalProps> = ({
             onClick={() => setShowAddModal(true)}
           >
             <IconlyPlus size={15} color="#ffffff" />
-            <span>+ Thêm học viên vào khóa</span>
+            <span>Thêm học viên vào khóa</span>
           </button>
         </div>
 
@@ -476,7 +476,7 @@ export const CourseStudentsModal: React.FC<CourseStudentsModalProps> = ({
                   <th>Học phí</th>
                   <th>Tiến độ</th>
                   <th>Trạng thái</th>
-                  <th style={{ textAlign: 'center' }}>Thao tác</th>
+                  <th style={{ textAlign: 'center' }}></th>
                 </tr>
               </thead>
               <tbody>

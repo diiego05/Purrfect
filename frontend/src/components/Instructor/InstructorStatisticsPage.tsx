@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from '../../context/ToastContext';
 import { fetchInstructorStatisticsApi } from '../../services/instructorCourseApi';
+import { withdrawalApi } from '../../services/withdrawalApi';
+import type { InstructorBalanceData } from '../../services/withdrawalApi';
 import {
   IconlyBookmark,
   IconlyRefresh,
@@ -80,6 +82,71 @@ export const InstructorStatisticsPage: React.FC = () => {
     avgMonthlyRevenue: 0,
     monthlyBreakdown: [],
   });
+
+  // Quản lý rút tiền giảng viên
+  const [balanceData, setBalanceData] = useState<InstructorBalanceData | null>(
+    null,
+  );
+  const [showWithdrawModal, setShowWithdrawModal] = useState<boolean>(false);
+  const [withdrawAmount, setWithdrawAmount] = useState<string>('');
+  const [bankName, setBankName] = useState<string>('Vietcombank');
+  const [bankAccount, setBankAccount] = useState<string>('');
+  const [accountHolder, setAccountHolder] = useState<string>('');
+  const [withdrawNotes, setWithdrawNotes] = useState<string>('');
+  const [submittingWithdraw, setSubmittingWithdraw] = useState<boolean>(false);
+
+  const loadBalanceData = async () => {
+    try {
+      const res = await withdrawalApi.getInstructorBalance();
+      if (res && res.data) {
+        setBalanceData(res.data);
+      }
+    } catch (err) {
+      console.warn('Lỗi tải số dư giảng viên:', err);
+    }
+  };
+
+  const handleOpenWithdrawModal = async () => {
+    await loadBalanceData();
+    setShowWithdrawModal(true);
+  };
+
+  const handleSubmitWithdrawal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amountNum = parseFloat(withdrawAmount);
+    if (!amountNum || amountNum <= 0) {
+      toast.error('Vui lòng nhập số tiền hợp lệ');
+      return;
+    }
+
+    if (!bankName.trim() || !bankAccount.trim() || !accountHolder.trim()) {
+      toast.error('Vui lòng nhập đầy đủ thông tin ngân hàng');
+      return;
+    }
+
+    setSubmittingWithdraw(true);
+    try {
+      const res = await withdrawalApi.createWithdrawalRequest({
+        amount: amountNum,
+        bankName,
+        bankAccount,
+        accountHolder,
+        notes: withdrawNotes,
+      });
+
+      toast.success(res.message || 'Gửi yêu cầu rút tiền thành công!');
+      setShowWithdrawModal(false);
+      setWithdrawAmount('');
+      setWithdrawNotes('');
+      await loadBalanceData();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Lỗi khi gửi yêu cầu rút tiền',
+      );
+    } finally {
+      setSubmittingWithdraw(false);
+    }
+  };
 
   const formatVND = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -449,11 +516,35 @@ export const InstructorStatisticsPage: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <div className="stats-section-quick-total green">
-                  Lũy kế:{' '}
-                  <strong>
-                    {formatVND(revenueStats.totalAccumulatedRevenue)}
-                  </strong>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
+                >
+                  <button
+                    type="button"
+                    style={{
+                      background: '#16a34a',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      fontSize: '0.88rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                    onClick={handleOpenWithdrawModal}
+                  >
+                    <IconlyWallet size={15} color="#ffffff" />
+                    <span>Yêu cầu rút tiền</span>
+                  </button>
+                  <div className="stats-section-quick-total green">
+                    Lũy kế:{' '}
+                    <strong>
+                      {formatVND(revenueStats.totalAccumulatedRevenue)}
+                    </strong>
+                  </div>
                 </div>
               </div>
 
@@ -658,6 +749,337 @@ export const InstructorStatisticsPage: React.FC = () => {
             </div>
           )}
         </>
+      )}
+
+      {/* MODAL YÊU CẦU RÚT TIỀN CHO GIẢNG VIÊN */}
+      {showWithdrawModal && (
+        <div
+          className="isp-modal-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px',
+          }}
+          onClick={() => setShowWithdrawModal(false)}
+        >
+          <div
+            className="isp-modal-content"
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '560px',
+              width: '100%',
+              padding: '24px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '18px',
+                borderBottom: '1px solid #e2e8f0',
+                paddingBottom: '12px',
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#0f172a' }}>
+                Yêu cầu rút tiền về tài khoản ngân hàng
+              </h3>
+              <button
+                type="button"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                }}
+                onClick={() => setShowWithdrawModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Thông tin số dư khả dụng */}
+            <div
+              style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '10px',
+                padding: '14px 18px',
+                marginBottom: '20px',
+                fontSize: '0.9rem',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '8px',
+                }}
+              >
+                <span>Tổng doanh thu hợp lệ:</span>
+                <strong style={{ color: '#16a34a' }}>
+                  {formatVND(balanceData?.totalRevenue || 0)}
+                </strong>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '8px',
+                }}
+              >
+                <span>Số dư khả dụng có thể rút:</span>
+                <strong style={{ color: '#0056d2', fontSize: '1.05rem' }}>
+                  {formatVND(balanceData?.availableBalance || 0)}
+                </strong>
+              </div>
+              {balanceData?.pendingWithdrawalAmount ? (
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '8px',
+                    color: '#d97706',
+                  }}
+                >
+                  <span>Đang chờ Admin duyệt:</span>
+                  <strong>
+                    {formatVND(balanceData.pendingWithdrawalAmount)}
+                  </strong>
+                </div>
+              ) : null}
+              <div
+                style={{
+                  borderTop: '1px dashed #cbd5e1',
+                  paddingTop: '8px',
+                  fontSize: '0.82rem',
+                  color: '#64748b',
+                }}
+              >
+                Hạn mức rút tối thiểu:{' '}
+                <strong>
+                  {formatVND(balanceData?.minWithdrawal || 200000)}
+                </strong>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmitWithdrawal}>
+              <div style={{ marginBottom: '14px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    color: '#334155',
+                    marginBottom: '6px',
+                  }}
+                >
+                  Số tiền muốn rút (VNĐ){' '}
+                  <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="number"
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '0.95rem',
+                    boxSizing: 'border-box',
+                  }}
+                  placeholder={`Tối thiểu ${formatVND(balanceData?.minWithdrawal || 200000)}`}
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  min={balanceData?.minWithdrawal || 200000}
+                  max={balanceData?.availableBalance || 0}
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    color: '#334155',
+                    marginBottom: '6px',
+                  }}
+                >
+                  Ngân hàng thụ hưởng{' '}
+                  <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <select
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '0.95rem',
+                    boxSizing: 'border-box',
+                  }}
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  required
+                >
+                  <option value="Vietcombank">Vietcombank</option>
+                  <option value="MB Bank">MB Bank (Quân đội)</option>
+                  <option value="Techcombank">Techcombank</option>
+                  <option value="BIDV">BIDV</option>
+                  <option value="Vietinbank">Vietinbank</option>
+                  <option value="ACB">ACB (Á Châu)</option>
+                  <option value="VPBank">VPBank</option>
+                  <option value="TPBank">TPBank</option>
+                  <option value="Sacombank">Sacombank</option>
+                  <option value="Khác">Ngân hàng khác</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    color: '#334155',
+                    marginBottom: '6px',
+                  }}
+                >
+                  Số tài khoản ngân hàng{' '}
+                  <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '0.95rem',
+                    boxSizing: 'border-box',
+                  }}
+                  placeholder="Ví dụ: 9704198526191432"
+                  value={bankAccount}
+                  onChange={(e) => setBankAccount(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    color: '#334155',
+                    marginBottom: '6px',
+                  }}
+                >
+                  Tên chủ tài khoản (viết hoa không dấu){' '}
+                  <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '0.95rem',
+                    textTransform: 'uppercase',
+                    boxSizing: 'border-box',
+                  }}
+                  placeholder="Ví dụ: NGUYEN VAN A"
+                  value={accountHolder}
+                  onChange={(e) =>
+                    setAccountHolder(e.target.value.toUpperCase())
+                  }
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '18px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    color: '#334155',
+                    marginBottom: '6px',
+                  }}
+                >
+                  Ghi chú cho Admin
+                </label>
+                <textarea
+                  rows={2}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                    boxSizing: 'border-box',
+                  }}
+                  placeholder="Ghi chú thêm nếu cần..."
+                  value={withdrawNotes}
+                  onChange={(e) => setWithdrawNotes(e.target.value)}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '10px',
+                  borderTop: '1px solid #e2e8f0',
+                  paddingTop: '16px',
+                }}
+              >
+                <button
+                  type="button"
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    color: '#475569',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setShowWithdrawModal(false)}
+                  disabled={submittingWithdraw}
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    background: '#16a34a',
+                    border: 'none',
+                    padding: '9px 20px',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                  }}
+                  disabled={submittingWithdraw}
+                >
+                  {submittingWithdraw ? 'Đang gửi...' : 'Gửi yêu cầu rút tiền'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

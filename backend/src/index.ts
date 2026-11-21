@@ -28,16 +28,17 @@ import playlistRoutes from './routes/playlistRoutes';
 import instructorCourseRoutes from './routes/instructorCourseRoutes';
 import discussionRoutes from './routes/discussionRoutes';
 import reviewRoutes from './routes/reviewRoutes';
+import refundRoutes from './routes/refundRoutes';
+import withdrawalRoutes from './routes/withdrawalRoutes';
 
 import { seedDefaultConfigs } from './controllers/systemConfigController';
 import { seedDefaultUsersIfEmpty } from './controllers/userController';
+import { seedCoursesIfEmpty } from './controllers/courseController';
 import { verifyMailerConnection } from './utils/mailer';
+import mongoose from 'mongoose';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Connect to MongoDB
-connectDB();
 
 // Middlewares
 app.use(
@@ -74,6 +75,26 @@ app.get(['/health', '/api/health'], (req: Request, res: Response) => {
 });
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Middleware phân tích Cookie từ HTTP Request (HttpOnly Cookies)
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  const cookies: Record<string, string> = {};
+  const cookieHeader = req.headers.cookie;
+  if (cookieHeader) {
+    const items = cookieHeader.split(';');
+    for (const item of items) {
+      const idx = item.indexOf('=');
+      if (idx !== -1) {
+        const key = item.substring(0, idx).trim();
+        const val = decodeURIComponent(item.substring(idx + 1).trim());
+        cookies[key] = val;
+      }
+    }
+  }
+  (req as any).cookies = cookies;
+  next();
+});
+
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
@@ -101,6 +122,10 @@ app.use('/api/v1', discussionRoutes);
 app.use('/api', discussionRoutes);
 app.use('/api/v1', reviewRoutes);
 app.use('/api', reviewRoutes);
+app.use('/api/refunds', refundRoutes);
+app.use('/api/v1/refunds', refundRoutes);
+app.use('/api/withdrawals', withdrawalRoutes);
+app.use('/api/v1/withdrawals', withdrawalRoutes);
 
 // Root endpoint
 app.get('/', (_req, res) => {
@@ -188,28 +213,36 @@ app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-app.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`Auth routes available at http://localhost:${PORT}/api/auth`);
+const startServer = async () => {
+  // Kết nối đến MongoDB trước khi mở cổng nhận request
+  await connectDB();
 
-  console.log(
-    `Category routes available at http://localhost:${PORT}/api/categories`,
-  );
-  console.log(
-    `System config routes available at http://localhost:${PORT}/api/system-configs`,
-  );
-  console.log(
-    `Banner routes available at http://localhost:${PORT}/api/banners`,
-  );
-  console.log(
-    `Coupon routes available at http://localhost:${PORT}/api/coupons`,
-  );
-  console.log(`AI Chat routes available at http://localhost:${PORT}/api/ai`);
+  app.listen(Number(PORT), '0.0.0.0', async () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Auth routes available at http://localhost:${PORT}/api/auth`);
+    console.log(
+      `Category routes available at http://localhost:${PORT}/api/categories`,
+    );
+    console.log(
+      `System config routes available at http://localhost:${PORT}/api/system-configs`,
+    );
+    console.log(
+      `Banner routes available at http://localhost:${PORT}/api/banners`,
+    );
+    console.log(
+      `Coupon routes available at http://localhost:${PORT}/api/coupons`,
+    );
+    console.log(`AI Chat routes available at http://localhost:${PORT}/api/ai`);
 
-  // Seed default system configs (only sets missing keys)
-  seedDefaultConfigs().catch(console.error);
-  // Seed sample users if empty
-  seedDefaultUsersIfEmpty().catch(console.error);
-  // Kiểm tra kết nối SMTP ngay khi server khởi động
-  verifyMailerConnection();
-});
+    // Chỉ thực hiện seed dữ liệu mẫu khi cơ sở dữ liệu đã kết nối thành công
+    if (mongoose.connection.readyState === 1) {
+      await seedDefaultConfigs().catch(console.error);
+      await seedDefaultUsersIfEmpty().catch(console.error);
+      await seedCoursesIfEmpty().catch(console.error);
+    }
+    // Kiểm tra kết nối SMTP ngay khi server khởi động
+    verifyMailerConnection();
+  });
+};
+
+startServer();

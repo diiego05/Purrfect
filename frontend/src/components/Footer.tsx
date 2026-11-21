@@ -1,8 +1,10 @@
 import type { FC } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export const Footer: FC = () => {
   const { navigate } = useAuth();
+  const { language } = useLanguage();
 
   return (
     <footer className="site-footer">
@@ -17,7 +19,7 @@ export const Footer: FC = () => {
               navigate('/about');
             }}
           >
-            About us
+            {language === 'vi' ? 'Về chúng tôi' : 'About Us'}
           </a>
           <a
             href="/blog"
@@ -27,7 +29,7 @@ export const Footer: FC = () => {
               navigate('/blog');
             }}
           >
-            Blog
+            {language === 'vi' ? 'Bài viết & Tin tức' : 'Blog'}
           </a>
           <a
             href="/services"
@@ -37,7 +39,7 @@ export const Footer: FC = () => {
               navigate('/services');
             }}
           >
-            Services
+            {language === 'vi' ? 'Dịch vụ đào tạo' : 'Services'}
           </a>
           <a
             href="/support"
@@ -47,7 +49,7 @@ export const Footer: FC = () => {
               navigate('/support');
             }}
           >
-            Support
+            {language === 'vi' ? 'Hỗ trợ khách hàng' : 'Support'}
           </a>
           <a
             href="/privacy"
@@ -57,13 +59,17 @@ export const Footer: FC = () => {
               navigate('/privacy');
             }}
           >
-            Privacy Policy
+            {language === 'vi' ? 'Chính sách bảo mật' : 'Privacy Policy'}
           </a>
         </nav>
 
         {/* Bottom Copyright Text */}
         <div className="footer-bottom-line">
-          <p className="copyright-text">2026 © Purrfect | All Right reserved</p>
+          <p className="copyright-text">
+            {language === 'vi'
+              ? '2026 © Purrfect | Đã đăng ký bản quyền'
+              : '2026 © Purrfect | All rights reserved'}
+          </p>
         </div>
       </div>
     </footer>

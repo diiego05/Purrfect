@@ -10,15 +10,14 @@ import {
   recordCourseInteraction,
 } from '../../services/courseApi';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { formatVND } from '../../utils/format';
 import { paymentApi } from '../../services/paymentApi';
 import { useCartWishlist } from '../../context/CartWishlistContext';
 import { reviewApi } from '../../services/reviewApi';
 import type { CourseReviewItem, ReviewStats } from '../../types/review';
 import {
-  IconlyTimeCircle,
   IconlyFolder,
-  IconlyDevice,
   IconlyChat,
   IconlyAward,
   IconlyTick,
@@ -42,6 +41,7 @@ interface CourseDetailPageProps {
 
 export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
   const { navigate, isAuthenticated, user } = useAuth();
+  const { language } = useLanguage();
   const { addToCart, isInCart, toggleWishlist, isInWishlist } =
     useCartWishlist();
   const [course, setCourse] = useState<Course | null>(null);
@@ -71,14 +71,16 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [editReplyContent, setEditReplyContent] = useState<string>('');
   const [editReplyError, setEditReplyError] = useState<string>('');
-  const [submittingEditReply, setSubmittingEditReply] = useState<boolean>(false);
+  const [submittingEditReply, setSubmittingEditReply] =
+    useState<boolean>(false);
 
   // Học viên gửi đánh giá mới
   const [showWriteReview, setShowWriteReview] = useState<boolean>(false);
   const [studentRating, setStudentRating] = useState<number>(5);
   const [studentComment, setStudentComment] = useState<string>('');
   const [studentReviewError, setStudentReviewError] = useState<string>('');
-  const [submittingStudentReview, setSubmittingStudentReview] = useState<boolean>(false);
+  const [submittingStudentReview, setSubmittingStudentReview] =
+    useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -224,7 +226,8 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
 
   // Giảng viên / Admin xóa phản hồi (Alternative Flow 4a2)
   const handleDeleteReply = async (reviewId: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa phản hồi này không?')) return;
+    if (!window.confirm('Bạn có chắc chắn muốn xóa phản hồi này không?'))
+      return;
     try {
       const res = await reviewApi.deleteReviewReply(reviewId);
       if (res.success) {
@@ -250,7 +253,11 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
     }
     setSubmittingStudentReview(true);
     try {
-      const res = await reviewApi.submitCourseReview(course._id, studentRating, trimmed);
+      const res = await reviewApi.submitCourseReview(
+        course._id,
+        studentRating,
+        trimmed,
+      );
       if (res.success) {
         setReviewToastMsg('Gửi nhận xét đánh giá thành công!');
         setShowWriteReview(false);
@@ -494,12 +501,30 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
   const formatLevel = (lvl?: string) => {
     const l = (lvl || 'Beginner').toLowerCase();
     if (l.includes('inter') || l.includes('trung')) {
-      return { title: 'Cấp độ Trung cấp', desc: 'Kinh nghiệm được đề xuất' };
+      return {
+        title: language === 'vi' ? 'Cấp độ Trung cấp' : 'Intermediate Level',
+        desc:
+          language === 'vi'
+            ? 'Kinh nghiệm được đề xuất'
+            : 'Recommended experience',
+      };
     }
     if (l.includes('adv') || l.includes('cao')) {
-      return { title: 'Cấp độ Nâng cao', desc: 'Dành cho chuyên gia' };
+      return {
+        title: language === 'vi' ? 'Cấp độ Nâng cao' : 'Advanced Level',
+        desc:
+          language === 'vi'
+            ? 'Dành cho chuyên gia'
+            : 'For experienced professionals',
+      };
     }
-    return { title: 'Cấp độ Cơ bản', desc: 'Dành cho người mới bắt đầu' };
+    return {
+      title: language === 'vi' ? 'Cấp độ Cơ bản' : 'Beginner Level',
+      desc:
+        language === 'vi'
+          ? 'Dành cho người mới bắt đầu'
+          : 'No prior experience required',
+    };
   };
 
   const levelInfo = formatLevel(course.level);
@@ -622,7 +647,7 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
           {/* Breadcrumb */}
           <nav className="course-breadcrumb" aria-label="Breadcrumb">
             <span className="breadcrumb-link" onClick={() => navigate('/')}>
-              Trang chủ
+              {language === 'vi' ? 'Trang chủ' : 'Home'}
             </span>
             <span className="breadcrumb-separator">/</span>
             {categoryName && (
@@ -673,6 +698,44 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                 </span>
               </div>
 
+              {/* Giá khóa học */}
+              <div className="banner-price-tag">
+                {(() => {
+                  const basePrice = course.price ?? 0;
+                  const hasDiscount = Boolean(
+                    course.discountPrice &&
+                    course.discountPrice > 0 &&
+                    course.discountPrice < basePrice,
+                  );
+                  const currentPriceVal = hasDiscount
+                    ? (course.discountPrice as number)
+                    : basePrice;
+                  const originalPriceVal = hasDiscount ? basePrice : null;
+
+                  if (basePrice <= 0) {
+                    return <span className="banner-price-free">Miễn phí</span>;
+                  }
+
+                  return (
+                    <div className="banner-price-values">
+                      <span className="banner-current-price">
+                        {formatVND(currentPriceVal)}
+                      </span>
+                      {originalPriceVal && (
+                        <span className="banner-original-price">
+                          {formatVND(originalPriceVal)}
+                        </span>
+                      )}
+                      {course.badge && (
+                        <span className="banner-discount-badge">
+                          {course.badge}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+
               {/* Nút Đăng ký, Giỏ hàng, Yêu thích & Số học viên */}
               <div className="banner-cta-group">
                 <button
@@ -688,16 +751,37 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                       }}
                     >
                       <IconlyPlay size={16} color="#ffffff" />
-                      <span>Vào học ngay</span>
+                      <span>
+                        {language === 'vi' ? 'Vào học ngay' : 'Start Learning'}
+                      </span>
                     </span>
                   ) : (course.price ?? 0) <= 0 ? (
-                    'Đăng ký miễn phí'
-                  ) : (
+                    language === 'vi' ? (
+                      'Đăng ký miễn phí'
+                    ) : (
+                      'Enroll for Free'
+                    )
+                  ) : language === 'vi' ? (
                     'Đăng ký học ngay'
+                  ) : (
+                    'Enroll Now'
                   )}
                 </button>
                 {!isEnrolled && !isOwnerOrAdmin && (
                   <>
+                    <button
+                      type="button"
+                      className="btn-banner-preview"
+                      onClick={handlePreviewCourse}
+                      title={
+                        language === 'vi'
+                          ? 'Xem trước bài giảng miễn phí'
+                          : 'Free Preview'
+                      }
+                    >
+                      <IconlyPlay size={16} color="#0056d2" />
+                      <span>{language === 'vi' ? 'Xem trước' : 'Preview'}</span>
+                    </button>
                     <button
                       type="button"
                       className="btn-banner-cart"
@@ -710,7 +794,15 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                       }}
                     >
                       <IconlyBuy size={18} color="#0056d2" />
-                      <span>{inCart ? 'Xem giỏ hàng' : 'Thêm vào giỏ'}</span>
+                      <span>
+                        {inCart
+                          ? language === 'vi'
+                            ? 'Xem giỏ hàng'
+                            : 'View Cart'
+                          : language === 'vi'
+                            ? 'Thêm vào giỏ'
+                            : 'Add to Cart'}
+                      </span>
                     </button>
                     <button
                       type="button"
@@ -772,10 +864,13 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
         <div className="floating-info-bar">
           {/* Cột 1: Phân loại / Dự án thực hành */}
           <div className="info-bar-col">
-            <h3 className="col-headline">Các dự án có hướng dẫn</h3>
+            <h3 className="col-headline">
+              {language === 'vi' ? 'Các dự án có hướng dẫn' : 'Guided Projects'}
+            </h3>
             <p className="col-subtext">
-              Học, thực hành và áp dụng các kỹ năng sẵn sàng cho công việc với
-              sự hướng dẫn của chuyên gia
+              {language === 'vi'
+                ? 'Học, thực hành và áp dụng các kỹ năng sẵn sàng cho công việc với sự hướng dẫn của chuyên gia'
+                : 'Learn, practice, and apply job-ready skills with expert guidance'}
             </p>
           </div>
 
@@ -784,10 +879,14 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
             <div className="col-rating-line">
               <span className="rating-score">{ratingNum}</span>
               <IconlyStar size={18} color="#f59e0b" />
-              <span className="rating-count">({ratingCount} đánh giá)</span>
+              <span className="rating-count">
+                ({ratingCount} {language === 'vi' ? 'đánh giá' : 'reviews'})
+              </span>
             </div>
             <p className="col-subtext">
-              Đánh giá trung thực từ cộng đồng người học
+              {language === 'vi'
+                ? 'Đánh giá trung thực từ cộng đồng người học'
+                : 'Verified reviews from student community'}
             </p>
           </div>
 
@@ -800,7 +899,11 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
           {/* Cột 4: Giờ học (Thông số chỉ định) */}
           <div className="info-bar-col">
             <h3 className="col-headline">{displayHours}</h3>
-            <p className="col-subtext">Học theo tốc độ của riêng bạn</p>
+            <p className="col-subtext">
+              {language === 'vi'
+                ? 'Học theo tốc độ của riêng bạn'
+                : 'Learn at your own pace'}
+            </p>
           </div>
         </div>
       </div>
@@ -814,19 +917,19 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
               className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
               onClick={() => setActiveTab('overview')}
             >
-              Tổng quan
+              {language === 'vi' ? 'Tổng quan' : 'Overview'}
             </button>
             <button
               className={`tab-btn ${activeTab === 'syllabus' ? 'active' : ''}`}
               onClick={() => setActiveTab('syllabus')}
             >
-              Chương trình học
+              {language === 'vi' ? 'Chương trình học' : 'Curriculum'}
             </button>
             <button
               className={`tab-btn ${activeTab === 'instructor' ? 'active' : ''}`}
               onClick={() => setActiveTab('instructor')}
             >
-              Giảng viên
+              {language === 'vi' ? 'Giảng viên' : 'Instructor'}
             </button>
             <button
               className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`}
@@ -839,7 +942,9 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                   gap: '4px',
                 }}
               >
-                <span>Đánh giá ({ratingNum}</span>
+                <span>
+                  {language === 'vi' ? 'Đánh giá' : 'Reviews'} ({ratingNum}
+                </span>
                 <IconlyStar size={13} color="#f59e0b" />
                 <span>)</span>
               </span>
@@ -1131,7 +1236,11 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                       onClick={() => setShowWriteReview(true)}
                     >
                       <IconlyStar size={16} color="currentColor" />
-                      <span>{reviewStats && reviewStats.totalReviews > 0 ? 'Viết hoặc sửa nhận xét' : 'Viết đánh giá đầu tiên'}</span>
+                      <span>
+                        {reviewStats && reviewStats.totalReviews > 0
+                          ? 'Viết hoặc sửa nhận xét'
+                          : 'Viết đánh giá đầu tiên'}
+                      </span>
                     </button>
                   )}
                 </div>
@@ -1154,7 +1263,9 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                 <div className="reviews-summary-box">
                   <div className="review-big-score">
                     <span className="big-number">
-                      {reviewStats ? reviewStats.averageRating.toFixed(1) : ratingNum}
+                      {reviewStats
+                        ? reviewStats.averageRating.toFixed(1)
+                        : ratingNum}
                     </span>
                     <div className="stars-gold-row">
                       {[1, 2, 3, 4, 5].map((s) => (
@@ -1162,7 +1273,8 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                       ))}
                     </div>
                     <span className="score-desc">
-                      {reviewStats ? reviewStats.totalReviews : ratingCount} đánh giá từ học viên
+                      {reviewStats ? reviewStats.totalReviews : ratingCount}{' '}
+                      đánh giá từ học viên
                     </span>
                   </div>
                   <div className="review-bars-col">
@@ -1197,7 +1309,9 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                 {/* Form Viết đánh giá của Học viên đã ghi danh */}
                 {isEnrolled && showWriteReview && (
                   <div className="student-write-review-panel">
-                    <h3 className="write-review-heading">Đánh giá của bạn về khóa học</h3>
+                    <h3 className="write-review-heading">
+                      Đánh giá của bạn về khóa học
+                    </h3>
                     <div className="rating-select-row">
                       <span className="rating-label">Mức độ hài lòng:</span>
                       <div className="star-picker-group">
@@ -1211,7 +1325,9 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                           >
                             <IconlyStar
                               size={24}
-                              color={star <= studentRating ? '#f59e0b' : '#cbd5e1'}
+                              color={
+                                star <= studentRating ? '#f59e0b' : '#cbd5e1'
+                              }
                             />
                           </button>
                         ))}
@@ -1232,7 +1348,9 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                       onChange={(e) => setStudentComment(e.target.value)}
                     />
                     {studentReviewError && (
-                      <div className="reply-error-msg">{studentReviewError}</div>
+                      <div className="reply-error-msg">
+                        {studentReviewError}
+                      </div>
                     )}
 
                     <div className="write-review-actions">
@@ -1249,7 +1367,9 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                         disabled={submittingStudentReview}
                         onClick={handleSubmitStudentReview}
                       >
-                        {submittingStudentReview ? 'Đang gửi...' : 'Gửi nhận xét'}
+                        {submittingStudentReview
+                          ? 'Đang gửi...'
+                          : 'Gửi nhận xét'}
                       </button>
                     </div>
                   </div>
@@ -1282,17 +1402,26 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                             rev.userId?.email || 'student',
                           )}`;
                         const studentName =
-                          rev.userId?.fullName || rev.userId?.name || rev.userId?.email || 'Học viên';
+                          rev.userId?.fullName ||
+                          rev.userId?.name ||
+                          rev.userId?.email ||
+                          'Học viên';
                         const revDate = rev.createdAt
-                          ? new Date(rev.createdAt).toLocaleDateString('vi-VN', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            })
+                          ? new Date(rev.createdAt).toLocaleDateString(
+                              'vi-VN',
+                              {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              },
+                            )
                           : '';
 
                         return (
-                          <div key={rev._id} className="course-review-feed-item">
+                          <div
+                            key={rev._id}
+                            className="course-review-feed-item"
+                          >
                             {/* Header của nhận xét */}
                             <div className="review-feed-author-row">
                               <img
@@ -1301,30 +1430,42 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                 className="review-author-avatar"
                               />
                               <div className="review-author-info">
-                                <span className="review-author-name">{studentName}</span>
+                                <span className="review-author-name">
+                                  {studentName}
+                                </span>
                                 <div className="review-author-stars-date">
                                   <div className="stars-mini-row">
                                     {[1, 2, 3, 4, 5].map((s) => (
                                       <IconlyStar
                                         key={s}
                                         size={14}
-                                        color={s <= rev.rating ? '#f59e0b' : '#cbd5e1'}
+                                        color={
+                                          s <= rev.rating
+                                            ? '#f59e0b'
+                                            : '#cbd5e1'
+                                        }
                                       />
                                     ))}
                                   </div>
-                                  <span className="review-feed-date">{revDate}</span>
+                                  <span className="review-feed-date">
+                                    {revDate}
+                                  </span>
                                 </div>
                               </div>
                             </div>
 
                             {/* Nội dung nhận xét của học viên */}
-                            <p className="review-feed-comment-text">{rev.comment}</p>
+                            <p className="review-feed-comment-text">
+                              {rev.comment}
+                            </p>
 
                             {/* Phản hồi chính thức của Giảng viên / Quản trị viên (UC23) */}
                             {hasReply && (
                               <div
                                 className={`review-official-reply-card ${
-                                  rev.replyRole === 'ADMIN' ? 'admin' : 'instructor'
+                                  rev.replyRole === 'ADMIN'
+                                    ? 'admin'
+                                    : 'instructor'
                                 }`}
                               >
                                 <div className="reply-card-header">
@@ -1343,22 +1484,30 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                     <span className="reply-author-name">
                                       {rev.repliedBy?.fullName ||
                                         rev.repliedBy?.email ||
-                                        (rev.replyRole === 'ADMIN' ? 'Quản trị viên' : 'Giảng viên')}
+                                        (rev.replyRole === 'ADMIN'
+                                          ? 'Quản trị viên'
+                                          : 'Giảng viên')}
                                     </span>
                                     {/* ROLE BADGE HIỂN THỊ RÕ RÀNG THEO YÊU CẦU */}
                                     <span
                                       className={`review-role-badge ${
-                                        rev.replyRole === 'ADMIN' ? 'admin' : 'instructor'
+                                        rev.replyRole === 'ADMIN'
+                                          ? 'admin'
+                                          : 'instructor'
                                       }`}
                                     >
-                                      {rev.replyRole === 'ADMIN' ? 'Quản trị viên' : 'Giảng viên'}
+                                      {rev.replyRole === 'ADMIN'
+                                        ? 'Quản trị viên'
+                                        : 'Giảng viên'}
                                     </span>
                                   </div>
 
                                   <div className="reply-actions-row">
                                     <span className="reply-card-date">
                                       {rev.repliedAt
-                                        ? new Date(rev.repliedAt).toLocaleDateString('vi-VN', {
+                                        ? new Date(
+                                            rev.repliedAt,
+                                          ).toLocaleDateString('vi-VN', {
                                             year: 'numeric',
                                             month: 'short',
                                             day: 'numeric',
@@ -1373,22 +1522,32 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                           className="btn-reply-action"
                                           onClick={() => {
                                             setEditingReviewId(rev._id);
-                                            setEditReplyContent(rev.instructorReply || '');
+                                            setEditReplyContent(
+                                              rev.instructorReply || '',
+                                            );
                                             setEditReplyError('');
                                             setReplyingReviewId(null);
                                           }}
                                           title="Chỉnh sửa câu trả lời"
                                         >
-                                          <IconlyEdit size={14} color="currentColor" />
+                                          <IconlyEdit
+                                            size={14}
+                                            color="currentColor"
+                                          />
                                           <span>Sửa</span>
                                         </button>
                                         <button
                                           type="button"
                                           className="btn-reply-action danger"
-                                          onClick={() => handleDeleteReply(rev._id)}
+                                          onClick={() =>
+                                            handleDeleteReply(rev._id)
+                                          }
                                           title="Xóa câu trả lời"
                                         >
-                                          <IconlyDelete size={14} color="currentColor" />
+                                          <IconlyDelete
+                                            size={14}
+                                            color="currentColor"
+                                          />
                                           <span>Xóa</span>
                                         </button>
                                       </div>
@@ -1402,11 +1561,15 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                     <textarea
                                       className="reply-textarea-field"
                                       value={editReplyContent}
-                                      onChange={(e) => setEditReplyContent(e.target.value)}
+                                      onChange={(e) =>
+                                        setEditReplyContent(e.target.value)
+                                      }
                                       placeholder="Chỉnh sửa nội dung phản hồi..."
                                     />
                                     {editReplyError && (
-                                      <div className="reply-error-msg">{editReplyError}</div>
+                                      <div className="reply-error-msg">
+                                        {editReplyError}
+                                      </div>
                                     )}
                                     <div className="reply-composer-footer">
                                       <button
@@ -1423,14 +1586,20 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                         type="button"
                                         className="btn-send-reply"
                                         disabled={submittingEditReply}
-                                        onClick={() => handleSaveEditReply(rev._id)}
+                                        onClick={() =>
+                                          handleSaveEditReply(rev._id)
+                                        }
                                       >
-                                        {submittingEditReply ? 'Đang lưu...' : 'Lưu thay đổi'}
+                                        {submittingEditReply
+                                          ? 'Đang lưu...'
+                                          : 'Lưu thay đổi'}
                                       </button>
                                     </div>
                                   </div>
                                 ) : (
-                                  <p className="reply-card-body">{rev.instructorReply}</p>
+                                  <p className="reply-card-body">
+                                    {rev.instructorReply}
+                                  </p>
                                 )}
                               </div>
                             )}
@@ -1442,27 +1611,36 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                   <div className="inline-reply-composer">
                                     <div className="composer-header">
                                       <span>
-                                        Phản hồi nhận xét của <strong>{studentName}</strong>:
+                                        Phản hồi nhận xét của{' '}
+                                        <strong>{studentName}</strong>:
                                       </span>
                                       <span
                                         className={`review-role-badge ${
-                                          user?.role === 'ADMIN' ? 'admin' : 'instructor'
+                                          user?.role === 'ADMIN'
+                                            ? 'admin'
+                                            : 'instructor'
                                         }`}
                                       >
-                                        {user?.role === 'ADMIN' ? 'Quản trị viên' : 'Giảng viên'}
+                                        {user?.role === 'ADMIN'
+                                          ? 'Quản trị viên'
+                                          : 'Giảng viên'}
                                       </span>
                                     </div>
 
                                     <textarea
                                       className="reply-textarea-field"
                                       value={replyContent}
-                                      onChange={(e) => setReplyContent(e.target.value)}
+                                      onChange={(e) =>
+                                        setReplyContent(e.target.value)
+                                      }
                                       placeholder="Nhập lời cảm ơn hoặc giải đáp thắc mắc của học viên..."
                                       autoFocus
                                     />
                                     {/* Exception Flow 4b: Thông báo lỗi khi nội dung rỗng */}
                                     {replyError && (
-                                      <div className="reply-error-msg">{replyError}</div>
+                                      <div className="reply-error-msg">
+                                        {replyError}
+                                      </div>
                                     )}
 
                                     <div className="reply-composer-footer">
@@ -1482,8 +1660,15 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                         disabled={submittingReply}
                                         onClick={() => handleSendReply(rev._id)}
                                       >
-                                        <IconlyTick size={16} color="currentColor" />
-                                        <span>{submittingReply ? 'Đang gửi...' : 'Gửi phản hồi'}</span>
+                                        <IconlyTick
+                                          size={16}
+                                          color="currentColor"
+                                        />
+                                        <span>
+                                          {submittingReply
+                                            ? 'Đang gửi...'
+                                            : 'Gửi phản hồi'}
+                                        </span>
                                       </button>
                                     </div>
                                   </div>
@@ -1498,7 +1683,10 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                       setEditingReviewId(null);
                                     }}
                                   >
-                                    <IconlyChat size={16} color="currentColor" />
+                                    <IconlyChat
+                                      size={16}
+                                      color="currentColor"
+                                    />
                                     <span>Phản hồi nhận xét này</span>
                                   </button>
                                 )}
@@ -1514,131 +1702,6 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
             </div>
           )}
         </div>
-
-        {/* Cột Phải (Sidebar Sticky Widget) */}
-        <aside className="content-right-sidebar">
-          <div className="sticky-enrollment-card">
-            <div
-              className="sidebar-thumb-wrap"
-              role="button"
-              tabIndex={0}
-              onClick={handlePreviewCourse}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handlePreviewCourse();
-                }
-              }}
-              title={
-                isEnrolled || isOwnerOrAdmin
-                  ? 'Nhấn để phát bài giảng ngay'
-                  : 'Nhấn để xem thử khóa học'
-              }
-            >
-              <img
-                src={
-                  course.thumbnailUrl || '/assets/advanced_digital_skills.jpg'
-                }
-                alt={course.title}
-                className="sidebar-thumb-img"
-              />
-              <div className="sidebar-thumb-overlay">
-                <span className="btn-play-preview">
-                  <IconlyPlay size={14} color="#0f172a" />
-                  <span>
-                    {isEnrolled || isOwnerOrAdmin
-                      ? 'Phát bài giảng ngay'
-                      : 'Xem trước khóa học'}
-                  </span>
-                </span>
-              </div>
-            </div>
-
-            <div className="sidebar-card-body">
-              {(() => {
-                const basePrice = course.price ?? 0;
-                const hasDiscount = Boolean(
-                  course.discountPrice &&
-                  course.discountPrice > 0 &&
-                  course.discountPrice < basePrice,
-                );
-                const currentPriceVal = hasDiscount
-                  ? (course.discountPrice as number)
-                  : basePrice;
-                const originalPriceVal = hasDiscount ? basePrice : null;
-
-                return (
-                  <div className="sidebar-price-row">
-                    <span className="current-price">
-                      {formatVND(currentPriceVal)}
-                    </span>
-                    {originalPriceVal && (
-                      <span className="original-price">
-                        {formatVND(originalPriceVal)}
-                      </span>
-                    )}
-                    {course.badge && (
-                      <span className="discount-tag">{course.badge}</span>
-                    )}
-                  </div>
-                );
-              })()}
-
-              <button
-                type="button"
-                className={`btn-sidebar-action ${isEnrolled || isOwnerOrAdmin ? 'enrolled' : ''}`}
-                onClick={handleEnrollClick}
-              >
-                {isEnrolled || isOwnerOrAdmin ? (
-                  <>
-                    <IconlyPlay size={15} color="#ffffff" />
-                    <span>Vào học ngay</span>
-                  </>
-                ) : (course.price ?? 0) <= 0 ? (
-                  'Đăng ký miễn phí ngay'
-                ) : (
-                  'Đăng ký học ngay'
-                )}
-              </button>
-
-              <div className="perks-list">
-                <h4 className="perks-title">Đặc quyền khóa học bao gồm:</h4>
-                <ul>
-                  <li>
-                    <span className="perk-icon-box">
-                      <IconlyTimeCircle size={18} color="#0056d2" />
-                    </span>
-                    <span>{displayHours} video bài giảng theo lộ trình</span>
-                  </li>
-                  <li>
-                    <span className="perk-icon-box">
-                      <IconlyFolder size={18} color="#0056d2" />
-                    </span>
-                    <span>Tài nguyên & source code dự án tải về</span>
-                  </li>
-                  <li>
-                    <span className="perk-icon-box">
-                      <IconlyDevice size={18} color="#0056d2" />
-                    </span>
-                    <span>Học linh hoạt trên cả Điện thoại và Máy tính</span>
-                  </li>
-                  <li>
-                    <span className="perk-icon-box">
-                      <IconlyChat size={18} color="#0056d2" />
-                    </span>
-                    <span>Diễn đàn thảo luận và trợ giảng giải đáp 24/7</span>
-                  </li>
-                  <li>
-                    <span className="perk-icon-box">
-                      <IconlyAward size={18} color="#0056d2" />
-                    </span>
-                    <span>Chứng chỉ tốt nghiệp xác thực khi hoàn thành</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </aside>
       </div>
 
       {course && (course._id || course.id) && (

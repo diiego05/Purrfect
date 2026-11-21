@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import { Response } from 'express';
 import mongoose from 'mongoose';
 import { Course, ISection, ILecture } from '../models/Course';
@@ -694,32 +692,8 @@ export const uploadLectureMedia = async (
       ? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
       : 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
 
-    // Lưu file cục bộ trước để luôn có bản dự phòng nội bộ
+    // Upload bài giảng trực tiếp lên Cloudinary (Không lưu file cục bộ trên máy chủ)
     if (file && file.buffer) {
-      try {
-        const uploadsDir = path.join(__dirname, '../../uploads/lectures');
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-        const safeExt =
-          path.extname(actualFileName || (isVideoType ? '.mp4' : '.pdf')) ||
-          (isVideoType ? '.mp4' : '.pdf');
-        const safeBase = path
-          .basename(actualFileName || 'lecture', safeExt)
-          .replace(/[^a-zA-Z0-9_-]/g, '_');
-        const safeFileNameOnDisk = `${Date.now()}_${safeBase}${safeExt}`;
-        fs.writeFileSync(
-          path.join(uploadsDir, safeFileNameOnDisk),
-          file.buffer,
-        );
-        contentUrl = `/uploads/lectures/${safeFileNameOnDisk}`;
-      } catch (fsErr) {
-        console.warn('[InstructorCourseController] Local save warning:', fsErr);
-      }
-    }
-
-    // Nếu có file buffer và dung lượng <= 40MB, thử upload lên Cloudinary
-    if (file && file.buffer && file.size <= 40 * 1024 * 1024) {
       try {
         const uploadResult = await new Promise<{ secure_url: string }>(
           (resolve, reject) => {
@@ -740,8 +714,8 @@ export const uploadLectureMedia = async (
           contentUrl = uploadResult.secure_url;
         }
       } catch (cloudErr) {
-        console.warn(
-          '[InstructorCourseController] Cloudinary lecture upload fallback:',
+        console.error(
+          '[InstructorCourseController] Lỗi tải bài giảng lên Cloudinary:',
           cloudErr,
         );
       }

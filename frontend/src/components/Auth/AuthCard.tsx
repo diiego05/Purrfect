@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { authApi } from '../../services/authApi';
 import './AuthCard.css';
 
@@ -19,6 +20,7 @@ export interface AuthCardProps {
 
 export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
   const { loginSuccess } = useAuth();
+  const { t } = useLanguage();
 
   const getInitialStep = (): AuthStep => {
     if (initialStep) return initialStep;
@@ -507,7 +509,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                 }
               }}
             >
-              Đăng nhập
+              {t('auth_tab_login', 'Đăng nhập')}
             </button>
             <button
               type="button"
@@ -522,7 +524,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                 }
               }}
             >
-              Đăng ký
+              {t('auth_tab_register', 'Đăng ký')}
             </button>
           </div>
         )}
@@ -530,34 +532,55 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
         {/* TIÊU ĐỀ THEO BƯỚC */}
         <h2 className="auth-header-title">
           {step === 'LOGIN'
-            ? 'Chào mừng đến với Purrfect'
+            ? t('auth_title_login', 'Chào mừng đến với Purrfect')
             : step === 'REGISTER_EMAIL'
-              ? 'Tạo tài khoản mới'
+              ? t('auth_title_register_email', 'Tạo tài khoản mới')
               : step === 'REGISTER_OTP'
-                ? 'Xác nhận mã OTP'
+                ? t('auth_title_register_otp', 'Xác nhận mã OTP')
                 : step === 'REGISTER_PASSWORD'
-                  ? 'Thiết lập mật khẩu'
+                  ? t('auth_title_register_password', 'Thiết lập mật khẩu')
                   : step === 'FORGOT_REQUEST'
-                    ? 'Khôi phục mật khẩu'
+                    ? t('auth_title_forgot_request', 'Khôi phục mật khẩu')
                     : step === 'FORGOT_VERIFY'
-                      ? 'Đặt lại mật khẩu mới'
-                      : 'Chào mừng đến với Purrfect'}
+                      ? t('auth_title_forgot_verify', 'Đặt lại mật khẩu mới')
+                      : t('auth_title_login', 'Chào mừng đến với Purrfect')}
         </h2>
 
         <p className="auth-header-subtitle">
           {step === 'LOGIN'
-            ? 'Đăng nhập vào tài khoản Purr của bạn để tiếp tục học tập.'
+            ? t(
+                'auth_subtitle_login',
+                'Đăng nhập vào tài khoản Purr của bạn để tiếp tục học tập.',
+              )
             : step === 'REGISTER_EMAIL'
-              ? 'Nhập địa chỉ email của bạn để bắt đầu đăng ký tài khoản.'
+              ? t(
+                  'auth_subtitle_register_email',
+                  'Nhập địa chỉ email của bạn để bắt đầu đăng ký tài khoản.',
+                )
               : step === 'REGISTER_OTP'
-                ? `Mã xác nhận OTP đã được gửi đến email của bạn.`
+                ? t(
+                    'auth_subtitle_register_otp',
+                    'Mã xác nhận OTP đã được gửi đến email của bạn.',
+                  )
                 : step === 'REGISTER_PASSWORD'
-                  ? 'Nhập thông tin cá nhân và mật khẩu (nhập lại) để hoàn tất đăng ký.'
+                  ? t(
+                      'auth_subtitle_register_password',
+                      'Nhập thông tin cá nhân và mật khẩu (nhập lại) để hoàn tất đăng ký.',
+                    )
                   : step === 'FORGOT_REQUEST'
-                    ? 'Nhập email của bạn để nhận mã xác nhận OTP khôi phục mật khẩu.'
+                    ? t(
+                        'auth_subtitle_forgot_request',
+                        'Nhập email của bạn để nhận mã xác nhận OTP khôi phục mật khẩu.',
+                      )
                     : step === 'FORGOT_VERIFY'
-                      ? 'Nhập mã xác nhận OTP và mật khẩu mới của bạn.'
-                      : 'Truy cập vào tài khoản Purr của bạn để tiếp tục học tập.'}
+                      ? t(
+                          'auth_subtitle_forgot_verify',
+                          'Nhập mã xác nhận OTP và mật khẩu mới của bạn.',
+                        )
+                      : t(
+                          'auth_subtitle_login',
+                          'Truy cập vào tài khoản Purr của bạn để tiếp tục học tập.',
+                        )}
         </p>
 
         {/* THÔNG BÁO ALERT */}
@@ -576,13 +599,14 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
             {/* Ô Email */}
             <div className="auth-form-group">
               <label className="auth-input-label">
-                EMAIL <span className="auth-star-required">*</span>
+                {t('auth_label_email', 'EMAIL')}{' '}
+                <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
                   type="email"
                   className="auth-input"
-                  placeholder="name@example.com"
+                  placeholder={t('auth_placeholder_email', 'name@example.com')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoFocus
@@ -594,13 +618,17 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
             {/* Ô Mật khẩu */}
             <div className="auth-form-group">
               <label className="auth-input-label">
-                MẬT KHẨU <span className="auth-star-required">*</span>
+                {t('auth_label_password', 'MẬT KHẨU')}{' '}
+                <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   className="auth-input"
-                  placeholder="Nhập mật khẩu của bạn"
+                  placeholder={t(
+                    'auth_placeholder_password',
+                    'Nhập mật khẩu của bạn',
+                  )}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -611,7 +639,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
                 >
-                  {showPassword ? 'Ẩn' : 'Hiện'}
+                  {showPassword ? t('auth_hide', 'Ẩn') : t('auth_show', 'Hiện')}
                 </button>
               </div>
             </div>
@@ -632,7 +660,9 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                 />
-                <span className="auth-checkbox-label">Ghi nhớ đăng nhập</span>
+                <span className="auth-checkbox-label">
+                  {t('auth_remember_me', 'Ghi nhớ đăng nhập')}
+                </span>
               </label>
 
               <span
@@ -643,7 +673,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   setStep('FORGOT_REQUEST');
                 }}
               >
-                Quên mật khẩu?
+                {t('auth_forgot_password', 'Quên mật khẩu?')}
               </span>
             </div>
 
@@ -653,12 +683,16 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
               className="auth-btn-primary"
               disabled={loading}
             >
-              {loading ? <span className="auth-spinner"></span> : 'Đăng nhập'}
+              {loading ? (
+                <span className="auth-spinner"></span>
+              ) : (
+                t('auth_btn_login', 'Đăng nhập')
+              )}
             </button>
 
             {/* Đường kẻ HOẶC */}
             <div className="auth-divider">
-              <span>HOẶC</span>
+              <span>{t('auth_or', 'HOẶC')}</span>
             </div>
 
             {/* Nút Tiếp tục với Google */}
@@ -668,12 +702,12 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
               onClick={handleGoogleLogin}
               disabled={loading}
             >
-              Tiếp tục với Google
+              {t('auth_btn_google', 'Tiếp tục với Google')}
             </button>
 
             {/* Link chuyển sang Đăng ký */}
             <div className="auth-switch-footer">
-              Chưa có tài khoản?{' '}
+              {t('auth_no_account', 'Chưa có tài khoản?')}{' '}
               <button
                 type="button"
                 className="auth-switch-btn"
@@ -689,7 +723,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   }
                 }}
               >
-                Đăng ký ngay
+                {t('auth_register_now', 'Đăng ký ngay')}
               </button>
             </div>
           </form>
@@ -702,13 +736,14 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
           <form onSubmit={handleRegisterEmail}>
             <div className="auth-form-group">
               <label className="auth-input-label">
-                EMAIL ĐĂNG KÝ <span className="auth-star-required">*</span>
+                {t('auth_label_email_reg', 'EMAIL ĐĂNG KÝ')}{' '}
+                <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
                   type="email"
                   className="auth-input"
-                  placeholder="name@example.com"
+                  placeholder={t('auth_placeholder_email', 'name@example.com')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoFocus
@@ -729,7 +764,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                 onChange={(e) => setAcceptTerms(e.target.checked)}
               />
               <span className="auth-terms-text">
-                Tôi chấp nhận{' '}
+                {t('auth_terms_agree', 'Tôi chấp nhận')}{' '}
                 <a
                   href="/terms"
                   target="_blank"
@@ -737,9 +772,9 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   className="auth-terms-link"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Điều khoản Sử dụng
+                  {t('auth_terms_usage', 'Điều khoản Sử dụng')}
                 </a>{' '}
-                và{' '}
+                {t('auth_terms_and', 'và')}{' '}
                 <a
                   href="/privacy"
                   target="_blank"
@@ -747,9 +782,9 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   className="auth-terms-link"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Thông báo về quyền riêng tư
+                  {t('auth_terms_privacy', 'Thông báo về quyền riêng tư')}
                 </a>{' '}
-                của Purrfect
+                {t('auth_terms_of', 'của Purrfect')}
               </span>
             </label>
 
@@ -759,12 +794,16 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
               className="auth-btn-primary"
               disabled={loading}
             >
-              {loading ? <span className="auth-spinner"></span> : 'Tiếp tục'}
+              {loading ? (
+                <span className="auth-spinner"></span>
+              ) : (
+                t('auth_btn_continue', 'Tiếp tục')
+              )}
             </button>
 
             {/* Đường kẻ HOẶC */}
             <div className="auth-divider">
-              <span>HOẶC</span>
+              <span>{t('auth_or', 'HOẶC')}</span>
             </div>
 
             {/* Nút Tiếp tục với Google */}
@@ -774,12 +813,12 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
               onClick={handleGoogleLogin}
               disabled={loading}
             >
-              Tiếp tục với Google
+              {t('auth_btn_google', 'Tiếp tục với Google')}
             </button>
 
             {/* Link chuyển sang Đăng nhập */}
             <div className="auth-switch-footer">
-              Đã có tài khoản?{' '}
+              {t('auth_has_account', 'Đã có tài khoản?')}{' '}
               <button
                 type="button"
                 className="auth-switch-btn"
@@ -793,7 +832,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   }
                 }}
               >
-                Đăng nhập ngay
+                {t('auth_login_now', 'Đăng nhập ngay')}
               </button>
             </div>
           </form>
@@ -815,7 +854,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   setStep('REGISTER_EMAIL');
                 }}
               >
-                Thay đổi email
+                {t('auth_btn_change_email', 'Thay đổi email')}
               </button>
             </div>
 
@@ -824,7 +863,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                 className="auth-input-label"
                 style={{ justifyContent: 'center', marginBottom: 12 }}
               >
-                NHẬP MÃ XÁC NHẬN OTP (6 SỐ){' '}
+                {t('auth_otp_label', 'NHẬP MÃ XÁC NHẬN OTP (6 SỐ)')}{' '}
                 <span className="auth-star-required">*</span>
               </label>
 
@@ -882,12 +921,15 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                     }
                   >
                     {resendCooldown > 0
-                      ? `Gửi lại sau (${resendCooldown}s)`
-                      : 'Gửi lại mã OTP'}
+                      ? `${t('auth_otp_resend_countdown', 'Gửi lại sau')} (${resendCooldown}s)`
+                      : t('auth_otp_resend_btn', 'Gửi lại mã OTP')}
                   </button>
                 ) : (
                   <span className="auth-resend-limit-exceeded">
-                    Đã hết số lần gửi lại mã OTP (tối đa 3 lần)
+                    {t(
+                      'auth_otp_limit',
+                      'Đã hết số lần gửi lại mã OTP (tối đa 3 lần)',
+                    )}
                   </span>
                 )}
               </div>
@@ -901,7 +943,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
               {loading ? (
                 <span className="auth-spinner"></span>
               ) : (
-                'Xác nhận OTP'
+                t('auth_btn_verify_otp', 'Xác nhận OTP')
               )}
             </button>
 
@@ -913,7 +955,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                 setStep('REGISTER_EMAIL');
               }}
             >
-              ← Quay lại
+              {t('auth_btn_back', '← Quay lại')}
             </button>
           </form>
         )}
@@ -931,13 +973,17 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
             {/* Ô Họ và tên */}
             <div className="auth-form-group">
               <label className="auth-input-label">
-                HỌ VÀ TÊN <span className="auth-star-required">*</span>
+                {t('auth_label_fullname', 'HỌ VÀ TÊN')}{' '}
+                <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
                   type="text"
                   className="auth-input"
-                  placeholder="Ví dụ: Nguyễn Văn A"
+                  placeholder={t(
+                    'auth_placeholder_fullname',
+                    'Ví dụ: Nguyễn Văn A',
+                  )}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   autoFocus
@@ -949,14 +995,17 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
             {/* Ô Mật khẩu */}
             <div className="auth-form-group">
               <label className="auth-input-label">
-                MẬT KHẨU (TỐI THIỂU 6 KÝ TỰ){' '}
+                {t('auth_label_password_min6', 'MẬT KHẨU (TỐI THIỂU 6 KÝ TỰ)')}{' '}
                 <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   className="auth-input"
-                  placeholder="Nhập mật khẩu mới"
+                  placeholder={t(
+                    'auth_placeholder_password_new',
+                    'Nhập mật khẩu mới',
+                  )}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -967,7 +1016,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
                 >
-                  {showPassword ? 'Ẩn' : 'Hiện'}
+                  {showPassword ? t('auth_hide', 'Ẩn') : t('auth_show', 'Hiện')}
                 </button>
               </div>
             </div>
@@ -975,13 +1024,17 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
             {/* Ô Nhập lại mật khẩu */}
             <div className="auth-form-group">
               <label className="auth-input-label">
-                NHẬP LẠI MẬT KHẨU <span className="auth-star-required">*</span>
+                {t('auth_label_password_confirm', 'NHẬP LẠI MẬT KHẨU')}{' '}
+                <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   className="auth-input"
-                  placeholder="Xác nhận lại mật khẩu vừa nhập"
+                  placeholder={t(
+                    'auth_placeholder_password_confirm',
+                    'Xác nhận lại mật khẩu vừa nhập',
+                  )}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -992,7 +1045,9 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   tabIndex={-1}
                 >
-                  {showConfirmPassword ? 'Ẩn' : 'Hiện'}
+                  {showConfirmPassword
+                    ? t('auth_hide', 'Ẩn')
+                    : t('auth_show', 'Hiện')}
                 </button>
               </div>
             </div>
@@ -1006,7 +1061,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
               {loading ? (
                 <span className="auth-spinner"></span>
               ) : (
-                'Hoàn tất đăng ký & Bắt đầu'
+                t('auth_btn_complete_reg', 'Hoàn tất đăng ký & Bắt đầu')
               )}
             </button>
 
@@ -1018,7 +1073,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                 setStep('REGISTER_OTP');
               }}
             >
-              ← Quay lại
+              {t('auth_btn_back', '← Quay lại')}
             </button>
           </form>
         )}
@@ -1030,14 +1085,14 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
           <form onSubmit={handleRequestForgotOtp}>
             <div className="auth-form-group">
               <label className="auth-input-label">
-                EMAIL CẦN KHÔI PHỤC{' '}
+                {t('auth_label_email_recovery', 'EMAIL CẦN KHÔI PHỤC')}{' '}
                 <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
                   type="email"
                   className="auth-input"
-                  placeholder="name@example.com"
+                  placeholder={t('auth_placeholder_email', 'name@example.com')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoFocus
@@ -1054,7 +1109,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
               {loading ? (
                 <span className="auth-spinner"></span>
               ) : (
-                'Gửi mã xác nhận OTP'
+                t('auth_btn_send_forgot_otp', 'Gửi mã xác nhận OTP')
               )}
             </button>
 
@@ -1066,7 +1121,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                 setStep('LOGIN');
               }}
             >
-              ← Quay lại đăng nhập
+              {t('auth_btn_back_to_login', '← Quay lại đăng nhập')}
             </button>
           </form>
         )}
@@ -1081,7 +1136,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                 className="auth-input-label"
                 style={{ justifyContent: 'center', marginBottom: 12 }}
               >
-                NHẬP MÃ XÁC NHẬN OTP (6 SỐ){' '}
+                {t('auth_otp_label', 'NHẬP MÃ XÁC NHẬN OTP (6 SỐ)')}{' '}
                 <span className="auth-star-required">*</span>
               </label>
 
@@ -1128,13 +1183,17 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
 
             <div className="auth-form-group">
               <label className="auth-input-label">
-                MẬT KHẨU MỚI <span className="auth-star-required">*</span>
+                {t('auth_label_password_new', 'MẬT KHẨU MỚI')}{' '}
+                <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   className="auth-input"
-                  placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                  placeholder={t(
+                    'auth_placeholder_password_new',
+                    'Nhập mật khẩu mới (tối thiểu 6 ký tự)',
+                  )}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
@@ -1145,7 +1204,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
                 >
-                  {showPassword ? 'Ẩn' : 'Hiện'}
+                  {showPassword ? t('auth_hide', 'Ẩn') : t('auth_show', 'Hiện')}
                 </button>
               </div>
             </div>
@@ -1158,7 +1217,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
               {loading ? (
                 <span className="auth-spinner"></span>
               ) : (
-                'Xác nhận & Đổi mật khẩu'
+                t('auth_btn_confirm_reset', 'Xác nhận & Đổi mật khẩu')
               )}
             </button>
 
@@ -1170,7 +1229,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                 setStep('FORGOT_REQUEST');
               }}
             >
-              ← Gửi lại mã khác
+              {t('auth_btn_request_another_code', '← Gửi lại mã khác')}
             </button>
           </form>
         )}
@@ -1195,7 +1254,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   }
                 }}
               >
-                Quay lại
+                {t('auth_btn_back', 'Quay lại')}
               </button>
             </div>
 
@@ -1220,7 +1279,10 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                     marginBottom: '4px',
                   }}
                 >
-                  Tài khoản đăng nhập bằng Google
+                  {t(
+                    'auth_google_detected_title',
+                    'Tài khoản đăng nhập bằng Google',
+                  )}
                 </p>
                 <p
                   style={{
@@ -1230,8 +1292,10 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                     margin: 0,
                   }}
                 >
-                  Email này trước đó đã đăng nhập bằng Google. Bạn có thể tiếp
-                  tục với Google hoặc tạo mật khẩu mới cho tài khoản.
+                  {t(
+                    'auth_google_detected_desc',
+                    'Email này trước đó đã đăng nhập bằng Google. Bạn có thể tiếp tục với Google hoặc tạo mật khẩu mới cho tài khoản.',
+                  )}
                 </p>
               </div>
             </div>
@@ -1247,7 +1311,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
               }}
               style={{ marginBottom: '16px' }}
             >
-              Tạo mật khẩu cho email này
+              {t('auth_google_create_pwd_btn', 'Tạo mật khẩu cho email này')}
             </button>
 
             <button
@@ -1256,7 +1320,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
               onClick={handleGoogleLogin}
               disabled={loading}
             >
-              Tiếp tục với Google
+              {t('auth_btn_google', 'Tiếp tục với Google')}
             </button>
           </div>
         )}
@@ -1276,19 +1340,23 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   setStep('GOOGLE_ACCOUNT_DETECTED');
                 }}
               >
-                Quay lại
+                {t('auth_btn_back', 'Quay lại')}
               </button>
             </div>
 
             <div className="auth-form-group">
               <label className="auth-input-label">
-                MẬT KHẨU MỚI <span className="auth-star-required">*</span>
+                {t('auth_label_password_new', 'MẬT KHẨU MỚI')}{' '}
+                <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   className="auth-input"
-                  placeholder="Tối thiểu 6 ký tự"
+                  placeholder={t(
+                    'auth_placeholder_password_new',
+                    'Tối thiểu 6 ký tự',
+                  )}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoFocus
@@ -1300,20 +1368,24 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
                 >
-                  {showPassword ? 'Ẩn' : 'Hiện'}
+                  {showPassword ? t('auth_hide', 'Ẩn') : t('auth_show', 'Hiện')}
                 </button>
               </div>
             </div>
 
             <div className="auth-form-group">
               <label className="auth-input-label">
-                XÁC NHẬN MẬT KHẨU <span className="auth-star-required">*</span>
+                {t('auth_label_password_confirm_verify', 'XÁC NHẬN MẬT KHẨU')}{' '}
+                <span className="auth-star-required">*</span>
               </label>
               <div className="auth-input-wrapper">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   className="auth-input"
-                  placeholder="Nhập lại mật khẩu"
+                  placeholder={t(
+                    'auth_placeholder_password_confirm',
+                    'Nhập lại mật khẩu',
+                  )}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -1324,7 +1396,9 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   tabIndex={-1}
                 >
-                  {showConfirmPassword ? 'Ẩn' : 'Hiện'}
+                  {showConfirmPassword
+                    ? t('auth_hide', 'Ẩn')
+                    : t('auth_show', 'Hiện')}
                 </button>
               </div>
             </div>
@@ -1337,7 +1411,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialStep }) => {
               {loading ? (
                 <span className="auth-spinner"></span>
               ) : (
-                'Tạo mật khẩu & Đăng nhập'
+                t('auth_google_set_pwd_btn', 'Tạo mật khẩu & Đăng nhập')
               )}
             </button>
           </form>

@@ -147,6 +147,7 @@ export const saveOnboardingSurvey = async (
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
+    credentials: 'include',
     body: JSON.stringify(payload),
   });
 
@@ -161,11 +162,11 @@ export const saveOnboardingSurvey = async (
  */
 export const getUserOnboardingSurvey = async () => {
   const token = getAccessToken();
-  if (!token) return null;
   const res = await fetch(`${AUTH_API_BASE}/onboarding`, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
+    credentials: 'include',
   });
   if (!res.ok) return null;
   try {

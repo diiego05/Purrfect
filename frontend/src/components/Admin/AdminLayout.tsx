@@ -14,7 +14,12 @@ import './AdminLayout.css';
 interface AdminLayoutProps {
   children: React.ReactNode;
   activeTab?:
-    'categories' | 'system-configs' | 'coupons' | 'users' | 'course-approvals';
+    | 'categories'
+    | 'system-configs'
+    | 'coupons'
+    | 'users'
+    | 'course-approvals'
+    | 'refunds';
   pageTitle?: string;
 }
 
@@ -103,6 +108,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               <IconlyUserGroup size={18} color="currentColor" />
             </div>
             <span>Quản lý người dùng</span>
+          </button>
+
+          <button
+            type="button"
+            className={`admin-nav-item ${activeTab === 'refunds' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/refunds')}
+          >
+            <div className="admin-nav-icon">
+              <IconlyDiscount size={18} color="currentColor" />
+            </div>
+            <span>Hoàn tiền & Rút tiền</span>
           </button>
         </nav>
 

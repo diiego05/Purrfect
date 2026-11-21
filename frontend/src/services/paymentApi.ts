@@ -128,11 +128,17 @@ export const paymentApi = {
   /**
    * Kiểm tra người dùng đã mua / đăng ký khóa học này chưa
    */
-  async checkEnrollment(courseId: string): Promise<{ isEnrolled: boolean }> {
+  async checkEnrollment(
+    courseId: string,
+  ): Promise<{ isEnrolled: boolean; refundStatus?: string; message?: string }> {
     try {
       const res = await authFetch(`/api/payment/check-enrollment/${courseId}`);
       if (!res.ok) return { isEnrolled: false };
-      return await parseJsonSafe<{ isEnrolled: boolean }>(res);
+      return await parseJsonSafe<{
+        isEnrolled: boolean;
+        refundStatus?: string;
+        message?: string;
+      }>(res);
     } catch {
       return { isEnrolled: false };
     }
@@ -221,5 +227,38 @@ export const paymentApi = {
           err instanceof Error ? err.message : 'Lỗi kết nối cổng thanh toán',
       };
     }
+  },
+
+  /**
+   * Lấy lịch sử giao dịch mua hàng của học viên (UC30 Trigger)
+   */
+  async getMyOrders(): Promise<{
+    orders: Array<{
+      _id: string;
+      orderCode: string;
+      amount: number;
+      originalAmount: number;
+      discountAmount: number;
+      couponCode?: string;
+      status:
+        | 'PENDING'
+        | 'PAID'
+        | 'FAILED'
+        | 'CANCELLED'
+        | 'REFUND_PENDING'
+        | 'REFUNDED';
+      paymentMethod: string;
+      courseId?: {
+        _id: string;
+        title: string;
+        slug: string;
+        thumbnailUrl?: string;
+        price: number;
+      };
+      createdAt: string;
+    }>;
+  }> {
+    const res = await authFetch('/api/payment/my-orders');
+    return parseJsonSafe(res, 'Không thể tải lịch sử đơn hàng');
   },
 };

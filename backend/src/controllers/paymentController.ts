@@ -692,6 +692,24 @@ export const checkEnrollment = async (
       if (c) targetCourseId = c._id.toString();
     }
 
+    // BR30.2: Nếu đơn hàng đang chờ hoàn tiền (REFUND_PENDING) hoặc đã hoàn tiền (REFUNDED), tạm khóa quyền truy cập
+    const refundOrBlockedOrder = await Order.findOne({
+      userId,
+      courseId: targetCourseId,
+      status: { $in: ['REFUND_PENDING', 'REFUNDED'] },
+    });
+    if (refundOrBlockedOrder) {
+      res.json({
+        isEnrolled: false,
+        refundStatus: refundOrBlockedOrder.status,
+        message:
+          refundOrBlockedOrder.status === 'REFUND_PENDING'
+            ? 'Quyền truy cập phòng học tạm thời bị khóa do đơn hàng đang chờ xét duyệt hoàn tiền.'
+            : 'Đơn hàng này đã được hoàn tiền.',
+      });
+      return;
+    }
+
     const paidOrder = await Order.findOne({
       userId,
       courseId: targetCourseId,

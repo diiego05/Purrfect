@@ -13,10 +13,14 @@ export const authenticateToken = async (
 ): Promise<void> => {
   try {
     const authHeader = req.headers['authorization'];
-    const token =
+    const headerToken =
       authHeader && authHeader.startsWith('Bearer ')
         ? authHeader.split(' ')[1]
         : null;
+    const cookieToken =
+      (req as any).cookies?.accessToken ||
+      (req as any).cookies?.purr_access_token;
+    const token = cookieToken || headerToken;
 
     if (!token) {
       res.status(401).json({
