@@ -26,9 +26,11 @@ const generateTokens = async (userId: string, email: string, role: string) => {
   const accessToken = jwt.sign({ id: userId, email, role }, secret, {
     expiresIn: '7d',
   });
-  const refreshToken = jwt.sign({ id: userId, email }, refreshSecret, {
-    expiresIn: '30d',
-  });
+  const refreshToken = jwt.sign(
+    { id: userId, email, nonce: Math.random().toString(36).substring(2) },
+    refreshSecret,
+    { expiresIn: '30d' },
+  );
 
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await RefreshToken.create({
@@ -276,6 +278,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     if (user.status === 'BLOCKED') {
+      // UC26: Kiểm tra tài khoản bị tạm khóa (Exception Flow 5b)
+      if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+        const unlockDate = new Date(user.lockedUntil).toLocaleDateString('vi-VN');
+        res.status(403).json({
+          success: false,
+          message: `Tài khoản của bạn đã bị tạm khóa do vi phạm tiêu chuẩn cộng đồng. Tài khoản sẽ được mở khóa vào ngày ${unlockDate}.`,
+        });
+        return;
+      }
       res.status(403).json({
         success: false,
         message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.',

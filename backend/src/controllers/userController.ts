@@ -230,9 +230,15 @@ export const toggleUserStatus = async (
       return;
     }
 
+    const updateFields: Record<string, unknown> = { status };
+    if (status === 'ACTIVE') {
+      updateFields.isLocked = false;
+      updateFields.lockedUntil = null;
+    }
+
     const user = await User.findByIdAndUpdate(
       id,
-      { status },
+      { $set: updateFields },
       { new: true, runValidators: true },
     ).select('-passwordHash');
 

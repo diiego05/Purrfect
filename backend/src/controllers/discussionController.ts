@@ -499,10 +499,11 @@ export const getLectureDiscussions = async (
       return;
     }
 
-    // Lấy tất cả câu hỏi gốc (parentId: null) của bài giảng
+    // Lấy tất cả câu hỏi gốc (parentId: null) của bài giảng (lọc bỏ nội dung vi phạm bị ẩn/xóa - BR26.1)
     const questions = await CourseDiscussion.find({
       lectureId,
       parentId: null,
+      status: { $nin: ['HIDDEN', 'DELETED'] },
     })
       .sort({ isPinned: -1, createdAt: -1 })
       .populate('userId', 'fullName email avatarUrl role')
@@ -510,9 +511,10 @@ export const getLectureDiscussions = async (
 
     const questionIds = questions.map((q) => q._id);
 
-    // Lấy toàn bộ phản hồi của các câu hỏi trên
+    // Lấy toàn bộ phản hồi của các câu hỏi trên (lọc bỏ nội dung vi phạm bị ẩn/xóa - BR26.1)
     const replies = await CourseDiscussion.find({
       parentId: { $in: questionIds },
+      status: { $nin: ['HIDDEN', 'DELETED'] },
     })
       .sort({ isPinned: -1, createdAt: 1 })
       .populate('userId', 'fullName email avatarUrl role')
