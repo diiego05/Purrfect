@@ -7,6 +7,8 @@ import {
   IconlyHome,
   IconlyUserGroup,
   IconlyStar,
+  IconlyShield,
+  IconlyWork,
 } from '../Onboarding/IconlyIcons';
 import './InstructorLayout.css';
 
@@ -22,7 +24,71 @@ export const InstructorLayout: React.FC<InstructorLayoutProps> = ({
   activeTab = 'courses',
   pageTitle = 'Quản lý khóa học',
 }) => {
-  const { user, logout, navigate } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, navigate } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="instructor-guard-container">
+        <div className="instructor-guard-spinner" />
+        <p>Đang kiểm tra quyền truy cập Giảng viên...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="instructor-guard-container">
+        <div className="instructor-guard-card">
+          <div className="instructor-guard-icon unauth">
+            <IconlyShield size={36} color="#059669" />
+          </div>
+          <h2>Yêu cầu đăng nhập Giảng viên</h2>
+          <p>
+            Bảng điều khiển Giảng viên yêu cầu đăng nhập bằng tài khoản Giảng viên hoặc Quản trị viên để truy cập.
+          </p>
+          <button
+            type="button"
+            className="btn-instructor-guard-primary"
+            onClick={() => navigate('/login')}
+          >
+            Đăng nhập ngay
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (user.role !== 'INSTRUCTOR' && user.role !== 'ADMIN') {
+    return (
+      <div className="instructor-guard-container">
+        <div className="instructor-guard-card">
+          <div className="instructor-guard-icon forbidden">
+            <IconlyWork size={36} color="#d97706" />
+          </div>
+          <h2>Chức năng dành riêng cho Giảng viên</h2>
+          <p>
+            Tài khoản hiện tại của bạn là Học viên. Để tạo khóa học và quản lý hoạt động giảng dạy trên Learnova, vui lòng nộp hồ sơ tham gia Chương trình Giảng viên Đối tác.
+          </p>
+          <div className="instructor-guard-actions">
+            <button
+              type="button"
+              className="btn-instructor-guard-primary"
+              onClick={() => navigate('/instructor/apply')}
+            >
+              Đăng ký làm Giảng viên
+            </button>
+            <button
+              type="button"
+              className="btn-instructor-guard-secondary"
+              onClick={() => navigate('/')}
+            >
+              Về Trang chủ
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="instructor-layout-root">

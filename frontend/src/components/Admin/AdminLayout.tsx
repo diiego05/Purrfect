@@ -8,13 +8,21 @@ import {
   IconlyLogout,
   IconlyHome,
   IconlyTick,
+  IconlyShield,
+  IconlyWork,
 } from '../Onboarding/IconlyIcons';
 import './AdminLayout.css';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
   activeTab?:
-    'categories' | 'system-configs' | 'coupons' | 'users' | 'course-approvals';
+    | 'categories'
+    | 'system-configs'
+    | 'coupons'
+    | 'users'
+    | 'course-approvals'
+    | 'moderation'
+    | 'instructor-applications';
   pageTitle?: string;
 }
 
@@ -23,7 +31,73 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   activeTab = 'categories',
   pageTitle = 'Quản lý danh mục',
 }) => {
-  const { user, logout, navigate } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, navigate } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="admin-guard-container">
+        <div className="admin-guard-spinner" />
+        <p>Đang kiểm tra quyền truy cập Quản trị viên...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="admin-guard-container">
+        <div className="admin-guard-card">
+          <div className="admin-guard-icon unauth">
+            <IconlyShield size={36} color="#0056d2" />
+          </div>
+          <h2>Yêu cầu đăng nhập Quản trị viên</h2>
+          <p>
+            Khu vực Quản trị (Admin) yêu cầu đăng nhập bằng tài khoản Quản trị viên hệ thống để truy cập.
+          </p>
+          <button
+            type="button"
+            className="btn-guard-primary"
+            onClick={() => navigate('/login')}
+          >
+            Đăng nhập tài khoản Admin
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (user.role !== 'ADMIN') {
+    return (
+      <div className="admin-guard-container">
+        <div className="admin-guard-card">
+          <div className="admin-guard-icon forbidden">
+            <IconlyShield size={36} color="#dc2626" />
+          </div>
+          <h2>Từ chối truy cập (403 Forbidden)</h2>
+          <p>
+            Bạn không có quyền truy cập vào Khu vực Quản trị viên. Trang này chỉ dành riêng cho tài khoản Quản trị viên (Admin) của hệ thống.
+          </p>
+          <div className="admin-guard-actions">
+            <button
+              type="button"
+              className="btn-guard-primary"
+              onClick={() => navigate('/')}
+            >
+              Về Trang chủ
+            </button>
+            {user.role === 'INSTRUCTOR' && (
+              <button
+                type="button"
+                className="btn-guard-secondary"
+                onClick={() => navigate('/instructor/courses')}
+              >
+                Vào Bảng điều khiển Giảng viên
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-layout-root">
@@ -61,6 +135,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
           <button
             type="button"
+            className={`admin-nav-item ${activeTab === 'moderation' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/moderation')}
+          >
+            <div className="admin-nav-icon">
+              <IconlyShield size={18} color="currentColor" />
+            </div>
+            <span>Kiểm duyệt nội dung</span>
+          </button>
+
+          <button
+            type="button"
             className={`admin-nav-item ${activeTab === 'categories' ? 'active' : ''}`}
             onClick={() => navigate('/admin/categories')}
           >
@@ -82,6 +167,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </button>
 
           <div className="admin-nav-section-label">Vận hành & Hệ thống</div>
+
+          <button
+            type="button"
+            className={`admin-nav-item ${activeTab === 'instructor-applications' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/instructor-applications')}
+          >
+            <div className="admin-nav-icon">
+              <IconlyWork size={18} color="currentColor" />
+            </div>
+            <span>Duyệt đơn giảng viên</span>
+          </button>
 
           <button
             type="button"

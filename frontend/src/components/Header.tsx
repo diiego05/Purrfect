@@ -20,6 +20,7 @@ import {
   IconlyAward,
   IconlyFolder,
   IconlyLogout,
+  IconlyWork,
   IconlyDocument,
   IconlySparkles,
 } from './Onboarding/IconlyIcons';
@@ -696,6 +697,34 @@ export const Header: FC = () => {
                         <IconlyDocument size={16} color="#059669" />
                         <span>
                           {language === 'vi' ? 'Giảng viên' : 'Instructor'}
+                        </span>
+                      </button>
+                    )}
+                    {user.role === 'STUDENT' && (
+                      <button
+                        type="button"
+                        className="dropdown-link"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          color: '#4f46e5',
+                          fontWeight: 600,
+                          background: 'none',
+                          border: 'none',
+                          width: '100%',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          padding: '10px 16px',
+                        }}
+                        onClick={() => {
+                          setAvatarMenuOpen(false);
+                          navigate('/instructor/apply');
+                        }}
+                      >
+                        <IconlyWork size={16} color="#4f46e5" />
+                        <span>
+                          {language === 'vi' ? 'Đăng ký làm Giảng viên' : 'Teach on Learnova'}
                         </span>
                       </button>
                     )}

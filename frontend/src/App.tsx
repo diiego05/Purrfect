@@ -23,6 +23,9 @@ import SystemConfigManagement from './components/Admin/SystemConfig/SystemConfig
 import CouponManagement from './components/Admin/CouponManagement/CouponManagement';
 import { UserManagement } from './components/Admin/UserManagement/UserManagement';
 import { CourseApprovalManagement } from './components/Admin/CourseApproval/CourseApprovalManagement';
+import { AdminModerationPage } from './components/Admin/Moderation/AdminModerationPage';
+import { InstructorApplicationManagement } from './components/Admin/InstructorApplications/InstructorApplicationManagement';
+import { InstructorApplyPage } from './components/Instructor/InstructorApplyPage';
 import { ProfilePage } from './components/Profile/ProfilePage';
 import { PlaylistsPage } from './components/Playlist/PlaylistsPage';
 import { PlaylistDetailPage } from './components/Playlist/PlaylistDetailPage';
@@ -315,6 +318,41 @@ function MainRouter() {
         <UserManagement />
       </AdminLayout>
     );
+  }
+
+  // Quản lý Kiểm duyệt nội dung (UC26)
+  if (
+    normalizedPath === '/admin/moderation' ||
+    normalizedPath === '/admin/kiem-duyet' ||
+    normalizedPath === '/admin/reports'
+  ) {
+    return (
+      <AdminLayout activeTab="moderation" pageTitle="Kiểm duyệt nội dung">
+        <AdminModerationPage />
+      </AdminLayout>
+    );
+  }
+
+  // Quản lý Phê duyệt Đơn đăng ký Giảng viên
+  if (
+    normalizedPath === '/admin/instructor-applications' ||
+    normalizedPath === '/admin/duyet-giang-vien' ||
+    normalizedPath === '/admin/don-giang-vien'
+  ) {
+    return (
+      <AdminLayout activeTab="instructor-applications" pageTitle="Duyệt đơn đăng ký Giảng viên">
+        <InstructorApplicationManagement />
+      </AdminLayout>
+    );
+  }
+
+  // Đăng ký làm Giảng viên (Instructor Application)
+  if (
+    normalizedPath === '/instructor/apply' ||
+    normalizedPath === '/dang-ky-giang-vien' ||
+    normalizedPath === '/become-instructor'
+  ) {
+    return <InstructorApplyPage />;
   }
 
   // 4. Chi tiết khóa học (Course Detail)
