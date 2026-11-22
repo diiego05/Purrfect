@@ -32,9 +32,11 @@ import {
   IconlyLock,
   IconlyEdit,
   IconlyDelete,
+  IconlyDanger,
 } from '../Onboarding/IconlyIcons';
 import './CourseDetailPage.css';
 import { AddToPlaylistModal } from '../Playlist/AddToPlaylistModal';
+import { ReportModal } from '../Common/ReportModal';
 
 interface CourseDetailPageProps {
   slug: string;
@@ -79,6 +81,7 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
   const [studentComment, setStudentComment] = useState<string>('');
   const [studentReviewError, setStudentReviewError] = useState<string>('');
   const [submittingStudentReview, setSubmittingStudentReview] = useState<boolean>(false);
+  const [reportingReview, setReportingReview] = useState<CourseReviewItem | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -1315,6 +1318,17 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                   <span className="review-feed-date">{revDate}</span>
                                 </div>
                               </div>
+                              {isAuthenticated && user?.id !== (typeof rev.userId === 'object' ? rev.userId?._id : rev.userId) && (
+                                <button
+                                  type="button"
+                                  className="review-report-btn"
+                                  title="Báo cáo vi phạm"
+                                  onClick={() => setReportingReview(rev)}
+                                >
+                                  <IconlyDanger size={14} color="#94a3b8" />
+                                  <span>Báo cáo</span>
+                                </button>
+                              )}
                             </div>
 
                             {/* Nội dung nhận xét của học viên */}
@@ -1647,6 +1661,16 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
           courseTitle={course.title}
           isOpen={isPlaylistModalOpen}
           onClose={() => setIsPlaylistModalOpen(false)}
+        />
+      )}
+
+      {reportingReview && (
+        <ReportModal
+          isOpen={Boolean(reportingReview)}
+          onClose={() => setReportingReview(null)}
+          targetType="REVIEW"
+          targetId={reportingReview._id}
+          targetTitle={reportingReview.comment}
         />
       )}
     </div>

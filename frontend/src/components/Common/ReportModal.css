@@ -1,0 +1,229 @@
+.report-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.report-modal-dialog {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px -8px rgba(15, 23, 42, 0.25);
+  max-width: 480px;
+  width: 100%;
+  overflow: hidden;
+  animation: reportModalFadeIn 0.2s ease-out;
+}
+
+@keyframes reportModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.report-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.report-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.report-modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.report-modal-close:hover {
+  background: #f1f5f9;
+}
+
+.report-modal-form {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.report-modal-preview {
+  background: #f8fafc;
+  border-left: 3px solid #cbd5e1;
+  padding: 10px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.report-modal-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.report-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-field-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.report-reasons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.report-reason-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #334155;
+  transition: all 0.15s ease;
+}
+
+.report-reason-item:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.report-reason-item.selected {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.report-reason-item input[type='radio'] {
+  accent-color: #ef4444;
+}
+
+.report-field-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.report-field-group textarea:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.report-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.report-btn-cancel {
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+}
+
+.report-btn-cancel:hover {
+  background: #e2e8f0;
+}
+
+.report-btn-submit {
+  padding: 8px 18px;
+  background: #ef4444;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.report-btn-submit:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.report-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.report-modal-success {
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.report-modal-success-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.report-modal-success h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #065f46;
+  margin: 0 0 6px;
+}
+
+.report-modal-success p {
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}

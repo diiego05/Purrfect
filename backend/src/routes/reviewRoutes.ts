@@ -7,7 +7,11 @@ import {
   submitCourseReview,
   getInstructorReviews,
 } from '../controllers/reviewController';
-import { authenticateToken, optionalAuthenticateToken } from '../middlewares/auth';
+import {
+  authenticateToken,
+  optionalAuthenticateToken,
+  requireInstructor,
+} from '../middlewares/auth';
 
 const router = Router();
 
@@ -42,6 +46,11 @@ router.post('/courses/:courseId/reviews', authenticateToken, submitCourseReview)
 
 // Giảng viên / Admin xem danh sách đánh giá trong Dashboard
 // GET /api/v1/instructor/reviews
-router.get('/instructor/reviews', authenticateToken, getInstructorReviews);
+router.get(
+  '/instructor/reviews',
+  authenticateToken,
+  requireInstructor,
+  getInstructorReviews,
+);
 
 export default router;

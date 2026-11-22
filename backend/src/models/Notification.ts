@@ -4,7 +4,12 @@ export type NotificationType =
   | 'NEW_QUESTION'
   | 'NEW_REPLY'
   | 'OFFICIAL_ANSWER_PINNED'
-  | 'NEW_REVIEW_REPLY';
+  | 'NEW_REVIEW_REPLY'
+  | 'CONTENT_WARNING'
+  | 'ACCOUNT_LOCKED'
+  | 'NEW_INSTRUCTOR_APPLICATION'
+  | 'INSTRUCTOR_APPLICATION_APPROVED'
+  | 'INSTRUCTOR_APPLICATION_REJECTED';
 
 export interface INotification extends Document {
   _id: mongoose.Types.ObjectId;
@@ -58,7 +63,17 @@ const notificationSchema = new Schema<INotification>(
     },
     type: {
       type: String,
-      enum: ['NEW_QUESTION', 'NEW_REPLY', 'OFFICIAL_ANSWER_PINNED', 'NEW_REVIEW_REPLY'],
+      enum: [
+        'NEW_QUESTION',
+        'NEW_REPLY',
+        'OFFICIAL_ANSWER_PINNED',
+        'NEW_REVIEW_REPLY',
+        'CONTENT_WARNING',
+        'ACCOUNT_LOCKED',
+        'NEW_INSTRUCTOR_APPLICATION',
+        'INSTRUCTOR_APPLICATION_APPROVED',
+        'INSTRUCTOR_APPLICATION_REJECTED',
+      ],
       required: true,
     },
     title: {

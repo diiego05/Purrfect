@@ -13,7 +13,9 @@ import {
   IconlyStar,
   IconlyBulb,
   IconlySearch,
+  IconlyDanger,
 } from '../Onboarding/IconlyIcons';
+import { ReportModal } from '../Common/ReportModal';
 import './LectureDiscussionPanel.css';
 
 interface LectureDiscussionPanelProps {
@@ -50,6 +52,7 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
   const [activeReplyId, setActiveReplyId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState<string>('');
   const [submittingReply, setSubmittingReply] = useState<boolean>(false);
+  const [reportingDiscussion, setReportingDiscussion] = useState<{ id: string; content: string } | null>(null);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -576,6 +579,19 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
                     <IconlyDelete size={14} /> Xóa
                   </button>
                 )}
+
+                {/* Report button */}
+                {!q.isAuthor && (
+                  <button
+                    type="button"
+                    className="btn-action-disc"
+                    style={{ color: '#94a3b8', marginLeft: 'auto' }}
+                    onClick={() => setReportingDiscussion({ id: q._id, content: q.content })}
+                    title="Báo cáo vi phạm"
+                  >
+                    <IconlyDanger size={13} color="#94a3b8" /> Báo cáo
+                  </button>
+                )}
               </div>
 
               {/* Form trả lời nhanh */}
@@ -726,6 +742,19 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
                             <IconlyDelete size={13} /> Xóa
                           </button>
                         )}
+
+                        {/* Report reply */}
+                        {!reply.isAuthor && (
+                          <button
+                            type="button"
+                            className="btn-action-disc"
+                            style={{ color: '#94a3b8', fontSize: '0.78rem', marginLeft: 'auto' }}
+                            onClick={() => setReportingDiscussion({ id: reply._id, content: reply.content })}
+                            title="Báo cáo vi phạm"
+                          >
+                            <IconlyDanger size={12} color="#94a3b8" /> Báo cáo
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -734,6 +763,16 @@ export const LectureDiscussionPanel: FC<LectureDiscussionPanelProps> = ({
             </div>
           ))}
         </div>
+      )}
+
+      {reportingDiscussion && (
+        <ReportModal
+          isOpen={Boolean(reportingDiscussion)}
+          onClose={() => setReportingDiscussion(null)}
+          targetType="DISCUSSION"
+          targetId={reportingDiscussion.id}
+          targetTitle={reportingDiscussion.content}
+        />
       )}
     </div>
   );
