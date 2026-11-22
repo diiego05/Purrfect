@@ -430,7 +430,7 @@ export const InstructorCoursesPage: React.FC = () => {
               className="stat-sub"
               style={{ color: '#0056d2', fontWeight: 600 }}
             >
-              👉 Xem danh sách ghi danh
+              Xem danh sách ghi danh
             </span>
           </div>
         </div>

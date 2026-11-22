@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { userApi } from '../../../services/userApi';
 import type {
   ManagedUser,
-  UserStats,
   UserRole,
   UserStatus,
   CreateUserData,
@@ -12,8 +11,6 @@ import {
   IconlySearch,
   IconlyPlus,
   IconlyDelete,
-  IconlyShield,
-  IconlyAward,
   IconlyTick,
   IconlyClose,
   IconlyTimeCircle,
@@ -38,13 +35,6 @@ const DEFAULT_NEW_USER: CreateUserData = {
 export const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [stats, setStats] = useState<UserStats>({
-    totalUsers: 0,
-    totalStudents: 0,
-    totalInstructors: 0,
-    totalAdmins: 0,
-    totalBlocked: 0,
-  });
   const [refreshKey, setRefreshKey] = useState<number>(0);
 
   // Filters
@@ -96,7 +86,6 @@ export const UserManagement: React.FC = () => {
         });
         if (isMounted) {
           setUsers(data.users);
-          setStats(data.stats);
         }
       } catch (err: unknown) {
         if (isMounted) {
@@ -135,15 +124,6 @@ export const UserManagement: React.FC = () => {
           : `Đã mở khóa tài khoản "${user.fullName || user.email}"`,
         'success',
       );
-      // Refresh stats
-      userApi
-        .getUsers({
-          search: debouncedSearch,
-          role: roleFilter,
-          status: statusFilter,
-        })
-        .then((d) => setStats(d.stats))
-        .catch(() => {});
     } catch (err: unknown) {
       addToast(
         err instanceof Error ? err.message : 'Không thể cập nhật trạng thái.',
@@ -162,15 +142,6 @@ export const UserManagement: React.FC = () => {
         `Đã phân quyền "${user.fullName || user.email}" thành ${newRole}`,
         'success',
       );
-      // Refresh stats
-      userApi
-        .getUsers({
-          search: debouncedSearch,
-          role: roleFilter,
-          status: statusFilter,
-        })
-        .then((d) => setStats(d.stats))
-        .catch(() => {});
     } catch (err: unknown) {
       addToast(
         err instanceof Error ? err.message : 'Không thể cập nhật vai trò.',
@@ -273,59 +244,6 @@ export const UserManagement: React.FC = () => {
             <IconlyPlus size={16} color="#ffffff" />
             <span>Thêm tài khoản mới</span>
           </button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="user-stats-grid">
-        <div className="user-stat-card">
-          <div className="stat-card-icon icon-blue">
-            <IconlyUserGroup size={24} color="#3b82f6" />
-          </div>
-          <div className="stat-card-info">
-            <span className="stat-card-label">Tổng người dùng</span>
-            <span className="stat-card-val">{stats.totalUsers}</span>
-          </div>
-        </div>
-
-        <div className="user-stat-card">
-          <div className="stat-card-icon icon-green">
-            <IconlyAward size={24} color="#10b981" />
-          </div>
-          <div className="stat-card-info">
-            <span className="stat-card-label">Học viên (Student)</span>
-            <span className="stat-card-val">{stats.totalStudents}</span>
-          </div>
-        </div>
-
-        <div className="user-stat-card">
-          <div className="stat-card-icon icon-purple">
-            <IconlyAward size={24} color="#8b5cf6" />
-          </div>
-          <div className="stat-card-info">
-            <span className="stat-card-label">Giảng viên (Instructor)</span>
-            <span className="stat-card-val">{stats.totalInstructors}</span>
-          </div>
-        </div>
-
-        <div className="user-stat-card">
-          <div className="stat-card-icon icon-amber">
-            <IconlyShield size={24} color="#f59e0b" />
-          </div>
-          <div className="stat-card-info">
-            <span className="stat-card-label">Quản trị viên (Admin)</span>
-            <span className="stat-card-val">{stats.totalAdmins}</span>
-          </div>
-        </div>
-
-        <div className="user-stat-card">
-          <div className="stat-card-icon icon-red">
-            <IconlyClose size={24} color="#ef4444" />
-          </div>
-          <div className="stat-card-info">
-            <span className="stat-card-label">Bị tạm khóa (Blocked)</span>
-            <span className="stat-card-val text-red">{stats.totalBlocked}</span>
-          </div>
         </div>
       </div>
 
