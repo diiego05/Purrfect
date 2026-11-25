@@ -1,4 +1,4 @@
-import { useState, type FC, type FormEvent } from 'react';
+import { useState, useEffect, type FC, type FormEvent } from 'react';
 import type { Course } from '../../types/course';
 import { formatVND } from '../../utils/format';
 import { paymentApi } from '../../services/paymentApi';
@@ -37,6 +37,33 @@ export const CheckoutModal: FC<CheckoutModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Khôi phục trạng thái nút thanh toán khi người dùng ấn nút Back trên trình duyệt quay lại từ VNPAY (bfcache)
+  useEffect(() => {
+    const handlePageShow = () => {
+      setIsSubmitting(false);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setIsSubmitting(false);
+      }
+    };
+
+    const handleWindowFocus = () => {
+      setIsSubmitting(false);
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, []);
+
   // Giá tính toán ban đầu
   const originalPrice =
     course.discountPrice &&
@@ -59,6 +86,7 @@ export const CheckoutModal: FC<CheckoutModalProps> = ({
     const res = await paymentApi.validateCoupon(
       couponCode.trim(),
       originalPrice,
+      course.id,
     );
     setIsCheckingCoupon(false);
 
@@ -102,6 +130,9 @@ export const CheckoutModal: FC<CheckoutModalProps> = ({
       if (res.success && res.paymentUrl) {
         // Chuyển hướng sang cổng thanh toán VNPAY
         window.location.href = res.paymentUrl;
+        setTimeout(() => {
+          setIsSubmitting(false);
+        }, 5000);
       } else {
         setErrorMessage(
           res.message ||

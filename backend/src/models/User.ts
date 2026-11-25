@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Model, Schema } from 'mongoose';
 
 export type UserRole = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
 export type UserStatus = 'ACTIVE' | 'BLOCKED';
@@ -13,13 +13,30 @@ export interface IUser extends Document {
   bio?: string;
   role: UserRole;
   status: UserStatus;
+  purrPoints: number;
   googleId?: string;
   onboardingCompleted?: boolean;
+  violationCount: number;
+  isLocked: boolean;
+  lockedUntil?: Date | null;
+  aiQuizWeeklyUsage?: number;
+  aiQuizWeekStartDate?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const userSchema = new Schema<IUser>(
+export interface IUserModel extends Model<IUser> {
+  incrementViolationCountAndWarn(
+    offendingUserId: string | mongoose.Types.ObjectId,
+  ): Promise<number>;
+
+  lockAccountTemporarily(
+    offendingUserId: string | mongoose.Types.ObjectId,
+    days?: number,
+  ): Promise<IUser | null>;
+}
+
+const userSchema = new Schema<IUser, IUserModel>(
   {
     email: {
       type: String,
@@ -60,6 +77,11 @@ const userSchema = new Schema<IUser>(
       enum: ['ACTIVE', 'BLOCKED'],
       default: 'ACTIVE',
     },
+    purrPoints: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     googleId: {
       type: String,
       default: null,
@@ -69,6 +91,28 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    violationCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    isLocked: {
+      type: Boolean,
+      default: false,
+    },
+    lockedUntil: {
+      type: Date,
+      default: null,
+    },
+    aiQuizWeeklyUsage: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    aiQuizWeekStartDate: {
+      type: Date,
+      default: () => new Date(),
+    },
   },
   {
     timestamps: true,
@@ -76,4 +120,37 @@ const userSchema = new Schema<IUser>(
   },
 );
 
-export const User = mongoose.model<IUser>('User', userSchema);
+// Khớp Sequence Diagram 3.2.26: User.incrementViolationCountAndWarn(offendingUserId) -> violationCount()
+userSchema.statics.incrementViolationCountAndWarn = async function (
+  offendingUserId: string | mongoose.Types.ObjectId,
+): Promise<number> {
+  const user = await this.findByIdAndUpdate(
+    offendingUserId,
+    { $inc: { violationCount: 1 } },
+    { new: true },
+  );
+  return user?.violationCount ?? 0;
+};
+
+// Khớp Sequence Diagram 3.2.26: User.lockAccountTemporarily(offendingUserId, days) -> accountLocked()
+userSchema.statics.lockAccountTemporarily = async function (
+  offendingUserId: string | mongoose.Types.ObjectId,
+  days: number = 7,
+): Promise<IUser | null> {
+  const lockedUntil = new Date();
+  lockedUntil.setDate(lockedUntil.getDate() + days);
+
+  return this.findByIdAndUpdate(
+    offendingUserId,
+    {
+      $set: {
+        isLocked: true,
+        lockedUntil,
+        status: 'BLOCKED',
+      },
+    },
+    { new: true },
+  );
+};
+
+export const User = mongoose.model<IUser, IUserModel>('User', userSchema);

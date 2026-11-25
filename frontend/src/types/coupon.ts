@@ -13,6 +13,8 @@ export interface Coupon {
   validFrom: string;
   validTo: string;
   isActive: boolean;
+  courseId?: string;
+  instructorId?: string;
   createdAt: string;
   updatedAt: string;
 }

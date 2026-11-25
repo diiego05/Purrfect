@@ -20,7 +20,7 @@ interface CheckoutPageProps {
 }
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
-  const { navigate, isAuthenticated } = useAuth();
+  const { navigate, isAuthenticated, user, updateUser } = useAuth();
   const { t, language } = useLanguage();
   const {
     cartItems,
@@ -48,6 +48,36 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const selectedBank = '';
+  const [paymentMethod, setPaymentMethod] = useState<'VNPAY' | 'PURR_POINTS'>(
+    'VNPAY',
+  );
+
+  // Khôi phục trạng thái nút thanh toán khi người dùng ấn nút Back trên trình duyệt quay lại từ VNPAY (bfcache)
+  useEffect(() => {
+    const handlePageShow = () => {
+      setIsSubmitting(false);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setIsSubmitting(false);
+      }
+    };
+
+    const handleWindowFocus = () => {
+      setIsSubmitting(false);
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, []);
 
   // Load single course if param is provided
   useEffect(() => {
@@ -88,9 +118,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
     setIsCheckingCoupon(true);
     setCouponFeedback(null);
 
+    const targetCourseId =
+      course?._id || course?.id || cartItems[0]?.courseId?._id;
     const res = await paymentApi.validateCoupon(
       couponCode.trim(),
       originalPrice,
+      targetCourseId,
     );
     setIsCheckingCoupon(false);
 
@@ -148,6 +181,27 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
         return;
       }
 
+      if (paymentMethod === 'PURR_POINTS') {
+        const res = await paymentApi.directCheckout({
+          courseId: targetCourseId,
+          couponCode: appliedCoupon?.code,
+          paymentMethod: 'PURR_POINTS',
+        });
+        if (res.success) {
+          const usedPoints = Math.ceil(currentFinalAmount / 1000);
+          updateUser({
+            purrPoints: Math.max(0, (user?.purrPoints || 0) - usedPoints),
+          });
+          toast.success(res.message || 'Thanh toán bằng PurrPoint thành công!');
+          navigate(`/learning/${course?.slug || targetCourseId}`);
+        } else
+          setErrorMessage(
+            res.message || 'Không thể thanh toán bằng PurrPoint.',
+          );
+        setIsSubmitting(false);
+        return;
+      }
+
       // 2. Tạo phiên thanh toán và chuyển hướng sang Cổng VNPAY
       const res = await paymentApi.createPaymentUrl({
         courseId: targetCourseId,
@@ -160,6 +214,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
         if (course?._id) removeFromCart(course._id);
         // Chuyển hướng trực tiếp sang VNPAY
         window.location.href = res.paymentUrl;
+        setTimeout(() => {
+          setIsSubmitting(false);
+        }, 5000);
       } else {
         setErrorMessage(
           res.message || 'Không thể khởi tạo liên kết thanh toán VNPAY.',
@@ -303,12 +360,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
               </h2>
 
               <div className="checkout-payment-methods">
-                <label className="checkout-method-option active">
+                <label
+                  className={`checkout-method-option ${paymentMethod === 'VNPAY' ? 'active' : ''}`}
+                >
                   <input
                     type="radio"
                     name="paymentMethodRadio"
-                    checked={true}
-                    readOnly
+                    checked={paymentMethod === 'VNPAY'}
+                    onChange={() => setPaymentMethod('VNPAY')}
                   />
                   <div className="method-option-info">
                     <div className="method-option-header">
@@ -324,6 +383,24 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ courseParam }) => {
                         'checkout_vnpay_desc',
                         'Hỗ trợ quét mã VNPAY-QR, Thẻ nội địa (ATM), Internet Banking và Thẻ quốc tế Visa/MasterCard.',
                       )}
+                    </p>
+                  </div>
+                </label>
+                <label
+                  className={`checkout-method-option ${paymentMethod === 'PURR_POINTS' ? 'active' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethodRadio"
+                    checked={paymentMethod === 'PURR_POINTS'}
+                    onChange={() => setPaymentMethod('PURR_POINTS')}
+                  />
+                  <div className="method-option-info">
+                    <strong>Thanh toán bằng PurrPoint</strong>
+                    <p className="method-option-desc">
+                      Số dư hiện có:{' '}
+                      {(user?.purrPoints || 0).toLocaleString('vi-VN')} điểm. Tỷ
+                      lệ: 1.000đ = 1 điểm.
                     </p>
                   </div>
                 </label>

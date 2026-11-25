@@ -28,8 +28,13 @@ import playlistRoutes from './routes/playlistRoutes';
 import instructorCourseRoutes from './routes/instructorCourseRoutes';
 import discussionRoutes from './routes/discussionRoutes';
 import reviewRoutes from './routes/reviewRoutes';
+
 import refundRoutes from './routes/refundRoutes';
 import withdrawalRoutes from './routes/withdrawalRoutes';
+
+import moderationRoutes from './routes/moderationRoutes';
+import instructorApplicationRoutes from './routes/instructorApplicationRoutes';
+import adminStatisticsRoutes from './routes/adminStatisticsRoutes';
 
 import { seedDefaultConfigs } from './controllers/systemConfigController';
 import { seedDefaultUsersIfEmpty } from './controllers/userController';
@@ -122,10 +127,26 @@ app.use('/api/v1', discussionRoutes);
 app.use('/api', discussionRoutes);
 app.use('/api/v1', reviewRoutes);
 app.use('/api', reviewRoutes);
+
 app.use('/api/refunds', refundRoutes);
 app.use('/api/v1/refunds', refundRoutes);
 app.use('/api/withdrawals', withdrawalRoutes);
 app.use('/api/v1/withdrawals', withdrawalRoutes);
+app.use('/api/v1', moderationRoutes);
+app.use('/api', moderationRoutes);
+app.use('/api/v1/admin/moderation', moderationRoutes);
+app.use('/api/admin/moderation', moderationRoutes);
+
+app.use('/api/v1', instructorApplicationRoutes);
+app.use('/api', instructorApplicationRoutes);
+app.use('/api/v1/instructor-applications', instructorApplicationRoutes);
+app.use('/api/instructor-applications', instructorApplicationRoutes);
+app.use('/api/v1/admin/instructor-applications', instructorApplicationRoutes);
+app.use('/api/admin/instructor-applications', instructorApplicationRoutes);
+
+app.use('/api/v1/admin/statistics', adminStatisticsRoutes);
+app.use('/api/admin/statistics', adminStatisticsRoutes);
+app.use('/api/admin-statistics', adminStatisticsRoutes);
 
 // Root endpoint
 app.get('/', (_req, res) => {

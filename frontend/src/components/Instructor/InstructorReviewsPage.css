@@ -1,12 +1,19 @@
 /* ==========================================================================
-   InstructorReviewsPage.css - Quản lý Đánh giá & Phản hồi Giảng viên (UC23)
+   InstructorReviewsPage.css - Quản lý Đánh giá & Phản hồi Giảng viên
    ========================================================================== */
 
 .instructor-reviews-page {
   padding: 1.5rem 2rem 3rem;
   max-width: 1400px;
   margin: 0 auto;
-  font-family: var(--font-primary, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-family: var(
+    --font-primary,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif
+  );
   color: #1e293b;
 }
 
@@ -51,7 +58,9 @@
   align-items: center;
   gap: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .reviews-kpi-card:hover {
@@ -296,7 +305,9 @@
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .review-item-card:hover {
@@ -448,7 +459,7 @@
   color: #0f172a;
 }
 
-/* Role Badges: Giảng viên & Quản trị viên (UC23 Requirement) */
+/* Role Badges: Giảng viên & Quản trị viên (  Requirement) */
 .review-role-badge {
   display: inline-flex;
   align-items: center;

@@ -673,3 +673,68 @@
   background: #f1f5f9;
   color: #0f172a;
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .purchase-history-container {
+    margin: 20px auto 48px;
+    padding: 0 16px;
+  }
+
+  .purchase-history-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .purchase-history-title {
+    font-size: 1.5rem;
+  }
+
+  .purchase-tabs {
+    width: 100%;
+    display: flex;
+  }
+
+  .purchase-tab-btn {
+    flex: 1;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .order-card-header,
+  .refund-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .order-item {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .order-item-img {
+    width: 100%;
+    height: 140px;
+    max-width: 100%;
+  }
+
+  .order-item-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .order-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+}

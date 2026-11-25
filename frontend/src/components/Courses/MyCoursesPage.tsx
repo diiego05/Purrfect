@@ -241,6 +241,20 @@ export const MyCoursesPage: React.FC = () => {
                       </span>
                     )}
 
+                    {c.isManualEnrollment && (
+                      <span
+                        className="my-course-category-pill"
+                        style={{
+                          background: '#fef3c7',
+                          color: '#b45309',
+                          border: '1px solid #fde68a',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {language === 'vi' ? 'Ghi danh thủ công' : 'Manual'}
+                      </span>
+                    )}
+
                     {isLocked ? (
                       <span className="my-course-status-badge badge-locked">
                         {language === 'vi'

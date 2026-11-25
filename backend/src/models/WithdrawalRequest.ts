@@ -11,6 +11,7 @@ export interface IWithdrawalRequest extends Document {
   bankAccount: string;
   accountHolder: string;
   notes?: string;
+  qrCodeUrl?: string;
   status: WithdrawalStatus;
   rejectionReason?: string;
   adminNotes?: string;
@@ -52,6 +53,10 @@ const withdrawalRequestSchema = new Schema<IWithdrawalRequest>(
       type: String,
       default: '',
       trim: true,
+    },
+    qrCodeUrl: {
+      type: String,
+      default: '',
     },
     status: {
       type: String,

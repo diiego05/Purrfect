@@ -317,7 +317,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
     setSections(updated);
   };
 
-  // Tải file bài giảng (Kiểm tra dung lượng <= 2GB theo BR06.2 & Exception 5b)
+  // Tải file bài giảng (Kiểm tra dung lượng <= 2GB theo   & Exception 5b)
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     sectionIndex: number,
@@ -325,7 +325,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Kiểm tra dung lượng 2GB (2 * 1024 * 1024 * 1024 bytes) - BR06.2 & Exception 5b
+    // Kiểm tra dung lượng 2GB (2 * 1024 * 1024 * 1024 bytes) -   & Exception 5b
     const maxSizeBytes = 2 * 1024 * 1024 * 1024;
     if (file.size > maxSizeBytes) {
       setErrorMsg('Định dạng file không hỗ trợ hoặc dung lượng vượt quá 2GB');
@@ -522,7 +522,6 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
       return;
     }
 
-    // BR06.3: Nếu có giá khuyến mãi, phải nhỏ hơn giá gốc
     const p = Number(price) || 0;
     const dp = Number(discountPrice) || 0;
     if (dp > 0 && dp >= p) {
@@ -554,7 +553,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
     }
   };
 
-  // Basic Flow Step 7 & 8: Gửi phê duyệt (BR06.1, Exception 8a1)
+  // Basic Flow Step 7 & 8: Gửi phê duyệt (   Exception 8a1)
   const handleSubmitApproval = async () => {
     // 1. Kiểm tra thông tin chung
     if (!title.trim() || !shortDescription.trim()) {
@@ -563,7 +562,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
       return;
     }
 
-    // 2. BR06.3: Kiểm tra giá khuyến mãi
+    // 2.    Kiểm tra giá khuyến mãi
     const p = Number(price) || 0;
     const dp = Number(discountPrice) || 0;
     if (dp > 0 && dp >= p) {
@@ -572,7 +571,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
       return;
     }
 
-    // 3. BR06.1 & Exception 8a: Có ít nhất 1 chương và 3 bài giảng có nội dung
+    // 3.   & Exception 8a: Có ít nhất 1 chương và 3 bài giảng có nội dung
     if (sections.length < 1 || totalLecturesCount < 3) {
       setErrorMsg(
         'Khóa học phải có tối thiểu 1 chương và 3 bài giảng có nội dung trước khi gửi duyệt',
@@ -1126,7 +1125,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                           onClick={() => handleOpenAiQuizForSection(secIdx)}
                           title="Tạo bài kiểm tra trắc nghiệm & tự luận cho chương này"
                         >
-                          <span>Tạo Quiz cho chương</span>
+                          <span>Tạo Quiz</span>
                         </button>
 
                         <button
@@ -1427,33 +1426,6 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                           ? 'Xem / Sửa Transcript'
                                           : 'Thêm Transcript'}
                                     </span>
-                                  </button>
-                                )}
-
-                                {/* Nút Tạo Quiz từ bài học này bằng AI */}
-                                {lecture.type !== 'QUIZ' && (
-                                  <button
-                                    type="button"
-                                    className="btn-action-secondary"
-                                    style={{
-                                      padding: '4px 8px',
-                                      fontSize: '11.5px',
-                                      color: '#7c3aed',
-                                      borderColor: '#ddd6fe',
-                                      background: '#f5f3ff',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '4px',
-                                    }}
-                                    onClick={() =>
-                                      handleOpenAiQuizForSection(
-                                        secIdx,
-                                        lecture,
-                                      )
-                                    }
-                                    title="Dùng AI đọc bài học này để soạn bài kiểm tra"
-                                  >
-                                    <span>Tạo Quiz</span>
                                   </button>
                                 )}
 
@@ -2095,7 +2067,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                       : '#475569',
                                 }}
                               >
-                                🎥 Video
+                                Video
                               </button>
                               <button
                                 type="button"
@@ -2120,32 +2092,7 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                                       : '#475569',
                                 }}
                               >
-                                📄 Tài liệu
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setNewLectureType('QUIZ')}
-                                style={{
-                                  padding: '6px 12px',
-                                  borderRadius: '6px',
-                                  fontSize: '12px',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  border:
-                                    newLectureType === 'QUIZ'
-                                      ? '1.5px solid #7c3aed'
-                                      : '1px solid #ddd6fe',
-                                  background:
-                                    newLectureType === 'QUIZ'
-                                      ? '#f5f3ff'
-                                      : '#ffffff',
-                                  color: '#7c3aed',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                }}
-                              >
-                                <span>Quiz AI</span>
+                                Tài liệu
                               </button>
                             </div>
                           </div>
@@ -2370,52 +2317,6 @@ export const CourseEditorView: React.FC<CourseEditorViewProps> = ({
                       </span>
                     </div>
                   )}
-              </div>
-
-              <div
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '12px 14px',
-                  fontSize: '12.5px',
-                  color: '#475569',
-                  lineHeight: '1.6',
-                }}
-              >
-                <strong
-                  style={{
-                    color: '#0f172a',
-                    display: 'block',
-                    marginBottom: '4px',
-                  }}
-                >
-                  Huy hiệu khóa học tự động (Smart Badge System):
-                </strong>
-                Hệ thống tự động phân loại và cấp huy hiệu theo hiệu suất thực
-                tế:
-                <ul style={{ margin: '4px 0 0 18px', padding: 0 }}>
-                  <li>
-                    <span style={{ color: '#059669', fontWeight: 600 }}>
-                      NEW
-                    </span>
-                    : Dành cho khóa học mới ra mắt gần đây.
-                  </li>
-                  <li>
-                    <span style={{ color: '#dc2626', fontWeight: 600 }}>
-                      HOT
-                    </span>
-                    : Dành cho khóa học mới ra có lượng truy cập và quan tâm
-                    cao.
-                  </li>
-                  <li>
-                    <span style={{ color: '#d97706', fontWeight: 600 }}>
-                      BESTSELLER
-                    </span>
-                    : Dành cho khóa học có số lượng học viên ghi danh đông đảo
-                    nhất.
-                  </li>
-                </ul>
               </div>
             </div>
           )}

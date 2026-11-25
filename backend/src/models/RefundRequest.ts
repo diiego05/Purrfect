@@ -14,6 +14,7 @@ export interface IRefundRequest extends Document {
   status: RefundStatus;
   rejectionReason?: string;
   adminNotes?: string;
+  pointsRefunded?: number;
   processedBy?: mongoose.Types.ObjectId;
   processedAt?: Date;
   cancelledAt?: Date;
@@ -74,6 +75,11 @@ const refundRequestSchema = new Schema<IRefundRequest>(
     adminNotes: {
       type: String,
       default: '',
+    },
+    pointsRefunded: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
     processedBy: {
       type: Schema.Types.ObjectId,

@@ -12,7 +12,6 @@ import {
   IconlyDelete,
   IconlySearch,
   IconlyTick,
-  IconlyAward,
   IconlyPlay,
   IconlyClose,
 } from '../Onboarding/IconlyIcons';
@@ -34,10 +33,18 @@ export const InstructorReviewsPage: React.FC = () => {
   });
 
   // Bộ lọc & tìm kiếm
-  const [statusFilter, setStatusFilter] = useState<'all' | 'unreplied' | 'replied'>('all');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'unreplied' | 'replied'
+  >('all');
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [page, setPage] = useState<number>(1);
+  const pageSize = 6;
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, selectedCourseId, searchKeyword]);
 
   // Thông báo toast & lỗi
   const [toastMsg, setToastMsg] = useState<string>('');
@@ -259,7 +266,8 @@ export const InstructorReviewsPage: React.FC = () => {
         <div className="reviews-header-titles">
           <h1>Đánh giá & Phản hồi từ học viên</h1>
           <p className="reviews-header-subtitle">
-            Trực tiếp giải đáp thắc mắc và cảm ơn học viên để nâng cao uy tín và trải nghiệm khóa học
+            Trực tiếp giải đáp thắc mắc và cảm ơn học viên để nâng cao uy tín và
+            trải nghiệm khóa học
           </p>
         </div>
       </div>
@@ -286,54 +294,6 @@ export const InstructorReviewsPage: React.FC = () => {
         </div>
       )}
 
-      {/* KPI Cards */}
-      <div className="reviews-kpi-grid">
-        <div className="reviews-kpi-card">
-          <div className="kpi-icon-box total">
-            <IconlyChat size={24} color="currentColor" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Tổng nhận xét</span>
-            <span className="kpi-value">{summary.totalReviews}</span>
-          </div>
-        </div>
-
-        <div className="reviews-kpi-card">
-          <div className="kpi-icon-box unreplied">
-            <IconlyStar size={24} color="currentColor" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">
-              Chưa phản hồi
-              {summary.unrepliedCount > 0 && (
-                <span className="kpi-badge alert">{summary.unrepliedCount} cần xử lý</span>
-              )}
-            </span>
-            <span className="kpi-value">{summary.unrepliedCount}</span>
-          </div>
-        </div>
-
-        <div className="reviews-kpi-card">
-          <div className="kpi-icon-box replied">
-            <IconlyTick size={24} color="currentColor" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Đã phản hồi</span>
-            <span className="kpi-value">{summary.repliedCount}</span>
-          </div>
-        </div>
-
-        <div className="reviews-kpi-card">
-          <div className="kpi-icon-box rate">
-            <IconlyAward size={24} color="currentColor" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Tỷ lệ phản hồi</span>
-            <span className="kpi-value">{summary.responseRate}%</span>
-          </div>
-        </div>
-      </div>
-
       {/* Toolbar bộ lọc */}
       <div className="reviews-filter-toolbar">
         <div className="filter-tabs-group">
@@ -352,7 +312,9 @@ export const InstructorReviewsPage: React.FC = () => {
           >
             <span>Chưa phản hồi</span>
             {summary.unrepliedCount > 0 && (
-              <span className="tab-count-pill alert">{summary.unrepliedCount}</span>
+              <span className="tab-count-pill alert">
+                {summary.unrepliedCount}
+              </span>
             )}
           </button>
           <button
@@ -406,262 +368,403 @@ export const InstructorReviewsPage: React.FC = () => {
           <div className="empty-state-icon">★</div>
           <p className="empty-state-title">Chưa có đánh giá nào phù hợp</p>
           <p className="empty-state-desc">
-            Khi học viên hoàn thành khóa học và gửi nhận xét, các đánh giá sẽ hiển thị tại đây để bạn phản hồi.
+            Khi học viên hoàn thành khóa học và gửi nhận xét, các đánh giá sẽ
+            hiển thị tại đây để bạn phản hồi.
           </p>
         </div>
       ) : (
-        <div className="reviews-list-container">
-          {filteredReviews.map((review) => {
-            const hasReply = Boolean(review.instructorReply);
-            const courseTitle = getCourseTitle(review.courseId);
-            const courseSlug = getCourseSlug(review.courseId);
-            const studentAvatar =
-              review.userId?.avatarUrl ||
-              review.userId?.avatar ||
-              `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(
-                review.userId?.email || review.userId?.fullName || 'student',
-              )}`;
-            const studentName =
-              review.userId?.fullName || review.userId?.name || review.userId?.email || 'Học viên';
+        <>
+          <div className="reviews-list-container">
+            {filteredReviews
+              .slice((page - 1) * pageSize, page * pageSize)
+              .map((review) => {
+                const hasReply = Boolean(review.instructorReply);
+                const courseTitle = getCourseTitle(review.courseId);
+                const courseSlug = getCourseSlug(review.courseId);
+                const studentAvatar =
+                  review.userId?.avatarUrl ||
+                  review.userId?.avatar ||
+                  `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(
+                    review.userId?.email ||
+                      review.userId?.fullName ||
+                      'student',
+                  )}`;
+                const studentName =
+                  review.userId?.fullName ||
+                  review.userId?.name ||
+                  review.userId?.email ||
+                  'Học viên';
 
-            return (
-              <div
-                key={review._id}
-                className={`review-item-card ${hasReply ? 'has-reply' : 'no-reply'}`}
-              >
-                {/* Header: Tên khóa học & Ngày đánh giá */}
-                <div className="review-card-top">
+                return (
                   <div
-                    className="review-course-badge"
-                    onClick={() => courseSlug && navigate(`/courses/${courseSlug}`)}
-                    style={{ cursor: 'pointer' }}
+                    key={review._id}
+                    className={`review-item-card ${hasReply ? 'has-reply' : 'no-reply'}`}
                   >
-                    <IconlyPlay size={14} color="currentColor" />
-                    <span>{courseTitle}</span>
-                  </div>
-                  <span className="review-date-text">{formatDate(review.createdAt)}</span>
-                </div>
-
-                {/* Thông tin học viên */}
-                <div className="student-info-row">
-                  <img
-                    src={studentAvatar}
-                    alt={studentName}
-                    className="student-avatar-img"
-                  />
-                  <div className="student-name-box">
-                    <span className="student-name-title">{studentName}</span>
-                    <span className="student-email-sub">{review.userId?.email || ''}</span>
-                  </div>
-                </div>
-
-                {/* Điểm số sao */}
-                <div className="review-rating-stars">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <IconlyStar
-                      key={star}
-                      size={18}
-                      color={star <= review.rating ? '#f59e0b' : '#cbd5e1'}
-                    />
-                  ))}
-                  <span className="stars-score-label">{review.rating}.0 / 5 sao</span>
-                </div>
-
-                {/* Nhận xét của học viên */}
-                <p className="review-comment-body">{review.comment}</p>
-
-                {/* Khu vực phản hồi chính thức (Nếu đã có phản hồi) */}
-                {hasReply && (
-                  <div
-                    className={`official-reply-box ${
-                      review.replyRole === 'ADMIN' ? 'admin-role' : 'instructor-role'
-                    }`}
-                  >
-                    <div className="reply-header-row">
-                      <div className="replier-meta-left">
-                        <img
-                          src={
-                            review.repliedBy?.avatarUrl ||
-                            review.repliedBy?.avatar ||
-                            `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(
-                              review.repliedBy?.email || 'instructor',
-                            )}`
-                          }
-                          alt="Replier Avatar"
-                          className="replier-avatar-img"
-                        />
-                        <span className="replier-name-text">
-                          {review.repliedBy?.fullName ||
-                            review.repliedBy?.email ||
-                            (review.replyRole === 'ADMIN' ? 'Quản trị viên' : 'Giảng viên')}
-                        </span>
-                        {/* ROLE BADGE THEO YÊU CẦU: Rõ vai trò Giảng viên hoặc Quản trị viên */}
-                        <span
-                          className={`review-role-badge ${
-                            review.replyRole === 'ADMIN' ? 'admin' : 'instructor'
-                          }`}
-                        >
-                          {review.replyRole === 'ADMIN' ? 'Quản trị viên' : 'Giảng viên'}
-                        </span>
+                    {/* Header: Tên khóa học & Ngày đánh giá */}
+                    <div className="review-card-top">
+                      <div
+                        className="review-course-badge"
+                        onClick={() =>
+                          courseSlug && navigate(`/courses/${courseSlug}`)
+                        }
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <IconlyPlay size={14} color="currentColor" />
+                        <span>{courseTitle}</span>
                       </div>
+                      <span className="review-date-text">
+                        {formatDate(review.createdAt)}
+                      </span>
+                    </div>
 
-                      <div className="reply-actions-right">
-                        <span className="reply-time-text">
-                          {formatDate(review.repliedAt || review.updatedAt)}
+                    {/* Thông tin học viên */}
+                    <div className="student-info-row">
+                      <img
+                        src={studentAvatar}
+                        alt={studentName}
+                        className="student-avatar-img"
+                      />
+                      <div className="student-name-box">
+                        <span className="student-name-title">
+                          {studentName}
                         </span>
-                        {/* Alternative Flow 4a1 & 4a2: Sửa và Xóa phản hồi */}
-                        <button
-                          type="button"
-                          className="btn-reply-action"
-                          onClick={() => handleOpenEditBox(review)}
-                          title="Chỉnh sửa câu trả lời"
-                        >
-                          <IconlyEdit size={14} color="currentColor" />
-                          <span>Sửa</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-reply-action danger"
-                          onClick={() => handleDeleteReply(review._id)}
-                          title="Xóa câu trả lời"
-                        >
-                          <IconlyDelete size={14} color="currentColor" />
-                          <span>Xóa</span>
-                        </button>
+                        <span className="student-email-sub">
+                          {review.userId?.email || ''}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Hiển thị nội dung hoặc ô chỉnh sửa */}
-                    {editingReviewId === review._id ? (
-                      <div className="reply-composer-section">
-                        <textarea
-                          className="reply-textarea-field"
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          placeholder="Chỉnh sửa nội dung phản hồi..."
+                    {/* Điểm số sao */}
+                    <div className="review-rating-stars">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <IconlyStar
+                          key={star}
+                          size={18}
+                          color={star <= review.rating ? '#f59e0b' : '#cbd5e1'}
                         />
-                        {editInputError && (
-                          <div className="reply-error-msg">{editInputError}</div>
-                        )}
-                        <div className="reply-composer-footer">
-                          <button
-                            type="button"
-                            className="btn-cancel-reply"
-                            onClick={() => {
-                              setEditingReviewId(null);
-                              setEditInputError('');
-                            }}
-                          >
-                            Hủy
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-send-reply"
-                            disabled={submittingEdit}
-                            onClick={() => handleSaveEdit(review._id)}
-                          >
-                            {submittingEdit ? 'Đang lưu...' : 'Lưu thay đổi'}
-                          </button>
+                      ))}
+                      <span className="stars-score-label">
+                        {review.rating}.0 / 5 sao
+                      </span>
+                    </div>
+
+                    {/* Nhận xét của học viên */}
+                    <p className="review-comment-body">{review.comment}</p>
+
+                    {/* Khu vực phản hồi chính thức (Nếu đã có phản hồi) */}
+                    {hasReply && (
+                      <div
+                        className={`official-reply-box ${
+                          review.replyRole === 'ADMIN'
+                            ? 'admin-role'
+                            : 'instructor-role'
+                        }`}
+                      >
+                        <div className="reply-header-row">
+                          <div className="replier-meta-left">
+                            <img
+                              src={
+                                review.repliedBy?.avatarUrl ||
+                                review.repliedBy?.avatar ||
+                                `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(
+                                  review.repliedBy?.email || 'instructor',
+                                )}`
+                              }
+                              alt="Replier Avatar"
+                              className="replier-avatar-img"
+                            />
+                            <span className="replier-name-text">
+                              {review.repliedBy?.fullName ||
+                                review.repliedBy?.email ||
+                                (review.replyRole === 'ADMIN'
+                                  ? 'Quản trị viên'
+                                  : 'Giảng viên')}
+                            </span>
+                            {/* ROLE BADGE THEO YÊU CẦU: Rõ vai trò Giảng viên hoặc Quản trị viên */}
+                            <span
+                              className={`review-role-badge ${
+                                review.replyRole === 'ADMIN'
+                                  ? 'admin'
+                                  : 'instructor'
+                              }`}
+                            >
+                              {review.replyRole === 'ADMIN'
+                                ? 'Quản trị viên'
+                                : 'Giảng viên'}
+                            </span>
+                          </div>
+
+                          <div className="reply-actions-right">
+                            <span className="reply-time-text">
+                              {formatDate(review.repliedAt || review.updatedAt)}
+                            </span>
+                            {/* Alternative Flow 4a1 & 4a2: Sửa và Xóa phản hồi */}
+                            <button
+                              type="button"
+                              className="btn-reply-action"
+                              onClick={() => handleOpenEditBox(review)}
+                              title="Chỉnh sửa câu trả lời"
+                            >
+                              <IconlyEdit size={14} color="currentColor" />
+                              <span>Sửa</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-reply-action danger"
+                              onClick={() => handleDeleteReply(review._id)}
+                              title="Xóa câu trả lời"
+                            >
+                              <IconlyDelete size={14} color="currentColor" />
+                              <span>Xóa</span>
+                            </button>
+                          </div>
                         </div>
+
+                        {/* Hiển thị nội dung hoặc ô chỉnh sửa */}
+                        {editingReviewId === review._id ? (
+                          <div className="reply-composer-section">
+                            <textarea
+                              className="reply-textarea-field"
+                              value={editContent}
+                              onChange={(e) => setEditContent(e.target.value)}
+                              placeholder="Chỉnh sửa nội dung phản hồi..."
+                            />
+                            {editInputError && (
+                              <div className="reply-error-msg">
+                                {editInputError}
+                              </div>
+                            )}
+                            <div className="reply-composer-footer">
+                              <button
+                                type="button"
+                                className="btn-cancel-reply"
+                                onClick={() => {
+                                  setEditingReviewId(null);
+                                  setEditInputError('');
+                                }}
+                              >
+                                Hủy
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-send-reply"
+                                disabled={submittingEdit}
+                                onClick={() => handleSaveEdit(review._id)}
+                              >
+                                {submittingEdit
+                                  ? 'Đang lưu...'
+                                  : 'Lưu thay đổi'}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="reply-content-text">
+                            {review.instructorReply}
+                          </p>
+                        )}
                       </div>
-                    ) : (
-                      <p className="reply-content-text">{review.instructorReply}</p>
+                    )}
+
+                    {/* Nếu chưa phản hồi -> Nút hoặc ô nhập phản hồi (Basic Flow 2, 3, 4) */}
+                    {!hasReply && (
+                      <div>
+                        {replyingReviewId === review._id ? (
+                          <div className="reply-composer-section">
+                            <div className="reply-composer-title">
+                              <span>
+                                Phản hồi nhận xét của{' '}
+                                <strong>{studentName}</strong>:
+                              </span>
+                              <span
+                                className={`review-role-badge ${user?.role === 'ADMIN' ? 'admin' : 'instructor'}`}
+                              >
+                                {user?.role === 'ADMIN'
+                                  ? 'Quản trị viên'
+                                  : 'Giảng viên'}
+                              </span>
+                            </div>
+
+                            {/* Mẫu gợi ý nhanh */}
+                            <div className="reply-quick-templates">
+                              <button
+                                type="button"
+                                className="quick-template-chip"
+                                onClick={() =>
+                                  setReplyContent(
+                                    'Cảm ơn bạn đã tham gia khóa học và để lại nhận xét tích cực! Chúc bạn học tập tốt và gặt hái nhiều thành công.',
+                                  )
+                                }
+                              >
+                                💡 Lời cảm ơn chuẩn
+                              </button>
+                              <button
+                                type="button"
+                                className="quick-template-chip"
+                                onClick={() =>
+                                  setReplyContent(
+                                    'Chào bạn, cảm ơn bạn đã góp ý. Mình sẽ cập nhật thêm tài liệu và ví dụ thực tế trong các bài học tiếp theo nhé!',
+                                  )
+                                }
+                              >
+                                💡 Tiếp thu góp ý
+                              </button>
+                            </div>
+
+                            <textarea
+                              className="reply-textarea-field"
+                              value={replyContent}
+                              onChange={(e) => setReplyContent(e.target.value)}
+                              placeholder="Nhập nội dung phản hồi, lời cảm ơn hoặc giải đáp thắc mắc..."
+                              autoFocus
+                            />
+                            {/* Exception Flow 4b: Hiển thị lỗi rỗng */}
+                            {replyInputError && (
+                              <div className="reply-error-msg">
+                                {replyInputError}
+                              </div>
+                            )}
+
+                            <div className="reply-composer-footer">
+                              <button
+                                type="button"
+                                className="btn-cancel-reply"
+                                onClick={() => {
+                                  setReplyingReviewId(null);
+                                  setReplyInputError('');
+                                }}
+                              >
+                                Hủy bỏ
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-send-reply"
+                                disabled={submittingReply}
+                                onClick={() => handleSendReply(review._id)}
+                              >
+                                <IconlyTick size={16} color="currentColor" />
+                                <span>
+                                  {submittingReply
+                                    ? 'Đang gửi...'
+                                    : 'Gửi phản hồi'}
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: '0.75rem' }}>
+                            <button
+                              type="button"
+                              className="btn-open-reply"
+                              onClick={() => handleOpenReplyBox(review)}
+                            >
+                              <IconlyChat size={16} color="currentColor" />
+                              <span>Phản hồi nhận xét này</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
+                );
+              })}
+          </div>
 
-                {/* Nếu chưa phản hồi -> Nút hoặc ô nhập phản hồi (Basic Flow 2, 3, 4) */}
-                {!hasReply && (
-                  <div>
-                    {replyingReviewId === review._id ? (
-                      <div className="reply-composer-section">
-                        <div className="reply-composer-title">
-                          <span>
-                            Phản hồi nhận xét của <strong>{studentName}</strong>:
-                          </span>
-                          <span className={`review-role-badge ${user?.role === 'ADMIN' ? 'admin' : 'instructor'}`}>
-                            {user?.role === 'ADMIN' ? 'Quản trị viên' : 'Giảng viên'}
-                          </span>
-                        </div>
-
-                        {/* Mẫu gợi ý nhanh */}
-                        <div className="reply-quick-templates">
-                          <button
-                            type="button"
-                            className="quick-template-chip"
-                            onClick={() =>
-                              setReplyContent(
-                                'Cảm ơn bạn đã tham gia khóa học và để lại nhận xét tích cực! Chúc bạn học tập tốt và gặt hái nhiều thành công.',
-                              )
-                            }
-                          >
-                            💡 Lời cảm ơn chuẩn
-                          </button>
-                          <button
-                            type="button"
-                            className="quick-template-chip"
-                            onClick={() =>
-                              setReplyContent(
-                                'Chào bạn, cảm ơn bạn đã góp ý. Mình sẽ cập nhật thêm tài liệu và ví dụ thực tế trong các bài học tiếp theo nhé!',
-                              )
-                            }
-                          >
-                            💡 Tiếp thu góp ý
-                          </button>
-                        </div>
-
-                        <textarea
-                          className="reply-textarea-field"
-                          value={replyContent}
-                          onChange={(e) => setReplyContent(e.target.value)}
-                          placeholder="Nhập nội dung phản hồi, lời cảm ơn hoặc giải đáp thắc mắc..."
-                          autoFocus
-                        />
-                        {/* Exception Flow 4b: Hiển thị lỗi rỗng */}
-                        {replyInputError && (
-                          <div className="reply-error-msg">{replyInputError}</div>
-                        )}
-
-                        <div className="reply-composer-footer">
-                          <button
-                            type="button"
-                            className="btn-cancel-reply"
-                            onClick={() => {
-                              setReplyingReviewId(null);
-                              setReplyInputError('');
-                            }}
-                          >
-                            Hủy bỏ
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-send-reply"
-                            disabled={submittingReply}
-                            onClick={() => handleSendReply(review._id)}
-                          >
-                            <IconlyTick size={16} color="currentColor" />
-                            <span>{submittingReply ? 'Đang gửi...' : 'Gửi phản hồi'}</span>
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ marginTop: '0.75rem' }}>
-                        <button
-                          type="button"
-                          className="btn-open-reply"
-                          onClick={() => handleOpenReplyBox(review)}
-                        >
-                          <IconlyChat size={16} color="currentColor" />
-                          <span>Phản hồi nhận xét này</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+          {/* Phân trang danh sách đánh giá */}
+          {filteredReviews.length > pageSize && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '16px 8px 8px',
+                marginTop: '16px',
+                fontSize: '0.85rem',
+                color: '#64748b',
+                flexWrap: 'wrap',
+                gap: '10px',
+              }}
+            >
+              <span>
+                Hiển thị {(page - 1) * pageSize + 1} -{' '}
+                {Math.min(page * pageSize, filteredReviews.length)} trong tổng
+                số <strong>{filteredReviews.length}</strong> nhận xét
+              </span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  style={{
+                    padding: '6px 14px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    background: page <= 1 ? '#f8fafc' : '#ffffff',
+                    color: page <= 1 ? '#94a3b8' : '#334155',
+                    cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                    fontWeight: 500,
+                  }}
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Trước
+                </button>
+                {Array.from(
+                  { length: Math.ceil(filteredReviews.length / pageSize) },
+                  (_, i) => i + 1,
+                ).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    style={{
+                      padding: '6px 12px',
+                      border: p === page ? 'none' : '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      background: p === page ? '#0056d2' : '#ffffff',
+                      color: p === page ? '#ffffff' : '#334155',
+                      fontWeight: p === page ? 600 : 500,
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => setPage(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  style={{
+                    padding: '6px 14px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    background:
+                      page >= Math.ceil(filteredReviews.length / pageSize)
+                        ? '#f8fafc'
+                        : '#ffffff',
+                    color:
+                      page >= Math.ceil(filteredReviews.length / pageSize)
+                        ? '#94a3b8'
+                        : '#334155',
+                    cursor:
+                      page >= Math.ceil(filteredReviews.length / pageSize)
+                        ? 'not-allowed'
+                        : 'pointer',
+                    fontWeight: 500,
+                  }}
+                  disabled={
+                    page >= Math.ceil(filteredReviews.length / pageSize)
+                  }
+                  onClick={() =>
+                    setPage((p) =>
+                      Math.min(
+                        Math.ceil(filteredReviews.length / pageSize),
+                        p + 1,
+                      ),
+                    )
+                  }
+                >
+                  Sau
+                </button>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

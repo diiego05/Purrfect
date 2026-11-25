@@ -9,6 +9,7 @@ export interface User {
   phoneNumber?: string;
   bio?: string;
   onboardingCompleted?: boolean;
+  purrPoints?: number;
 }
 
 export interface CheckEmailResponse {

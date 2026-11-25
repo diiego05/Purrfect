@@ -106,7 +106,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
     return playlist.courses.reduce((sum, c) => sum + (c.durationHours || 0), 0);
   }, [playlist]);
 
-  // Theo dõi / Bỏ theo dõi playlist công khai (BR29.3)
+  // Theo dõi / Bỏ theo dõi playlist công khai
   const handleToggleFollow = async () => {
     if (!isAuthenticated) {
       navigate('/login');
@@ -144,7 +144,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
     setIsEditModalOpen(true);
   };
 
-  // Lưu chỉnh sửa thông tin playlist (BR29.1, BR29.3)
+  // Lưu chỉnh sửa thông tin playlist (
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!playlist) return;

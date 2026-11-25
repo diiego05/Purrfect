@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { fetchCourses, fetchCategories } from '../../services/courseApi';
+import {
+  fetchCourses,
+  fetchCategories,
+  defaultCategories,
+} from '../../services/courseApi';
 import { categoryApi } from '../../services/categoryApi';
 import { CourseCard } from '../Courses/CourseCard';
 import { NotFound } from '../NotFound/NotFound';
@@ -25,7 +29,8 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({ slug }) => {
     description?: string;
   } | null>(null);
 
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [allCategories, setAllCategories] =
+    useState<Category[]>(defaultCategories);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [notFound, setNotFound] = useState<boolean>(false);

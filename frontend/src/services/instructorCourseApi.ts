@@ -103,7 +103,7 @@ export const uploadCourseThumbnail = async (
 };
 
 /**
- * Tải lên tệp video hoặc tài liệu bài giảng (BR06.2, BR06.5)
+ * Tải lên tệp video hoặc tài liệu bài giảng (
  * Kích hoạt xử lý nén video và trích xuất transcript phục vụ AI RAG Chatbot
  */
 export const uploadLectureMedia = async (
@@ -154,7 +154,7 @@ export const uploadLectureMedia = async (
 };
 
 /**
- * Gửi yêu cầu phê duyệt khóa học lên Admin (BR06.1, Exception 8a)
+ * Gửi yêu cầu phê duyệt khóa học lên Admin (   Exception 8a)
  */
 export const submitCourseForApproval = async (
   id: string,
@@ -166,7 +166,7 @@ export const submitCourseForApproval = async (
 };
 
 /**
- * Xóa hoặc chuyển trạng thái ngừng kinh doanh (BR06.4)
+ * Xóa hoặc chuyển trạng thái ngừng kinh doanh
  */
 export const deleteOrDisableCourse = async (
   id: string,
@@ -195,7 +195,7 @@ export const toggleCourseStatus = async (
 };
 
 /**
- * Quản trị viên duyệt khóa học (Chuyển sang PUBLISHED - BR06.1)
+ * Quản trị viên duyệt khóa học (Chuyển sang PUBLISHED -
  */
 export const approveInstructorCourse = async (
   id: string,
@@ -285,8 +285,7 @@ export const enrollManualStudentApi = async (payload: {
   studentEmail: string;
   studentPhone?: string;
   courseId: string;
-  paymentMethod?: 'VNPAY' | 'FREE';
-  amount?: number;
+  paymentMethod?: 'FREE';
 }): Promise<{ success: boolean; message: string }> => {
   const res = await authFetch(`${API_BASE}/students/enroll-manual`, {
     method: 'POST',

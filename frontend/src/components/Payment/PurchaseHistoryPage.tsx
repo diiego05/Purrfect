@@ -27,6 +27,7 @@ interface OrderItem {
   status:
     'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'REFUND_PENDING' | 'REFUNDED';
   paymentMethod: string;
+  isManualEnrollment?: boolean;
   courseId?: {
     _id: string;
     title: string;
@@ -135,13 +136,24 @@ export const PurchaseHistoryPage: React.FC = () => {
 
   // Trigger: Chọn "Yêu cầu hoàn tiền" tại chi tiết đơn hàng (Basic Flow 1, 2)
   const handleOpenRefundRequest = async (order: OrderItem) => {
+    if (order.isManualEnrollment) {
+      setAlertMessage({
+        type: 'error',
+        text:
+          language === 'vi'
+            ? 'Khóa học được ghi danh thủ công bởi giảng viên, không áp dụng chính sách hoàn tiền.'
+            : 'This course was manually enrolled by instructor and is non-refundable.',
+      });
+      return;
+    }
+
     setSelectedOrder(order);
     setCheckingEligibility(true);
     setEligibilityData(null);
     setAlertMessage(null);
 
     try {
-      // 2. Hệ thống kiểm tra điều kiện hoàn tiền của đơn hàng (BR30.1)
+      // 2. Hệ thống kiểm tra điều kiện hoàn tiền của đơn hàng
       const res = await refundApi.checkEligibility(order._id);
       setEligibilityData(res);
 
@@ -230,7 +242,7 @@ export const PurchaseHistoryPage: React.FC = () => {
     }
   };
 
-  // 4a. Hủy yêu cầu hoàn tiền khi đang PENDING (Alternative Flow 4a & BR30.3)
+  // 4a. Hủy yêu cầu hoàn tiền khi đang PENDING (Alternative Flow 4a &
   const handleCancelRefund = async (requestId: string) => {
     const isConfirmed = window.confirm(
       language === 'vi'
@@ -577,34 +589,55 @@ export const PurchaseHistoryPage: React.FC = () => {
                         </button>
                       )}
 
-                      {/* NÚT YÊU CẦU HOÀN TIỀN (UC30 Trigger) */}
-                      {ord.status === 'PAID' && (
-                        <button
-                          type="button"
-                          className="btn-purr-refund"
-                          disabled={
-                            checkingEligibility &&
+                      {/* NÚT YÊU CẦU HOÀN TIỀN (  Trigger) */}
+                      {ord.status === 'PAID' &&
+                        (ord.isManualEnrollment ? (
+                          <span
+                            className="badge-manual-enroll"
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              background: '#fef3c7',
+                              color: '#b45309',
+                              border: '1px solid #fde68a',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                            }}
+                          >
+                            {language === 'vi'
+                              ? 'Ghi danh thủ công (Không hoàn tiền)'
+                              : 'Manual Enrollment (Non-refundable)'}
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn-purr-refund"
+                            disabled={
+                              checkingEligibility &&
+                              selectedOrder?._id === ord._id
+                            }
+                            onClick={() => handleOpenRefundRequest(ord)}
+                          >
+                            {checkingEligibility &&
                             selectedOrder?._id === ord._id
-                          }
-                          onClick={() => handleOpenRefundRequest(ord)}
-                        >
-                          {checkingEligibility && selectedOrder?._id === ord._id
-                            ? language === 'vi'
-                              ? 'Đang kiểm tra...'
-                              : 'Checking...'
-                            : language === 'vi'
-                              ? 'Yêu cầu hoàn tiền'
-                              : 'Request Refund'}
-                        </button>
-                      )}
+                              ? language === 'vi'
+                                ? 'Đang kiểm tra...'
+                                : 'Checking...'
+                              : language === 'vi'
+                                ? 'Yêu cầu hoàn tiền'
+                                : 'Request Refund'}
+                          </button>
+                        ))}
 
                       {/* Trạng thái đang PENDING hoàn tiền: Hiển thị cảnh báo & Nút Hủy (Alternative Flow 4a) */}
                       {ord.status === 'REFUND_PENDING' && matchingRefund && (
                         <div className="order-refund-pending-box">
                           <p className="refund-pending-notice">
                             {language === 'vi'
-                              ? '⏳ Đang chờ Admin xét duyệt hoàn tiền. Quyền truy cập bài học tạm thời bị khóa (BR30.2).'
-                              : '⏳ Awaiting Admin review. Course lecture access is temporarily locked (BR30.2).'}
+                              ? '⏳ Đang chờ Admin xét duyệt hoàn tiền. Quyền truy cập bài học tạm thời bị khóa.'
+                              : '⏳ Awaiting Admin review. Course lecture access is temporarily locked.'}
                           </p>
                           <button
                             type="button"
@@ -678,6 +711,27 @@ export const PurchaseHistoryPage: React.FC = () => {
                       {formatVND(req.amount)}
                     </strong>
                   </p>
+                  {req.status === 'APPROVED' && (
+                    <p
+                      style={{
+                        margin: '4px 0',
+                        fontSize: '0.85rem',
+                        color: '#b45309',
+                        fontWeight: 600,
+                      }}
+                    >
+                      🪙{' '}
+                      {language === 'vi'
+                        ? 'Điểm PurrPoint đã nhận:'
+                        : 'PurrPoints credited:'}{' '}
+                      <strong style={{ color: '#d97706' }}>
+                        {(
+                          req.pointsRefunded || Math.floor(req.amount / 1000)
+                        ).toLocaleString('vi-VN')}{' '}
+                        pts
+                      </strong>
+                    </p>
+                  )}
                   <p className="refund-reason-text">
                     <strong>{language === 'vi' ? 'Lý do:' : 'Reason:'}</strong>{' '}
                     {req.reason}
@@ -715,7 +769,7 @@ export const PurchaseHistoryPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Nút Hủy yêu cầu hoàn tiền khi đang PENDING (UC30 Alternative Flow 4a) */}
+                {/* Nút Hủy yêu cầu hoàn tiền khi đang PENDING (  Alternative Flow 4a) */}
                 {req.status === 'PENDING' && (
                   <div className="refund-actions">
                     <button
@@ -784,23 +838,71 @@ export const PurchaseHistoryPage: React.FC = () => {
                   </strong>
                 </div>
                 {eligibilityData && (
-                  <div className="refund-summary-eligibility">
-                    <span>
+                  <>
+                    <div className="refund-summary-row">
+                      <span>
+                        {language === 'vi'
+                          ? 'Quy đổi điểm PurrPoint nhận được:'
+                          : 'PurrPoints to receive:'}
+                      </span>
+                      <strong style={{ color: '#b45309' }}>
+                        🪙{' '}
+                        {(
+                          eligibilityData.estimatedPoints ||
+                          Math.floor(
+                            selectedOrder.amount /
+                              (eligibilityData.pointConversionRate || 1000),
+                          )
+                        ).toLocaleString('vi-VN')}{' '}
+                        pts
+                      </strong>
+                    </div>
+                    <div className="refund-summary-row">
+                      <span>
+                        {language === 'vi'
+                          ? 'Số lần hoàn tiền đã dùng:'
+                          : 'Refunds used:'}
+                      </span>
+                      <strong>
+                        {eligibilityData.refundCount || 0} /{' '}
+                        {eligibilityData.maxRefunds || 3} lần tối đa
+                      </strong>
+                    </div>
+                    <div className="refund-summary-eligibility">
+                      <span>
+                        {language === 'vi'
+                          ? `✓ Đã thanh toán ${eligibilityData.daysPassed} ngày (≤ 14 ngày)`
+                          : `✓ Paid ${eligibilityData.daysPassed} days ago (≤ 14 days)`}
+                      </span>
+                      <span>
+                        {language === 'vi'
+                          ? `✓ Đã hoàn thành ${eligibilityData.completedLecturesCount} bài giảng (≤ 2 bài)`
+                          : `✓ Completed ${eligibilityData.completedLecturesCount} lectures (≤ 2)`}
+                      </span>
+                      <span>
+                        {language === 'vi'
+                          ? '✓ Chưa cấp chứng chỉ hoàn thành'
+                          : '✓ No certificate claimed or issued'}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        marginTop: '8px',
+                        padding: '8px 12px',
+                        background: '#fffbeb',
+                        border: '1px solid #fde68a',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        color: '#92400e',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      📌{' '}
                       {language === 'vi'
-                        ? `✓ Đã thanh toán ${eligibilityData.daysPassed} ngày (≤ 14 ngày)`
-                        : `✓ Paid ${eligibilityData.daysPassed} days ago (≤ 14 days)`}
-                    </span>
-                    <span>
-                      {language === 'vi'
-                        ? `✓ Đã hoàn thành ${eligibilityData.completedLecturesCount} bài giảng (≤ 2 bài)`
-                        : `✓ Completed ${eligibilityData.completedLecturesCount} lectures (≤ 2)`}
-                    </span>
-                    <span>
-                      {language === 'vi'
-                        ? '✓ Chưa cấp chứng chỉ hoàn thành'
-                        : '✓ No certificate claimed or issued'}
-                    </span>
-                  </div>
+                        ? `Tiền hoàn sẽ được chuyển thành điểm PurrPoint (${(eligibilityData.pointConversionRate || 1000).toLocaleString('vi-VN')}đ = 1 point) và cộng trực tiếp vào tài khoản học viên để sử dụng tiếp.`
+                        : `Refund amount will be converted into PurrPoints and credited to your account.`}
+                    </div>
+                  </>
                 )}
               </div>
 

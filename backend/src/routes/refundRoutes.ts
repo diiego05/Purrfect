@@ -6,8 +6,13 @@ import {
   getMyRefundRequests,
   getAdminRefundRequests,
   processAdminRefund,
+  getInstructorRefundRequests,
 } from '../controllers/refundController';
-import { authenticateToken, requireAdmin } from '../middlewares/auth';
+import {
+  authenticateToken,
+  requireAdmin,
+  requireInstructor,
+} from '../middlewares/auth';
 
 const router = Router();
 
@@ -17,7 +22,15 @@ router.post('/request', authenticateToken, createRefundRequest);
 router.post('/cancel/:id', authenticateToken, cancelRefundRequest);
 router.get('/my-requests', authenticateToken, getMyRefundRequests);
 
-// Admin routes (UC33)
+// Instructor routes (  / Logs hoàn tiền học viên)
+router.get(
+  ['/instructor/requests', '/instructor'],
+  authenticateToken,
+  requireInstructor,
+  getInstructorRefundRequests,
+);
+
+// Admin routes
 router.get(
   '/admin/requests',
   authenticateToken,

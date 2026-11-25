@@ -18,7 +18,7 @@ export async function buildKnowledgeBase(): Promise<string> {
       'title shortDescription level price discountPrice durationHours averageRating totalStudents slug badge',
     )
     .lean()
-    .limit(100);
+    .limit(400);
 
   if (courses.length > 0) {
     const courseLines = courses.map((c) => {
@@ -702,7 +702,7 @@ async function ruleBasedResponse(
     };
   }
 
-  // Ngoài phạm vi dữ liệu hệ thống (BR21.2)
+  // Ngoài phạm vi dữ liệu hệ thống
   return {
     message:
       'Xin lỗi, tôi chưa có dữ liệu chính xác cho thắc mắc này. Bạn có thể liên hệ bộ phận Chăm sóc khách hàng qua email **support@purrfect.com** hoặc hotline **1900-xxxx** để được hỗ trợ thêm nhé! 🙏',

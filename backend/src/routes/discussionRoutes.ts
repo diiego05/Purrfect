@@ -10,12 +10,15 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
 } from '../controllers/discussionController';
-import { authenticateToken, optionalAuthenticateToken } from '../middlewares/auth';
+import {
+  authenticateToken,
+  optionalAuthenticateToken,
+} from '../middlewares/auth';
 
 const router = Router();
 
 // ==========================================
-// 1. Thảo luận theo bài giảng (UC22)
+// 1. Thảo luận theo bài giảng
 // Khớp Lược đồ tuần tự 3.2.22
 // ==========================================
 
@@ -45,11 +48,7 @@ router.post(
 
 // Giảng viên ghim câu trả lời chính thức
 // PATCH /api/v1/discussions/:replyId/pin ()
-router.patch(
-  '/discussions/:replyId/pin',
-  authenticateToken,
-  pinOfficialAnswer,
-);
+router.patch('/discussions/:replyId/pin', authenticateToken, pinOfficialAnswer);
 
 // Thích / Bỏ thích câu hỏi hoặc phản hồi
 router.patch(
@@ -64,17 +63,21 @@ router.post(
 );
 
 // Xóa câu hỏi / phản hồi
-router.delete(
-  '/discussions/:id',
-  authenticateToken,
-  deleteDiscussion,
-);
+router.delete('/discussions/:id', authenticateToken, deleteDiscussion);
 
 // ==========================================
 // 2. Thông báo bài giảng (Notifications)
 // ==========================================
 router.get('/notifications', authenticateToken, getUserNotifications);
-router.patch('/notifications/read-all', authenticateToken, markAllNotificationsAsRead);
-router.patch('/notifications/:id/read', authenticateToken, markNotificationAsRead);
+router.patch(
+  '/notifications/read-all',
+  authenticateToken,
+  markAllNotificationsAsRead,
+);
+router.patch(
+  '/notifications/:id/read',
+  authenticateToken,
+  markNotificationAsRead,
+);
 
 export default router;

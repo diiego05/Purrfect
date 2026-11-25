@@ -42,14 +42,10 @@ export const CourseStudentsModal: React.FC<CourseStudentsModalProps> = ({
     name: string;
     email: string;
     phone: string;
-    paymentMethod: 'VNPAY' | 'FREE';
-    amount: number;
   }>({
     name: '',
     email: '',
     phone: '',
-    paymentMethod: course.price > 0 ? 'VNPAY' : 'FREE',
-    amount: course.price || 0,
   });
   const [submittingAdd, setSubmittingAdd] = useState<boolean>(false);
   const [refreshTick, setRefreshTick] = useState<number>(0);
@@ -182,7 +178,7 @@ export const CourseStudentsModal: React.FC<CourseStudentsModalProps> = ({
     }
   };
 
-  // Xử lý Thêm học viên thủ công vào khóa này
+  // Xử lý Thêm học viên thủ công vào khóa này (Miễn phí tối đa 10 học viên)
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addForm.name.trim() || !addForm.email.trim()) {
@@ -197,19 +193,16 @@ export const CourseStudentsModal: React.FC<CourseStudentsModalProps> = ({
         studentEmail: addForm.email.trim(),
         studentPhone: addForm.phone.trim() || undefined,
         courseId: course._id,
-        paymentMethod: addForm.paymentMethod,
-        amount: addForm.amount,
+        paymentMethod: 'FREE',
       });
 
       if (res.success) {
-        toast.success(res.message);
+        toast.success(res.message || 'Thêm học viên miễn phí thành công!');
         setShowAddModal(false);
         setAddForm({
           name: '',
           email: '',
           phone: '',
-          paymentMethod: course.price > 0 ? 'VNPAY' : 'FREE',
-          amount: course.price || 0,
         });
         setRefreshTick((t) => t + 1);
         if (onStudentsChanged) onStudentsChanged();
@@ -296,6 +289,9 @@ export const CourseStudentsModal: React.FC<CourseStudentsModalProps> = ({
     return true;
   });
 
+  const manualCount = students.filter((s) => s.isManualEnrollment).length;
+  const isMaxManual = manualCount >= 10;
+
   return (
     <div className="course-students-modal-overlay" onClick={onClose}>
       <div
@@ -375,13 +371,39 @@ export const CourseStudentsModal: React.FC<CourseStudentsModalProps> = ({
               {filteredStudents.length} / {students.length}
             </strong>
           </div>
+          <div className="csm-stat-box">
+            <span className="csm-stat-label">Thêm miễn phí:</span>
+            <strong
+              className={`csm-stat-val ${isMaxManual ? 'orange' : 'blue'}`}
+            >
+              {manualCount} / 10
+            </strong>
+          </div>
           <button
             type="button"
             className="csm-btn-add-student"
-            onClick={() => setShowAddModal(true)}
+            disabled={isMaxManual}
+            title={
+              isMaxManual
+                ? 'Khóa học đã đạt giới hạn 10 học viên thêm miễn phí.'
+                : 'Thêm học viên miễn phí vào khóa học (tối đa 10)'
+            }
+            onClick={() => {
+              if (isMaxManual) {
+                toast.warning(
+                  'Khóa học này đã đạt giới hạn tối đa 10 học viên được thêm miễn phí bởi giảng viên.',
+                );
+                return;
+              }
+              setShowAddModal(true);
+            }}
           >
             <IconlyPlus size={15} color="#ffffff" />
-            <span>Thêm học viên vào khóa</span>
+            <span>
+              {isMaxManual
+                ? 'Hết suất thêm (10/10)'
+                : `Thêm học viên (Free ${10 - manualCount})`}
+            </span>
           </button>
         </div>
 
@@ -520,13 +542,27 @@ export const CourseStudentsModal: React.FC<CourseStudentsModalProps> = ({
                       </td>
                       <td>
                         <div className="csm-pay-cell">
-                          <span
-                            className={`csm-pay-badge ${item.paymentMethod === 'VNPAY' ? 'vnpay' : 'free'}`}
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              flexWrap: 'wrap',
+                            }}
                           >
-                            {item.paymentMethod === 'VNPAY'
-                              ? 'VNPAY'
-                              : 'Miễn phí'}
-                          </span>
+                            <span
+                              className={`csm-pay-badge ${item.paymentMethod === 'VNPAY' ? 'vnpay' : 'free'}`}
+                            >
+                              {item.paymentMethod === 'VNPAY'
+                                ? 'VNPAY'
+                                : 'Miễn phí'}
+                            </span>
+                            {item.isManualEnrollment && (
+                              <span className="badge-manual-enroll">
+                                Ghi danh thủ công
+                              </span>
+                            )}
+                          </div>
                           <span className="csm-pay-amt">
                             {item.amount > 0 ? formatVND(item.amount) : '0 ₫'}
                           </span>
@@ -659,37 +695,24 @@ export const CourseStudentsModal: React.FC<CourseStudentsModalProps> = ({
                     }
                   />
                 </div>
-                <div className="form-row">
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label>Hình thức</label>
-                    <select
-                      value={addForm.paymentMethod}
-                      onChange={(e) =>
-                        setAddForm({
-                          ...addForm,
-                          paymentMethod: e.target.value as 'VNPAY' | 'FREE',
-                          amount:
-                            e.target.value === 'FREE' ? 0 : course.price || 0,
-                        })
-                      }
-                    >
-                      <option value="VNPAY">Thanh toán VNPAY</option>
-                      <option value="FREE">Miễn phí (FREE)</option>
-                    </select>
+                <div
+                  style={{
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '16px',
+                    fontSize: '0.85rem',
+                    color: '#1e40af',
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: '4px' }}>
+                    🎁 Ghi danh miễn phí (100% Free)
                   </div>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label>Học phí ghi nhận (VNĐ)</label>
-                    <input
-                      type="number"
-                      value={addForm.amount}
-                      disabled={addForm.paymentMethod === 'FREE'}
-                      onChange={(e) =>
-                        setAddForm({
-                          ...addForm,
-                          amount: Number(e.target.value),
-                        })
-                      }
-                    />
+                  <div>
+                    Mỗi khóa học được thêm tối đa 10 học viên miễn phí (Hiện
+                    tại: <strong>{manualCount} / 10</strong>). Học viên sẽ nhận
+                    được toàn quyền truy cập học tập ngay lập tức.
                   </div>
                 </div>
                 <div className="csm-nested-actions">

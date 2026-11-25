@@ -7,12 +7,22 @@ import {
   IconlyHome,
   IconlyUserGroup,
   IconlyStar,
+  IconlyShield,
+  IconlyWork,
+  IconlyWallet,
+  IconlyDiscount,
 } from '../Onboarding/IconlyIcons';
 import './InstructorLayout.css';
 
 interface InstructorLayoutProps {
   children: React.ReactNode;
-  activeTab?: 'courses' | 'analytics' | 'students' | 'reviews';
+  activeTab?:
+    | 'courses'
+    | 'analytics'
+    | 'students'
+    | 'reviews'
+    | 'withdrawals'
+    | 'refunds';
   pageTitle?: string;
   onQuickCreate?: () => void;
 }
@@ -22,7 +32,74 @@ export const InstructorLayout: React.FC<InstructorLayoutProps> = ({
   activeTab = 'courses',
   pageTitle = 'Quản lý khóa học',
 }) => {
-  const { user, logout, navigate } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, navigate } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="instructor-guard-container">
+        <div className="instructor-guard-spinner" />
+        <p>Đang kiểm tra quyền truy cập Giảng viên...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="instructor-guard-container">
+        <div className="instructor-guard-card">
+          <div className="instructor-guard-icon unauth">
+            <IconlyShield size={36} color="#059669" />
+          </div>
+          <h2>Yêu cầu đăng nhập Giảng viên</h2>
+          <p>
+            Bảng điều khiển Giảng viên yêu cầu đăng nhập bằng tài khoản Giảng
+            viên hoặc Quản trị viên để truy cập.
+          </p>
+          <button
+            type="button"
+            className="btn-instructor-guard-primary"
+            onClick={() => navigate('/login')}
+          >
+            Đăng nhập ngay
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (user.role !== 'INSTRUCTOR' && user.role !== 'ADMIN') {
+    return (
+      <div className="instructor-guard-container">
+        <div className="instructor-guard-card">
+          <div className="instructor-guard-icon forbidden">
+            <IconlyWork size={36} color="#d97706" />
+          </div>
+          <h2>Chức năng dành riêng cho Giảng viên</h2>
+          <p>
+            Tài khoản hiện tại của bạn là Học viên. Để tạo khóa học và quản lý
+            hoạt động giảng dạy trên Purrfect, vui lòng nộp hồ sơ tham gia
+            Chương trình Giảng viên Đối tác.
+          </p>
+          <div className="instructor-guard-actions">
+            <button
+              type="button"
+              className="btn-instructor-guard-primary"
+              onClick={() => navigate('/instructor/apply')}
+            >
+              Đăng ký làm Giảng viên
+            </button>
+            <button
+              type="button"
+              className="btn-instructor-guard-secondary"
+              onClick={() => navigate('/')}
+            >
+              Về Trang chủ
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="instructor-layout-root">
@@ -93,6 +170,32 @@ export const InstructorLayout: React.FC<InstructorLayoutProps> = ({
               <IconlyStar size={18} color="currentColor" />
             </div>
             <span>Đánh giá & Phản hồi</span>
+          </button>
+
+          <div className="instructor-nav-section-label">
+            Tài chính & Doanh thu
+          </div>
+
+          <button
+            type="button"
+            className={`instructor-nav-item ${activeTab === 'withdrawals' ? 'active' : ''}`}
+            onClick={() => navigate('/instructor/withdrawals')}
+          >
+            <div className="instructor-nav-icon">
+              <IconlyWallet size={18} color="currentColor" />
+            </div>
+            <span>Quản lý Rút tiền</span>
+          </button>
+
+          <button
+            type="button"
+            className={`instructor-nav-item ${activeTab === 'refunds' ? 'active' : ''}`}
+            onClick={() => navigate('/instructor/refunds')}
+          >
+            <div className="instructor-nav-icon">
+              <IconlyDiscount size={18} color="currentColor" />
+            </div>
+            <span>Nhật ký Hoàn trả</span>
           </button>
         </nav>
 

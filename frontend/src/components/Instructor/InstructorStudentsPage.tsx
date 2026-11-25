@@ -56,15 +56,13 @@ export const InstructorStudentsPage: React.FC = () => {
     studentEmail: string;
     studentPhone: string;
     courseId: string;
-    paymentMethod: 'VNPAY' | 'FREE';
-    amount: number;
+    paymentMethod: 'FREE';
   }>({
     studentName: '',
     studentEmail: '',
     studentPhone: '',
     courseId: '',
-    paymentMethod: 'VNPAY',
-    amount: 0,
+    paymentMethod: 'FREE',
   });
   const [submittingManual, setSubmittingManual] = useState<boolean>(false);
 
@@ -198,8 +196,7 @@ export const InstructorStudentsPage: React.FC = () => {
         studentEmail: manualForm.studentEmail.trim(),
         studentPhone: manualForm.studentPhone.trim() || undefined,
         courseId: manualForm.courseId,
-        paymentMethod: manualForm.paymentMethod,
-        amount: manualForm.amount,
+        paymentMethod: 'FREE',
       });
 
       if (res.success) {
@@ -210,8 +207,7 @@ export const InstructorStudentsPage: React.FC = () => {
           studentEmail: '',
           studentPhone: '',
           courseId: courseOptions[0]?.id || '',
-          paymentMethod: 'VNPAY',
-          amount: 0,
+          paymentMethod: 'FREE',
         });
         // Tải lại danh sách
         setRefreshTick((t) => t + 1);
@@ -574,13 +570,27 @@ export const InstructorStudentsPage: React.FC = () => {
                         {/* Cột Hình thức & Học phí */}
                         <td>
                           <div className="payment-cell">
-                            <span
-                              className={`badge-pay-method ${item.paymentMethod === 'VNPAY' ? 'vnpay' : 'free'}`}
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                flexWrap: 'wrap',
+                              }}
                             >
-                              {item.paymentMethod === 'VNPAY'
-                                ? 'VNPAY'
-                                : 'Miễn phí'}
-                            </span>
+                              <span
+                                className={`badge-pay-method ${item.paymentMethod === 'VNPAY' ? 'vnpay' : 'free'}`}
+                              >
+                                {item.paymentMethod === 'VNPAY'
+                                  ? 'VNPAY'
+                                  : 'Miễn phí'}
+                              </span>
+                              {item.isManualEnrollment && (
+                                <span className="badge-manual-enroll">
+                                  Ghi danh thủ công
+                                </span>
+                              )}
+                            </div>
                             <span className="pay-amount-text">
                               {item.amount > 0 ? formatVND(item.amount) : '0 ₫'}
                             </span>
@@ -802,24 +812,10 @@ export const InstructorStudentsPage: React.FC = () => {
                   />
                 </div>
 
-                <div className="modal-form-group">
-                  <label className="modal-form-label">
-                    Hình thức thanh toán / Ghi danh:
-                  </label>
-                  <select
-                    className="modal-form-input"
-                    value={manualForm.paymentMethod}
-                    onChange={(e) => {
-                      const method = e.target.value as 'VNPAY' | 'FREE';
-                      setManualForm({ ...manualForm, paymentMethod: method });
-                    }}
-                  >
-                    <option value="VNPAY">
-                      Thanh toán qua VNPAY (Có tính doanh thu)
-                    </option>
-                    <option value="FREE">Miễn phí / Khóa học tặng (0 ₫)</option>
-                  </select>
-                </div>
+                <p className="enroll-free-notice">
+                  Ghi danh thủ công là miễn phí (0 ₫). Mỗi khóa học tối đa 10
+                  học viên.
+                </p>
               </div>
 
               <div className="enroll-modal-footer">

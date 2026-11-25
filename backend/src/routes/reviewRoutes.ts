@@ -7,12 +7,16 @@ import {
   submitCourseReview,
   getInstructorReviews,
 } from '../controllers/reviewController';
-import { authenticateToken, optionalAuthenticateToken } from '../middlewares/auth';
+import {
+  authenticateToken,
+  optionalAuthenticateToken,
+  requireInstructor,
+} from '../middlewares/auth';
 
 const router = Router();
 
 // ==========================================
-// 1. Phản hồi đánh giá (UC23)
+// 1. Phản hồi đánh giá
 // Khớp Lược đồ tuần tự Sequence Diagram 3.2.23 (sd PhanHoiDanhGia)
 // ==========================================
 
@@ -34,14 +38,27 @@ router.delete('/reviews/:id/reply', authenticateToken, deleteReviewReply);
 
 // Lấy danh sách đánh giá của khóa học (kèm phân bố sao và phản hồi)
 // GET /api/v1/courses/:courseId/reviews
-router.get('/courses/:courseId/reviews', optionalAuthenticateToken, getCourseReviews);
+router.get(
+  '/courses/:courseId/reviews',
+  optionalAuthenticateToken,
+  getCourseReviews,
+);
 
 // Học viên gửi đánh giá cho khóa học
 // POST /api/v1/courses/:courseId/reviews
-router.post('/courses/:courseId/reviews', authenticateToken, submitCourseReview);
+router.post(
+  '/courses/:courseId/reviews',
+  authenticateToken,
+  submitCourseReview,
+);
 
 // Giảng viên / Admin xem danh sách đánh giá trong Dashboard
 // GET /api/v1/instructor/reviews
-router.get('/instructor/reviews', authenticateToken, getInstructorReviews);
+router.get(
+  '/instructor/reviews',
+  authenticateToken,
+  requireInstructor,
+  getInstructorReviews,
+);
 
 export default router;

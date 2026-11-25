@@ -53,12 +53,18 @@ export const InstructorCoursesPage: React.FC = () => {
     totalRevenue: 0,
   });
 
-  // Bộ lọc
+  // Bộ lọc & Phân trang
   const [activeStatusTab, setActiveStatusTab] = useState<string>('ALL');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [toastMsg, setToastMsg] = useState<string>('');
+  const [page, setPage] = useState<number>(1);
+  const pageSize = 8;
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeStatusTab, searchKeyword]);
 
   // Chế độ Soạn thảo / Tạo mới khóa học (Hiển thị dạng trang View, không Popup)
   const [editingCourse, setEditingCourse] = useState<InstructorCourse | null>(
@@ -145,7 +151,7 @@ export const InstructorCoursesPage: React.FC = () => {
     }
   };
 
-  // Chuyển đổi trạng thái Ngừng kinh doanh / Mở bán lại (BR06.4)
+  // Chuyển đổi trạng thái Ngừng kinh doanh / Mở bán lại
   const handleToggleStatus = async (courseId: string) => {
     try {
       const res = await toggleCourseStatus(courseId);
@@ -158,7 +164,7 @@ export const InstructorCoursesPage: React.FC = () => {
     }
   };
 
-  // Quản trị viên duyệt xuất bản khóa học (BR06.1)
+  // Quản trị viên duyệt xuất bản khóa học
   const handleApproveCourse = async (courseId: string) => {
     try {
       const res = await approveInstructorCourse(courseId);
@@ -189,7 +195,7 @@ export const InstructorCoursesPage: React.FC = () => {
     }
   };
 
-  // Xác nhận xóa hoặc ngừng kinh doanh (BR06.4)
+  // Xác nhận xóa hoặc ngừng kinh doanh
   const handleConfirmDelete = async () => {
     if (!deleteConfirmCourse) return;
     setDeleting(true);
@@ -415,24 +421,6 @@ export const InstructorCoursesPage: React.FC = () => {
             <span className="stat-value">{stats.draft}</span>
             <span className="stat-sub">Đang soạn thảo</span>
           </div>
-
-          <div
-            className="instructor-stat-card stat-card-revenue"
-            onClick={() => navigate('/instructor/students')}
-            style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
-            title="Nhấn để mở trang Quản lý học viên ghi danh"
-          >
-            <span className="stat-label">Tổng học viên</span>
-            <span className="stat-value">
-              {stats.totalStudents.toLocaleString('vi-VN')}
-            </span>
-            <span
-              className="stat-sub"
-              style={{ color: '#0056d2', fontWeight: 600 }}
-            >
-              👉 Xem danh sách ghi danh
-            </span>
-          </div>
         </div>
 
         {/* =========================================================================
@@ -523,263 +511,383 @@ export const InstructorCoursesPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="instructor-courses-grid">
-            {courses.map((c) => {
-              const categoryName =
-                typeof c.categoryId === 'object' && c.categoryId?.name
-                  ? c.categoryId.name
-                  : 'Chưa phân loại';
+          <>
+            <div className="instructor-courses-grid">
+              {courses
+                .slice((page - 1) * pageSize, page * pageSize)
+                .map((c) => {
+                  const categoryName =
+                    typeof c.categoryId === 'object' && c.categoryId?.name
+                      ? c.categoryId.name
+                      : 'Chưa phân loại';
 
-              const totalLectures = (c.sections || []).reduce(
-                (acc, sec) => acc + (sec.lectures?.length || 0),
-                0,
-              );
+                  const totalLectures = (c.sections || []).reduce(
+                    (acc, sec) => acc + (sec.lectures?.length || 0),
+                    0,
+                  );
 
-              return (
-                <div key={c._id} className="instructor-course-row">
-                  {/* Thumbnail & Badge */}
-                  <div className="instructor-course-thumb">
-                    <img src={c.thumbnailUrl} alt={c.title} />
-                    <span
-                      className={`course-status-badge ${
-                        c.status === 'PUBLISHED'
-                          ? 'badge-published'
-                          : c.status === 'PENDING_APPROVAL'
-                            ? 'badge-pending'
-                            : c.status === 'REJECTED'
-                              ? 'badge-rejected'
-                              : c.status === 'DISABLED'
-                                ? 'badge-disabled'
-                                : 'badge-draft'
-                      }`}
-                    >
-                      {c.status === 'PUBLISHED'
-                        ? 'Đang phát hành'
-                        : c.status === 'PENDING_APPROVAL'
-                          ? 'Chờ duyệt'
-                          : c.status === 'REJECTED'
-                            ? 'Từ chối'
-                            : c.status === 'DISABLED'
-                              ? 'Ngừng bán'
-                              : 'Bản nháp'}
-                    </span>
-                  </div>
-
-                  {/* Thông tin khóa học */}
-                  <div className="instructor-course-info">
-                    <h3
-                      className="instructor-course-title"
-                      onClick={() => setEditingCourse(c)}
-                      title="Nhấn để mở trình soạn thảo"
-                    >
-                      {c.title}
-                    </h3>
-
-                    <div className="instructor-course-meta">
-                      <span>
-                        <IconlyFolder size={14} color="#94a3b8" />
-                        <span>{categoryName}</span>
-                      </span>
-                      <span>
-                        <IconlyDiscovery size={14} color="#38bdf8" />
-                        <span>Trình độ: {c.level}</span>
-                      </span>
-                      <span>
-                        <IconlyBookmark size={14} color="#34d399" />
-                        <span>
-                          <strong>{(c.sections || []).length}</strong> chương •{' '}
-                          <strong>{totalLectures}</strong> bài giảng
-                        </span>
-                      </span>
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setViewingStudentsCourse(c);
-                        }}
-                        style={{
-                          cursor: 'pointer',
-                          color: '#0056d2',
-                          fontWeight: 600,
-                          padding: '2px 6px',
-                          background: '#eff6ff',
-                          borderRadius: '4px',
-                        }}
-                        title="Xem danh sách học viên ghi danh khóa học này"
-                      >
-                        <IconlyUserGroup size={14} color="#0056d2" />
-                        <span>
-                          {(c.totalStudents || 0).toLocaleString('vi-VN')} học
-                          viên
-                        </span>
-                      </span>
-                      <span>
-                        <IconlyStar size={14} color="#f59e0b" />
-                        <span>{(c.averageRating || 5).toFixed(1)}</span>
-                      </span>
-                    </div>
-
-                    <div className="instructor-course-pricing">
-                      <span>
-                        {c.price <= 0 ? 'Miễn phí' : formatVND(c.price)}
-                      </span>
-                      {c.discountPrice && c.discountPrice > 0 && (
-                        <span className="original">
-                          {formatVND(c.discountPrice)}
-                        </span>
-                      )}
-                      {c.badge && (
+                  return (
+                    <div key={c._id} className="instructor-course-row">
+                      {/* Thumbnail & Badge */}
+                      <div className="instructor-course-thumb">
+                        <img src={c.thumbnailUrl} alt={c.title} />
                         <span
-                          style={{
-                            fontSize: '11px',
-                            background: '#fef2f2',
-                            color: '#dc2626',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                          }}
+                          className={`course-status-badge ${
+                            c.status === 'PUBLISHED'
+                              ? 'badge-published'
+                              : c.status === 'PENDING_APPROVAL'
+                                ? 'badge-pending'
+                                : c.status === 'REJECTED'
+                                  ? 'badge-rejected'
+                                  : c.status === 'DISABLED'
+                                    ? 'badge-disabled'
+                                    : 'badge-draft'
+                          }`}
                         >
-                          {c.badge}
+                          {c.status === 'PUBLISHED'
+                            ? 'Đang phát hành'
+                            : c.status === 'PENDING_APPROVAL'
+                              ? 'Chờ duyệt'
+                              : c.status === 'REJECTED'
+                                ? 'Từ chối'
+                                : c.status === 'DISABLED'
+                                  ? 'Ngừng bán'
+                                  : 'Bản nháp'}
                         </span>
-                      )}
-                    </div>
-
-                    {/* Lý do từ chối nếu có */}
-                    {c.status === 'REJECTED' && c.rejectionReason && (
-                      <div
-                        style={{
-                          marginTop: '8px',
-                          background: '#fef2f2',
-                          color: '#b91c1c',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          fontSize: '12.5px',
-                        }}
-                      >
-                        <strong>Lý do từ chối:</strong> {c.rejectionReason}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Nhóm nút hành động */}
-                  <div className="instructor-course-actions">
-                    <button
-                      type="button"
-                      className="btn-action-edit"
-                      onClick={() => setEditingCourse(c)}
-                    >
-                      <IconlyEdit size={15} color="#ffffff" />
-                      <span>Soạn thảo</span>
-                    </button>
+                      {/* Thông tin khóa học */}
+                      <div className="instructor-course-info">
+                        <h3
+                          className="instructor-course-title"
+                          onClick={() => setEditingCourse(c)}
+                          title="Nhấn để mở trình soạn thảo"
+                        >
+                          {c.title}
+                        </h3>
 
-                    {/* Nút gửi phê duyệt nếu đang là DRAFT hoặc REJECTED */}
-                    {(c.status === 'DRAFT' || c.status === 'REJECTED') && (
-                      <button
-                        type="button"
-                        className="btn-action-submit"
-                        onClick={() => handleSubmitApprovalDirect(c._id)}
-                      >
-                        <span>Gửi duyệt</span>
-                      </button>
-                    )}
+                        <div className="instructor-course-meta">
+                          <span>
+                            <IconlyFolder size={14} color="#94a3b8" />
+                            <span>{categoryName}</span>
+                          </span>
+                          <span>
+                            <IconlyDiscovery size={14} color="#38bdf8" />
+                            <span>Trình độ: {c.level}</span>
+                          </span>
+                          <span>
+                            <IconlyBookmark size={14} color="#34d399" />
+                            <span>
+                              <strong>{(c.sections || []).length}</strong>{' '}
+                              chương • <strong>{totalLectures}</strong> bài
+                              giảng
+                            </span>
+                          </span>
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingStudentsCourse(c);
+                            }}
+                            style={{
+                              cursor: 'pointer',
+                              color: '#0056d2',
+                              fontWeight: 600,
+                              padding: '2px 6px',
+                              background: '#eff6ff',
+                              borderRadius: '4px',
+                            }}
+                            title="Xem danh sách học viên ghi danh khóa học này"
+                          >
+                            <IconlyUserGroup size={14} color="#0056d2" />
+                            <span>
+                              {(c.totalStudents || 0).toLocaleString('vi-VN')}{' '}
+                              học viên
+                            </span>
+                          </span>
+                          <span>
+                            <IconlyStar size={14} color="#f59e0b" />
+                            <span>{(c.averageRating || 5).toFixed(1)}</span>
+                          </span>
+                        </div>
 
-                    {/* Admin: Phê duyệt hoặc từ chối khóa học đang chờ duyệt */}
-                    {user?.role === 'ADMIN' &&
-                      c.status === 'PENDING_APPROVAL' && (
-                        <>
+                        <div className="instructor-course-pricing">
+                          <span>
+                            {c.price <= 0 ? 'Miễn phí' : formatVND(c.price)}
+                          </span>
+                          {c.discountPrice && c.discountPrice > 0 && (
+                            <span className="original">
+                              {formatVND(c.discountPrice)}
+                            </span>
+                          )}
+                          {c.badge && (
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                background: '#fef2f2',
+                                color: '#dc2626',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                              }}
+                            >
+                              {c.badge}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Lý do từ chối nếu có */}
+                        {c.status === 'REJECTED' && c.rejectionReason && (
+                          <div
+                            style={{
+                              marginTop: '8px',
+                              background: '#fef2f2',
+                              color: '#b91c1c',
+                              padding: '6px 10px',
+                              borderRadius: '6px',
+                              fontSize: '12.5px',
+                            }}
+                          >
+                            <strong>Lý do từ chối:</strong> {c.rejectionReason}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Nhóm nút hành động */}
+                      <div className="instructor-course-actions">
+                        <button
+                          type="button"
+                          className="btn-action-edit"
+                          onClick={() => setEditingCourse(c)}
+                        >
+                          <IconlyEdit size={15} color="#ffffff" />
+                          <span>Soạn thảo</span>
+                        </button>
+
+                        {/* Nút gửi phê duyệt nếu đang là DRAFT hoặc REJECTED */}
+                        {(c.status === 'DRAFT' || c.status === 'REJECTED') && (
                           <button
                             type="button"
                             className="btn-action-submit"
-                            style={{
-                              background:
-                                'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-                              boxShadow: '0 2px 10px rgba(16, 185, 129, 0.35)',
-                            }}
-                            onClick={() => handleApproveCourse(c._id)}
-                            title="Phê duyệt xuất bản khóa học"
+                            onClick={() => handleSubmitApprovalDirect(c._id)}
                           >
-                            <IconlyTick size={14} color="#ffffff" />
-                            <span>Duyệt</span>
+                            <span>Gửi duyệt</span>
                           </button>
+                        )}
+
+                        {/* Admin: Phê duyệt hoặc từ chối khóa học đang chờ duyệt */}
+                        {user?.role === 'ADMIN' &&
+                          c.status === 'PENDING_APPROVAL' && (
+                            <>
+                              <button
+                                type="button"
+                                className="btn-action-submit"
+                                style={{
+                                  background:
+                                    'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                                  boxShadow:
+                                    '0 2px 10px rgba(16, 185, 129, 0.35)',
+                                }}
+                                onClick={() => handleApproveCourse(c._id)}
+                                title="Phê duyệt xuất bản khóa học"
+                              >
+                                <IconlyTick size={14} color="#ffffff" />
+                                <span>Duyệt</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-action-danger"
+                                style={{
+                                  padding: '6px 12px',
+                                  fontSize: '13px',
+                                }}
+                                onClick={() => handleRejectCourse(c._id)}
+                                title="Từ chối phê duyệt"
+                              >
+                                <IconlyClose size={14} color="#f87171" />
+                                <span>Từ chối</span>
+                              </button>
+                            </>
+                          )}
+
+                        {/* Xem danh sách học viên ghi danh của khóa học này */}
+                        <button
+                          type="button"
+                          className="btn-action-secondary"
+                          style={{
+                            color: '#0056d2',
+                            borderColor: '#bfdbfe',
+                            background: '#eff6ff',
+                          }}
+                          onClick={() => setViewingStudentsCourse(c)}
+                          title="Xem danh sách học viên ghi danh khóa học này"
+                        >
+                          <IconlyUserGroup size={14} color="#0056d2" />
+                          <span>
+                            Học viên (
+                            {(c.totalStudents || 0).toLocaleString('vi-VN')})
+                          </span>
+                        </button>
+
+                        {/* Quản lý 5 mã giảm giá cho khóa học */}
+                        <button
+                          type="button"
+                          className="btn-action-secondary"
+                          style={{
+                            color: '#7c3aed',
+                            borderColor: '#ddd6fe',
+                            background: '#f5f3ff',
+                          }}
+                          onClick={() =>
+                            navigate(`/instructor/courses/${c._id}/coupons`)
+                          }
+                          title="Quản lý mã giảm giá của khóa học (tối đa 5 mã giảm 10%)"
+                        >
+                          <span>Mã giảm giá</span>
+                        </button>
+
+                        {/* Xem trực tiếp trang khóa học */}
+                        <button
+                          type="button"
+                          className="btn-action-secondary"
+                          onClick={() =>
+                            navigate(`/courses/${c.slug || c._id}`)
+                          }
+                        >
+                          <IconlyShow size={14} color="currentColor" />
+                          <span>Xem</span>
+                        </button>
+
+                        {/* Tạm dừng kinh doanh / Mở bán lại */}
+                        {(c.status === 'PUBLISHED' ||
+                          c.status === 'DISABLED') && (
                           <button
                             type="button"
-                            className="btn-action-danger"
-                            style={{ padding: '6px 12px', fontSize: '13px' }}
-                            onClick={() => handleRejectCourse(c._id)}
-                            title="Từ chối phê duyệt"
+                            className="btn-action-secondary"
+                            onClick={() => handleToggleStatus(c._id)}
+                            title={
+                              c.status === 'PUBLISHED'
+                                ? 'Ngừng bán khóa học'
+                                : 'Mở bán lại khóa học'
+                            }
                           >
-                            <IconlyClose size={14} color="#f87171" />
-                            <span>Từ chối</span>
+                            <span>
+                              {c.status === 'PUBLISHED'
+                                ? 'Tạm ngừng bán'
+                                : 'Mở bán lại'}
+                            </span>
                           </button>
-                        </>
-                      )}
+                        )}
 
-                    {/* Xem danh sách học viên ghi danh của khóa học này */}
+                        {/* Xóa khóa học */}
+                        <button
+                          type="button"
+                          className="btn-action-danger"
+                          onClick={() => setDeleteConfirmCourse(c)}
+                          title="Xóa khóa học"
+                        >
+                          <IconlyDelete size={15} color="#dc2626" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {/* Phân trang danh sách khóa học */}
+            {courses.length > pageSize && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px 8px 8px',
+                  marginTop: '12px',
+                  fontSize: '0.85rem',
+                  color: '#64748b',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                }}
+              >
+                <span>
+                  Hiển thị {(page - 1) * pageSize + 1} -{' '}
+                  {Math.min(page * pageSize, courses.length)} trong tổng số{' '}
+                  <strong>{courses.length}</strong> khóa học
+                </span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    style={{
+                      padding: '6px 14px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      background: page <= 1 ? '#f8fafc' : '#ffffff',
+                      color: page <= 1 ? '#94a3b8' : '#334155',
+                      cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                      fontWeight: 500,
+                    }}
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Trước
+                  </button>
+                  {Array.from(
+                    { length: Math.ceil(courses.length / pageSize) },
+                    (_, i) => i + 1,
+                  ).map((p) => (
                     <button
+                      key={p}
                       type="button"
-                      className="btn-action-secondary"
                       style={{
-                        color: '#0056d2',
-                        borderColor: '#bfdbfe',
-                        background: '#eff6ff',
+                        padding: '6px 12px',
+                        border: p === page ? 'none' : '1px solid #e2e8f0',
+                        borderRadius: '6px',
+                        background: p === page ? '#0056d2' : '#ffffff',
+                        color: p === page ? '#ffffff' : '#334155',
+                        fontWeight: p === page ? 600 : 500,
+                        cursor: 'pointer',
                       }}
-                      onClick={() => setViewingStudentsCourse(c)}
-                      title="Xem danh sách học viên ghi danh khóa học này"
+                      onClick={() => setPage(p)}
                     >
-                      <IconlyUserGroup size={14} color="#0056d2" />
-                      <span>
-                        Học viên (
-                        {(c.totalStudents || 0).toLocaleString('vi-VN')})
-                      </span>
+                      {p}
                     </button>
-
-                    {/* Xem trực tiếp trang khóa học */}
-                    <button
-                      type="button"
-                      className="btn-action-secondary"
-                      onClick={() => navigate(`/courses/${c.slug || c._id}`)}
-                    >
-                      <IconlyShow size={14} color="currentColor" />
-                      <span>Xem</span>
-                    </button>
-
-                    {/* Tạm dừng kinh doanh / Mở bán lại */}
-                    {(c.status === 'PUBLISHED' || c.status === 'DISABLED') && (
-                      <button
-                        type="button"
-                        className="btn-action-secondary"
-                        onClick={() => handleToggleStatus(c._id)}
-                        title={
-                          c.status === 'PUBLISHED'
-                            ? 'Ngừng bán khóa học'
-                            : 'Mở bán lại khóa học'
-                        }
-                      >
-                        <span>
-                          {c.status === 'PUBLISHED'
-                            ? 'Tạm ngừng bán'
-                            : 'Mở bán lại'}
-                        </span>
-                      </button>
-                    )}
-
-                    {/* Xóa khóa học (BR06.4) */}
-                    <button
-                      type="button"
-                      className="btn-action-danger"
-                      onClick={() => setDeleteConfirmCourse(c)}
-                      title="Xóa khóa học"
-                    >
-                      <IconlyDelete size={15} color="#dc2626" />
-                    </button>
-                  </div>
+                  ))}
+                  <button
+                    type="button"
+                    style={{
+                      padding: '6px 14px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      background:
+                        page >= Math.ceil(courses.length / pageSize)
+                          ? '#f8fafc'
+                          : '#ffffff',
+                      color:
+                        page >= Math.ceil(courses.length / pageSize)
+                          ? '#94a3b8'
+                          : '#334155',
+                      cursor:
+                        page >= Math.ceil(courses.length / pageSize)
+                          ? 'not-allowed'
+                          : 'pointer',
+                      fontWeight: 500,
+                    }}
+                    disabled={page >= Math.ceil(courses.length / pageSize)}
+                    onClick={() =>
+                      setPage((p) =>
+                        Math.min(Math.ceil(courses.length / pageSize), p + 1),
+                      )
+                    }
+                  >
+                    Sau
+                  </button>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
       {/* =========================================================================
-          MODAL XÁC NHẬN XÓA / NGỪNG KINH DOANH (BR06.4)
+          MODAL XÁC NHẬN XÓA / NGỪNG KINH DOANH
          ========================================================================= */}
       {deleteConfirmCourse && (
         <div

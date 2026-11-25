@@ -7,14 +7,12 @@ import type {
 } from '../../../types/coupon';
 import {
   IconlyDiscount,
-  IconlyUserGroup,
   IconlySearch,
   IconlyEdit,
   IconlyDelete,
   IconlyPlus,
   IconlyGraph,
   IconlyBuy,
-  IconlyTimeCircle,
   IconlyTick,
   IconlyClose,
   IconlyDocument,
@@ -158,18 +156,6 @@ export default function CouponManagement() {
     e.preventDefault();
     loadCoupons();
   };
-
-  // Helper calculation for stats
-  const now = new Date();
-  const activeCoupons = coupons.filter(
-    (c) =>
-      c.isActive &&
-      new Date(c.validFrom) <= now &&
-      new Date(c.validTo) >= now &&
-      c.usedCount < c.totalUsageLimit,
-  );
-  const expiredCoupons = coupons.filter((c) => new Date(c.validTo) < now);
-  const totalUsed = coupons.reduce((sum, c) => sum + c.usedCount, 0);
 
   // Validation
   const validateForm = (): boolean => {
@@ -426,46 +412,6 @@ export default function CouponManagement() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="coupon-stats">
-        <div className="coupon-stat-card">
-          <span className="coupon-stat-icon">
-            <IconlyDiscount size={22} color="#3b82f6" />
-          </span>
-          <div>
-            <div className="coupon-stat-value">{coupons.length}</div>
-            <div className="coupon-stat-label">Tổng số mã</div>
-          </div>
-        </div>
-        <div className="coupon-stat-card">
-          <span className="coupon-stat-icon">
-            <IconlyDiscount size={22} color="#10b981" />
-          </span>
-          <div>
-            <div className="coupon-stat-value">{activeCoupons.length}</div>
-            <div className="coupon-stat-label">Đang có hiệu lực</div>
-          </div>
-        </div>
-        <div className="coupon-stat-card">
-          <span className="coupon-stat-icon">
-            <IconlyTimeCircle size={22} color="#f59e0b" />
-          </span>
-          <div>
-            <div className="coupon-stat-value">{expiredCoupons.length}</div>
-            <div className="coupon-stat-label">Đã hết hạn</div>
-          </div>
-        </div>
-        <div className="coupon-stat-card">
-          <span className="coupon-stat-icon">
-            <IconlyUserGroup size={22} color="#0056d2" />
-          </span>
-          <div>
-            <div className="coupon-stat-value">{totalUsed}</div>
-            <div className="coupon-stat-label">Tổng lượt đã dùng</div>
-          </div>
-        </div>
-      </div>
-
       {/* Quick Tester Widget */}
       {showTester && (
         <div className="coupon-tester-card">
@@ -688,6 +634,7 @@ export default function CouponManagement() {
             </thead>
             <tbody>
               {coupons.map((coupon) => {
+                const now = new Date();
                 const isExpired = new Date(coupon.validTo) < now;
                 const isUpcoming = new Date(coupon.validFrom) > now;
                 const isLimitReached =

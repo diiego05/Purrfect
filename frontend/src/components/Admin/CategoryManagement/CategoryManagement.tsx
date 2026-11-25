@@ -7,12 +7,10 @@ import type {
   UpdateCategoryPayload,
 } from '../../../types/category';
 import {
-  IconlyCategory,
   IconlyPlus,
   IconlyEdit,
   IconlyDelete,
   IconlySearch,
-  IconlyAward,
   IconlyFolder,
   IconlyDocument,
   IconlyTimeCircle,
@@ -60,8 +58,8 @@ export const CategoryManagement: React.FC = () => {
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [filterType, setFilterType] = useState<'all' | 'root' | 'sub'>('all');
-  const [viewMode, setViewMode] = useState<'tree' | 'flat'>('tree');
+  const [filterType] = useState<'all' | 'root' | 'sub'>('all');
+  const viewMode: 'tree' | 'flat' = 'tree';
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -169,18 +167,6 @@ export const CategoryManagement: React.FC = () => {
       ignore = true;
     };
   }, []);
-
-  // Thống kê nhanh
-  const stats = useMemo(() => {
-    const total = categories.length;
-    const roots = categories.filter((c) => !c.parentId).length;
-    const subs = total - roots;
-    const totalCourses = categories.reduce(
-      (sum, c) => sum + (c.courseCount || 0),
-      0,
-    );
-    return { total, roots, subs, totalCourses };
-  }, [categories]);
 
   // Mở modal Thêm mới
   const handleOpenCreateModal = () => {
@@ -457,53 +443,10 @@ export const CategoryManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="cat-stats-grid">
-        <div className="cat-stat-card">
-          <div className="cat-stat-icon-wrapper icon-blue">
-            <IconlyCategory size={22} color="#3b82f6" />
-          </div>
-          <div className="cat-stat-content">
-            <span className="cat-stat-label">Tổng số danh mục</span>
-            <span className="cat-stat-value">{stats.total}</span>
-          </div>
-        </div>
-
-        <div className="cat-stat-card">
-          <div className="cat-stat-icon-wrapper icon-emerald">
-            <IconlyCategory size={22} color="#10b981" />
-          </div>
-          <div className="cat-stat-content">
-            <span className="cat-stat-label">Danh mục gốc (Root)</span>
-            <span className="cat-stat-value">{stats.roots}</span>
-          </div>
-        </div>
-
-        <div className="cat-stat-card">
-          <div className="cat-stat-icon-wrapper icon-purple">
-            <IconlyCategory size={22} color="#a855f7" />
-          </div>
-          <div className="cat-stat-content">
-            <span className="cat-stat-label">Danh mục con (Sub)</span>
-            <span className="cat-stat-value">{stats.subs}</span>
-          </div>
-        </div>
-
-        <div className="cat-stat-card">
-          <div className="cat-stat-icon-wrapper icon-amber">
-            <IconlyAward size={22} color="#f59e0b" />
-          </div>
-          <div className="cat-stat-content">
-            <span className="cat-stat-label">Khóa học liên kết</span>
-            <span className="cat-stat-value">{stats.totalCourses}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter & Search Bar */}
+      {/* Search Bar */}
       <div className="cat-filter-bar">
         <div className="cat-search-wrapper">
-          <IconlySearch size={16} color="#94a3b8" />
+          <IconlySearch size={18} color="#64748b" />
           <input
             type="text"
             className="cat-search-input"
@@ -516,54 +459,11 @@ export const CategoryManagement: React.FC = () => {
               type="button"
               className="cat-search-clear-btn"
               onClick={() => setSearchQuery('')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                padding: '0 0.35rem',
-                fontSize: '0.9rem',
-              }}
               title="Xóa từ khóa tìm kiếm"
             >
-              <IconlyClose size={14} color="#94a3b8" />
+              <IconlyClose size={15} color="#94a3b8" />
             </button>
           )}
-        </div>
-
-        <div className="cat-filter-controls">
-          <select
-            className="cat-filter-select"
-            value={filterType}
-            onChange={(e) =>
-              setFilterType(e.target.value as 'all' | 'root' | 'sub')
-            }
-          >
-            <option value="all">Tất cả danh mục ({categories.length})</option>
-            <option value="root">Chỉ danh mục gốc ({stats.roots})</option>
-            <option value="sub">Chỉ danh mục con ({stats.subs})</option>
-          </select>
-
-          <div className="cat-view-toggles">
-            <button
-              type="button"
-              className={`cat-view-toggle-btn ${viewMode === 'tree' ? 'active' : ''}`}
-              onClick={() => setViewMode('tree')}
-              title="Dạng cây phân cấp"
-            >
-              <IconlyCategory size={15} color="currentColor" />
-              <span>Cây phân cấp</span>
-            </button>
-            <button
-              type="button"
-              className={`cat-view-toggle-btn ${viewMode === 'flat' ? 'active' : ''}`}
-              onClick={() => setViewMode('flat')}
-              title="Dạng bảng phẳng"
-            >
-              <IconlyDocument size={15} color="currentColor" />
-              <span>Bảng phẳng</span>
-            </button>
-          </div>
         </div>
       </div>
 

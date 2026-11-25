@@ -25,7 +25,8 @@ export const replyToReview = async (
     }
 
     const reviewId = String(req.params.id);
-    const rawReply = req.body.instructorReply ?? req.body.reply ?? req.body.content;
+    const rawReply =
+      req.body.instructorReply ?? req.body.reply ?? req.body.content;
     const instructorReply = typeof rawReply === 'string' ? rawReply.trim() : '';
 
     // alt [Reply Content Empty] -> 400 Bad Request (Reply content cannot be empty)
@@ -84,9 +85,15 @@ export const replyToReview = async (
 
     // Gửi thông báo đến học viên (tác giả đánh giá)
     try {
-      if (reviewObject.userId && reviewObject.userId.toString() !== req.user._id.toString()) {
-        const course = await Course.findById(reviewObject.courseId).select('title');
-        const roleLabel = replyRole === 'ADMIN' ? 'Quản trị viên' : 'Giảng viên';
+      if (
+        reviewObject.userId &&
+        reviewObject.userId.toString() !== req.user._id.toString()
+      ) {
+        const course = await Course.findById(reviewObject.courseId).select(
+          'title',
+        );
+        const roleLabel =
+          replyRole === 'ADMIN' ? 'Quản trị viên' : 'Giảng viên';
         await Notification.create({
           recipientId: reviewObject.userId,
           senderId: req.user._id,
@@ -99,7 +106,10 @@ export const replyToReview = async (
         });
       }
     } catch (notifErr) {
-      console.warn('[ReviewController] Warning sending notification:', notifErr);
+      console.warn(
+        '[ReviewController] Warning sending notification:',
+        notifErr,
+      );
     }
 
     // 200 OK (updatedReview)
@@ -132,7 +142,8 @@ export const updateReviewReply = async (
     }
 
     const reviewId = String(req.params.id);
-    const rawReply = req.body.instructorReply ?? req.body.reply ?? req.body.content;
+    const rawReply =
+      req.body.instructorReply ?? req.body.reply ?? req.body.content;
     const instructorReply = typeof rawReply === 'string' ? rawReply.trim() : '';
 
     if (!instructorReply) {
@@ -144,13 +155,17 @@ export const updateReviewReply = async (
     }
 
     if (!mongoose.Types.ObjectId.isValid(reviewId)) {
-      res.status(400).json({ success: false, message: 'Mã đánh giá không hợp lệ' });
+      res
+        .status(400)
+        .json({ success: false, message: 'Mã đánh giá không hợp lệ' });
       return;
     }
 
     const reviewObject = await CourseReview.findById(reviewId);
     if (!reviewObject) {
-      res.status(404).json({ success: false, message: 'Không tìm thấy đánh giá' });
+      res
+        .status(404)
+        .json({ success: false, message: 'Không tìm thấy đánh giá' });
       return;
     }
 
@@ -202,13 +217,17 @@ export const deleteReviewReply = async (
 
     const reviewId = String(req.params.id);
     if (!mongoose.Types.ObjectId.isValid(reviewId)) {
-      res.status(400).json({ success: false, message: 'Mã đánh giá không hợp lệ' });
+      res
+        .status(400)
+        .json({ success: false, message: 'Mã đánh giá không hợp lệ' });
       return;
     }
 
     const reviewObject = await CourseReview.findById(reviewId);
     if (!reviewObject) {
-      res.status(404).json({ success: false, message: 'Không tìm thấy đánh giá' });
+      res
+        .status(404)
+        .json({ success: false, message: 'Không tìm thấy đánh giá' });
       return;
     }
 
@@ -266,7 +285,7 @@ export const getCourseReviews = async (
       return;
     }
 
-    // Lấy danh sách đánh giá của khóa học (lọc bỏ các đánh giá vi phạm bị ẩn/xóa - BR26.1)
+    // Lấy danh sách đánh giá của khóa học (lọc bỏ các đánh giá vi phạm bị ẩn/xóa -
     const reviews = await CourseReview.find({
       courseId: course._id,
       status: { $nin: ['HIDDEN', 'DELETED'] },
@@ -294,11 +313,18 @@ export const getCourseReviews = async (
         : course.averageRating || 5.0;
 
     const starPercentages = {
-      5: totalReviews > 0 ? Math.round((starCounts[5] / totalReviews) * 100) : 88,
-      4: totalReviews > 0 ? Math.round((starCounts[4] / totalReviews) * 100) : 9,
-      3: totalReviews > 0 ? Math.round((starCounts[3] / totalReviews) * 100) : 2,
-      2: totalReviews > 0 ? Math.round((starCounts[2] / totalReviews) * 100) : 1,
-      1: totalReviews > 0 ? Math.round((starCounts[1] / totalReviews) * 100) : 0,
+      5:
+        totalReviews > 0
+          ? Math.round((starCounts[5] / totalReviews) * 100)
+          : 88,
+      4:
+        totalReviews > 0 ? Math.round((starCounts[4] / totalReviews) * 100) : 9,
+      3:
+        totalReviews > 0 ? Math.round((starCounts[3] / totalReviews) * 100) : 2,
+      2:
+        totalReviews > 0 ? Math.round((starCounts[2] / totalReviews) * 100) : 1,
+      1:
+        totalReviews > 0 ? Math.round((starCounts[1] / totalReviews) * 100) : 0,
     };
 
     // Kiểm tra quyền của người dùng hiện tại
@@ -310,7 +336,8 @@ export const getCourseReviews = async (
       const currentUserId = req.user._id.toString();
       isCourseOwner = Boolean(
         req.user.role === 'ADMIN' ||
-          (course.instructorId && course.instructorId.toString() === currentUserId),
+        (course.instructorId &&
+          course.instructorId.toString() === currentUserId),
       );
 
       const paidOrder = await Order.findOne({
@@ -377,7 +404,9 @@ export const submitCourseReview = async (
     }
 
     if (!course) {
-      res.status(404).json({ success: false, message: 'Không tìm thấy khóa học' });
+      res
+        .status(404)
+        .json({ success: false, message: 'Không tìm thấy khóa học' });
       return;
     }
 
@@ -432,7 +461,7 @@ export const submitCourseReview = async (
       .populate('userId', 'fullName email avatarUrl role')
       .populate('repliedBy', 'fullName email avatarUrl role');
 
-    // Cập nhật lại averageRating của khóa học (loại trừ đánh giá vi phạm - BR26.2)
+    // Cập nhật lại averageRating của khóa học (loại trừ đánh giá vi phạm -
     const allReviews = await CourseReview.find({
       courseId: course._id,
       status: { $nin: ['HIDDEN', 'DELETED'] },
@@ -484,21 +513,30 @@ export const getInstructorReviews = async (
       ? { isDeleted: false }
       : { instructorId: req.user._id, isDeleted: false };
 
-    const courses = await Course.find(courseQuery).select('_id title slug thumbnailUrl averageRating');
+    const courses = await Course.find(courseQuery).select(
+      '_id title slug thumbnailUrl averageRating',
+    );
     const courseIds = courses.map((c) => c._id);
 
     // Lọc theo trạng thái phản hồi
     const filter = String(req.query.status || 'all');
-    const selectedCourseId = req.query.courseId ? String(req.query.courseId) : null;
+    const selectedCourseId = req.query.courseId
+      ? String(req.query.courseId)
+      : null;
 
     const query: Record<string, unknown> = {
-      courseId: selectedCourseId && mongoose.Types.ObjectId.isValid(selectedCourseId)
-        ? new mongoose.Types.ObjectId(selectedCourseId)
-        : { $in: courseIds },
+      courseId:
+        selectedCourseId && mongoose.Types.ObjectId.isValid(selectedCourseId)
+          ? new mongoose.Types.ObjectId(selectedCourseId)
+          : { $in: courseIds },
     };
 
     if (filter === 'unreplied') {
-      query.$or = [{ instructorReply: null }, { instructorReply: '' }, { instructorReply: { $exists: false } }];
+      query.$or = [
+        { instructorReply: null },
+        { instructorReply: '' },
+        { instructorReply: { $exists: false } },
+      ];
     } else if (filter === 'replied') {
       query.instructorReply = { $ne: null, $exists: true };
     }
@@ -511,13 +549,22 @@ export const getInstructorReviews = async (
       .lean();
 
     // Thống kê nhanh KPI
-    const totalReviewsAll = await CourseReview.countDocuments({ courseId: { $in: courseIds } });
+    const totalReviewsAll = await CourseReview.countDocuments({
+      courseId: { $in: courseIds },
+    });
     const unrepliedCount = await CourseReview.countDocuments({
       courseId: { $in: courseIds },
-      $or: [{ instructorReply: null }, { instructorReply: '' }, { instructorReply: { $exists: false } }],
+      $or: [
+        { instructorReply: null },
+        { instructorReply: '' },
+        { instructorReply: { $exists: false } },
+      ],
     });
     const repliedCount = totalReviewsAll - unrepliedCount;
-    const responseRate = totalReviewsAll > 0 ? Math.round((repliedCount / totalReviewsAll) * 100) : 100;
+    const responseRate =
+      totalReviewsAll > 0
+        ? Math.round((repliedCount / totalReviewsAll) * 100)
+        : 100;
 
     res.status(200).json({
       success: true,
@@ -534,6 +581,11 @@ export const getInstructorReviews = async (
     });
   } catch (error) {
     console.error('[ReviewController] Error in getInstructorReviews:', error);
-    res.status(500).json({ success: false, message: 'Lỗi tải danh sách đánh giá của giảng viên' });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: 'Lỗi tải danh sách đánh giá của giảng viên',
+      });
   }
 };

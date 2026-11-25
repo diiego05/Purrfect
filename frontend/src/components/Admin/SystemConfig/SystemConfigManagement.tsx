@@ -4,8 +4,6 @@ import type { SystemConfig } from '../../../types/systemConfig';
 import { CONFIG_KEYS } from '../../../types/systemConfig';
 import {
   IconlySetting,
-  IconlyBuy,
-  IconlyDiscount,
   IconlyTick,
   IconlyClose,
   IconlySwap,
@@ -21,7 +19,7 @@ interface Toast {
 let toastCounter = 0;
 
 export default function SystemConfigManagement() {
-  const [configs, setConfigs] = useState<SystemConfig[]>([]);
+  const [, setConfigs] = useState<SystemConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -29,8 +27,12 @@ export default function SystemConfigManagement() {
   // Finance form
   const [commissionRate, setCommissionRate] = useState('15');
   const [minWithdrawal, setMinWithdrawal] = useState('200000');
+  const [purrPointRate, setPurrPointRate] = useState('1000');
+  const [maxRefundTimes, setMaxRefundTimes] = useState('3');
   const [commissionError, setCommissionError] = useState('');
   const [minWithdrawalError, setMinWithdrawalError] = useState('');
+  const [purrPointError, setPurrPointError] = useState('');
+  const [maxRefundError, setMaxRefundError] = useState('');
 
   // Reset confirm
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -51,6 +53,8 @@ export default function SystemConfigManagement() {
 
     setCommissionRate(map[CONFIG_KEYS.COMMISSION_RATE_PERCENT] ?? '15');
     setMinWithdrawal(map[CONFIG_KEYS.MIN_WITHDRAWAL_AMOUNT] ?? '200000');
+    setPurrPointRate(map[CONFIG_KEYS.PURR_POINT_RATE_VND] ?? '1000');
+    setMaxRefundTimes(map[CONFIG_KEYS.MAX_REFUND_TIMES_PER_USER] ?? '3');
   };
 
   useEffect(() => {
@@ -92,6 +96,25 @@ export default function SystemConfigManagement() {
     } else {
       setMinWithdrawalError('');
     }
+
+    const pr = parseFloat(purrPointRate);
+    if (isNaN(pr) || pr <= 0) {
+      setPurrPointError(
+        'Tỷ lệ quy đổi điểm PurrPoint phải lớn hơn 0 (Ví dụ: 1000).',
+      );
+      valid = false;
+    } else {
+      setPurrPointError('');
+    }
+
+    const mr = parseInt(maxRefundTimes, 10);
+    if (isNaN(mr) || mr <= 0) {
+      setMaxRefundError('Số lần hoàn tiền tối đa phải ≥ 1.');
+      valid = false;
+    } else {
+      setMaxRefundError('');
+    }
+
     return valid;
   };
 
@@ -107,6 +130,14 @@ export default function SystemConfigManagement() {
         {
           keyName: CONFIG_KEYS.MIN_WITHDRAWAL_AMOUNT,
           valueText: minWithdrawal,
+        },
+        {
+          keyName: CONFIG_KEYS.PURR_POINT_RATE_VND,
+          valueText: purrPointRate,
+        },
+        {
+          keyName: CONFIG_KEYS.MAX_REFUND_TIMES_PER_USER,
+          valueText: maxRefundTimes,
         },
       ]);
       addToast('Lưu cấu hình tài chính thành công!', 'success');
@@ -140,12 +171,6 @@ export default function SystemConfigManagement() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const formatCurrency = (val: string) => {
-    const num = parseFloat(val);
-    if (isNaN(num)) return val;
-    return new Intl.NumberFormat('vi-VN').format(num) + ' VND';
   };
 
   if (loading) {
@@ -196,39 +221,6 @@ export default function SystemConfigManagement() {
         >
           Khôi phục mặc định
         </button>
-      </div>
-
-      {/* Stats bar */}
-      <div className="scm-stats">
-        <div className="scm-stat-card">
-          <span className="scm-stat-icon">
-            <IconlyDiscount size={22} color="#10b981" />
-          </span>
-          <div>
-            <div className="scm-stat-value">{commissionRate}%</div>
-            <div className="scm-stat-label">Hoa hồng</div>
-          </div>
-        </div>
-        <div className="scm-stat-card">
-          <span className="scm-stat-icon">
-            <IconlyBuy size={22} color="#3b82f6" />
-          </span>
-          <div>
-            <div className="scm-stat-value">
-              {formatCurrency(minWithdrawal)}
-            </div>
-            <div className="scm-stat-label">Rút tối thiểu</div>
-          </div>
-        </div>
-        <div className="scm-stat-card">
-          <span className="scm-stat-icon">
-            <IconlySetting size={22} color="#0056d2" />
-          </span>
-          <div>
-            <div className="scm-stat-value">{configs.length}</div>
-            <div className="scm-stat-label">Tổng cài đặt</div>
-          </div>
-        </div>
       </div>
 
       {/* Panel: Finance Configuration */}
@@ -289,6 +281,59 @@ export default function SystemConfigManagement() {
           <span className="scm-hint">
             Số tiền số dư khả dụng tối thiểu giảng viên cần đạt để gửi yêu cầu
             rút tiền (VD: 200000 = 200.000 VND).
+          </span>
+        </div>
+
+        <div className="scm-form-group">
+          <label className="scm-label">
+            Tỷ lệ quy đổi điểm PurrPoint khi hoàn tiền (VNĐ / 1 Point)
+            <span className="scm-required">*</span>
+          </label>
+          <input
+            type="number"
+            className={`scm-input ${purrPointError ? 'scm-input--error' : ''}`}
+            value={purrPointRate}
+            min={1}
+            step={100}
+            onChange={(e) => {
+              setPurrPointRate(e.target.value);
+              setPurrPointError('');
+            }}
+            placeholder="Mặc định: 1000"
+          />
+          {purrPointError && (
+            <span className="scm-error-msg">{purrPointError}</span>
+          )}
+          <span className="scm-hint">
+            Mức quy đổi tiền hoàn thành điểm PurrPoint cho học viên: Mặc định
+            1.000 VNĐ = 1 point (Ví dụ: hoàn 200.000 VNĐ = 200 points).
+          </span>
+        </div>
+
+        <div className="scm-form-group">
+          <label className="scm-label">
+            Số lần hoàn tiền tối đa cho mỗi tài khoản
+            <span className="scm-required">*</span>
+          </label>
+          <input
+            type="number"
+            className={`scm-input ${maxRefundError ? 'scm-input--error' : ''}`}
+            value={maxRefundTimes}
+            min={1}
+            max={20}
+            step={1}
+            onChange={(e) => {
+              setMaxRefundTimes(e.target.value);
+              setMaxRefundError('');
+            }}
+            placeholder="Mặc định: 3"
+          />
+          {maxRefundError && (
+            <span className="scm-error-msg">{maxRefundError}</span>
+          )}
+          <span className="scm-hint">
+            Số lần hoàn tiền tối đa mà mỗi học viên được phép thực hiện trên hệ
+            thống (Mặc định: 3 lần).
           </span>
         </div>
 

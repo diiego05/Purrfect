@@ -17,6 +17,30 @@ interface AiQuizGeneratorProps {
 
 type QuizMode = 'ai' | 'manual' | 'import';
 
+const shuffleQuestionOptions = (
+  question: QuizQuestionItem,
+): QuizQuestionItem => {
+  if (question.type !== 'MULTIPLE_CHOICE' || !question.options?.length)
+    return question;
+  const correct = Number(question.correctAnswer);
+  if (
+    !Number.isInteger(correct) ||
+    correct < 0 ||
+    correct >= question.options.length
+  )
+    return question;
+  const choices = question.options.map((text, index) => ({ text, index }));
+  for (let i = choices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
+  }
+  return {
+    ...question,
+    options: choices.map((choice) => choice.text),
+    correctAnswer: choices.findIndex((choice) => choice.index === correct),
+  };
+};
+
 const getDaysInMonth = (year: number, month: number) => {
   return new Date(year, month, 0).getDate();
 };
@@ -555,17 +579,18 @@ function parseCsvToQuizQuestions(text: string): QuizQuestionItem[] {
           : ['Phương án A', 'Phương án B', 'Phương án C', 'Phương án D'];
 
       const rawAns = (cols[6] || '').trim().toUpperCase();
-      let correctIdx = 0;
+      if (!rawAns)
+        throw new Error(
+          `Dòng ${idx + 1}: thiếu đáp án đúng (A, B, C, D hoặc 1-4).`,
+        );
+      let correctIdx = -1;
       if (rawAns === 'A' || rawAns === '1') correctIdx = 0;
       else if (rawAns === 'B' || rawAns === '2') correctIdx = 1;
       else if (rawAns === 'C' || rawAns === '3') correctIdx = 2;
       else if (rawAns === 'D' || rawAns === '4') correctIdx = 3;
-      else if (!isNaN(Number(rawAns))) {
-        correctIdx = Math.max(
-          0,
-          Math.min(Number(rawAns), finalOptions.length - 1),
-        );
-      }
+      else if (/^[1-4]$/.test(rawAns)) correctIdx = Number(rawAns) - 1;
+      if (correctIdx < 0 || correctIdx >= finalOptions.length)
+        throw new Error(`Dòng ${idx + 1}: đáp án đúng không khớp phương án.`);
 
       result.push({
         id: `imported_mc_${Date.now()}_${idx}`,
@@ -612,7 +637,7 @@ function parseJsonToQuizQuestions(text: string): QuizQuestionItem[] {
       ? item.options.map(String)
       : ['Phương án A', 'Phương án B', 'Phương án C', 'Phương án D'];
 
-    let correct = 0;
+    let correct = -1;
     if (typeof item.correctAnswer === 'number') {
       correct = item.correctAnswer;
     } else if (typeof item.correctAnswer === 'string') {
@@ -621,7 +646,12 @@ function parseJsonToQuizQuestions(text: string): QuizQuestionItem[] {
       else if (up === 'B') correct = 1;
       else if (up === 'C') correct = 2;
       else if (up === 'D') correct = 3;
-      else if (!isNaN(Number(up))) correct = Number(up);
+      else if (/^[1-4]$/.test(up)) correct = Number(up) - 1;
+    }
+    if (!Number.isInteger(correct) || correct < 0 || correct >= opts.length) {
+      throw new Error(
+        `Câu ${idx + 1}: cần có correctAnswer hợp lệ (A-D hoặc 1-4).`,
+      );
     }
 
     return {
@@ -685,8 +715,13 @@ function parseTextToQuizQuestions(text: string): QuizQuestionItem[] {
     }
 
     if (optList.length >= 2) {
-      let correctIdx = optList.findIndex((o) => o.isCorrect);
-      if (correctIdx === -1) correctIdx = 0;
+      const correctItems = optList.filter((o) => o.isCorrect);
+      if (correctItems.length !== 1) {
+        throw new Error(
+          `Câu ${idx + 1}: phải đánh dấu đúng chính xác một đáp án bằng * hoặc (đúng).`,
+        );
+      }
+      const correctIdx = optList.findIndex((o) => o.isCorrect);
 
       result.push({
         id: `imported_text_mc_${Date.now()}_${idx}`,
@@ -734,6 +769,7 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>(
     'Medium',
   );
+  const [shuffleAnswers, setShuffleAnswers] = useState<boolean>(true);
   const [passingScore, setPassingScore] = useState<number>(
     initialQuizData?.passingScore || 80,
   );
@@ -756,6 +792,25 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
   const [questions, setQuestions] = useState<QuizQuestionItem[]>(
     initialQuizData?.questions || [],
   );
+
+  // AI Quiz Weekly Quota (Tối đa 5 lần/tuần)
+  const [quota, setQuota] = useState<{
+    limit: number;
+    used: number;
+    remaining: number;
+    resetDate: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    aiQuizApi
+      .getQuota()
+      .then((res) => {
+        if (res.success && res.data) {
+          setQuota(res.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Import state
   const [importMode, setImportMode] = useState<'replace' | 'append'>('replace');
@@ -980,6 +1035,14 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
       return;
     }
 
+    if (quota && quota.remaining <= 0) {
+      toast.error(
+        'Bạn đã dùng hết hạn mức 5 lần tạo Quiz bằng AI trong tuần này. Vui lòng quay lại vào tuần mới để được cấp thêm lượt!',
+        'Hết hạn mức AI',
+      );
+      return;
+    }
+
     setLoading(true);
     setNotice('');
 
@@ -993,9 +1056,22 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
       });
 
       if (res.success && res.data) {
-        setQuestions(res.data.questions || []);
+        setQuestions(
+          (res.data.questions || []).map((question) =>
+            shuffleAnswers ? shuffleQuestionOptions(question) : question,
+          ),
+        );
         if (res.data.passingScore) {
           setPassingScore(res.data.passingScore);
+        }
+        if (res.quota) {
+          setQuota(res.quota);
+        } else if (quota) {
+          setQuota({
+            ...quota,
+            used: quota.used + 1,
+            remaining: Math.max(0, quota.remaining - 1),
+          });
         }
         if (res.message) {
           setNotice(res.message);
@@ -1271,6 +1347,39 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
             marginBottom: '16px',
           }}
         >
+          {/* Hạn mức Credit tuần */}
+          <div
+            style={{
+              gridColumn: 'span 2',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '10px 14px',
+              borderRadius: '8px',
+              background: quota && quota.remaining <= 0 ? '#fef2f2' : '#f5f3ff',
+              border: `1px solid ${quota && quota.remaining <= 0 ? '#fecaca' : '#ddd6fe'}`,
+              fontSize: '12.5px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '15px' }}>⚡</span>
+              <span
+                style={{
+                  color: quota && quota.remaining <= 0 ? '#dc2626' : '#6d28d9',
+                  fontWeight: 600,
+                }}
+              >
+                Hạn mức AI tuần này: Còn {quota ? quota.remaining : 5}/5 lượt
+                tạo Quiz
+              </span>
+            </div>
+            <span style={{ color: '#64748b', fontSize: '11.5px' }}>
+              {quota && quota.remaining <= 0
+                ? 'Đã hết lượt - Tự động cấp lại vào tuần mới'
+                : 'Giới hạn 5 lần/tuần, tự động cấp mới hàng tuần'}
+            </span>
+          </div>
+
           <div style={{ gridColumn: 'span 2' }}>
             <label
               style={{
@@ -1492,19 +1601,24 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
               type="button"
               className="btn-create-course"
               onClick={handleGenerate}
-              disabled={loading}
+              disabled={loading || (quota !== null && quota.remaining <= 0)}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: '#7c3aed',
+                background:
+                  quota && quota.remaining <= 0 ? '#94a3b8' : '#7c3aed',
+                cursor:
+                  quota && quota.remaining <= 0 ? 'not-allowed' : 'pointer',
                 padding: '8px 20px',
               }}
             >
               <span>
                 {loading
                   ? 'AI đang phân tích tài liệu & soạn câu hỏi...'
-                  : 'Tạo câu hỏi ngay với AI'}
+                  : quota && quota.remaining <= 0
+                    ? 'Đã hết hạn mức AI tuần này (0/5)'
+                    : 'Tạo câu hỏi ngay với AI'}
               </span>
             </button>
           </div>
@@ -2038,6 +2152,23 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
             Danh sách câu hỏi đề thi ({questions.length} câu)
           </h5>
           <div style={{ display: 'flex', gap: '8px' }}>
+            <label
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '12px',
+                color: '#475569',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={shuffleAnswers}
+                onChange={(e) => setShuffleAnswers(e.target.checked)}
+              />
+              Xáo trộn đáp án khi AI tạo
+            </label>
             <button
               type="button"
               className="btn-action-secondary"
@@ -2337,6 +2468,17 @@ export const AiQuizGenerator: React.FC<AiQuizGeneratorProps> = ({
                           </div>
                         );
                       })}
+                      <p
+                        style={{
+                          margin: '2px 0 0 48px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          color: '#16a34a',
+                        }}
+                      >
+                        Đáp án đúng:{' '}
+                        {String.fromCharCode(65 + Number(q.correctAnswer))}
+                      </p>
                     </div>
                   )}
 

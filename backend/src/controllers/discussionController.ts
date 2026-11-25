@@ -65,7 +65,11 @@ async function findCourseByLectureOrId(
     });
   }
 
-  if (!course && courseIdQuery && mongoose.Types.ObjectId.isValid(courseIdQuery)) {
+  if (
+    !course &&
+    courseIdQuery &&
+    mongoose.Types.ObjectId.isValid(courseIdQuery)
+  ) {
     course = await Course.findById(courseIdQuery);
   }
 
@@ -102,8 +106,7 @@ async function checkDiscussionAccess(
 }> {
   const isAdmin = userRole === 'ADMIN';
   const isInstructor = Boolean(
-    course.instructorId &&
-      course.instructorId.toString() === userId.toString(),
+    course.instructorId && course.instructorId.toString() === userId.toString(),
   );
 
   let isEnrolled = false;
@@ -199,10 +202,7 @@ export const createLectureDiscussion = async (
     );
 
     // Send notification (New question in lecture) đến giảng viên
-    if (
-      course.instructorId &&
-      course.instructorId.toString() !== userId
-    ) {
+    if (course.instructorId && course.instructorId.toString() !== userId) {
       await Notification.create({
         recipientId: course.instructorId,
         senderId: userId,
@@ -268,9 +268,8 @@ export const createDiscussionReply = async (
       return;
     }
 
-    const parentDiscussion = await CourseDiscussion.findById(
-      parentDiscussionId,
-    );
+    const parentDiscussion =
+      await CourseDiscussion.findById(parentDiscussionId);
     if (!parentDiscussion) {
       res.status(400).json({
         success: false,
@@ -325,7 +324,7 @@ export const createDiscussionReply = async (
         discussionId: replyObject._id,
         type: 'NEW_REPLY',
         title: 'Phản hồi mới cho câu hỏi của bạn',
-        message: `${isInstructor ? 'Giảng viên' : (req.user.fullName || 'Một học viên')} đã trả lời câu hỏi của bạn trong khóa học "${course.title}".`,
+        message: `${isInstructor ? 'Giảng viên' : req.user.fullName || 'Một học viên'} đã trả lời câu hỏi của bạn trong khóa học "${course.title}".`,
       });
     }
 
@@ -414,7 +413,9 @@ export const pinOfficialAnswer = async (
 
     // Toggle hoặc set isPinned
     const targetPin =
-      req.body.isPinned !== undefined ? Boolean(req.body.isPinned) : !discussion.isPinned;
+      req.body.isPinned !== undefined
+        ? Boolean(req.body.isPinned)
+        : !discussion.isPinned;
 
     // updatePinStatus(replyId, isPinned = true)
     const pinnedDiscussion = await CourseDiscussion.updatePinStatus(
@@ -473,7 +474,9 @@ export const getLectureDiscussions = async (
     }
 
     const lectureId = String(req.params.id);
-    const courseIdQuery = req.query.courseId ? String(req.query.courseId) : undefined;
+    const courseIdQuery = req.query.courseId
+      ? String(req.query.courseId)
+      : undefined;
 
     const { course } = await findCourseByLectureOrId(lectureId, courseIdQuery);
     if (!course) {
@@ -499,10 +502,11 @@ export const getLectureDiscussions = async (
       return;
     }
 
-    // Lấy tất cả câu hỏi gốc (parentId: null) của bài giảng
+    // Lấy tất cả câu hỏi gốc (parentId: null) của bài giảng (lọc bỏ nội dung vi phạm bị ẩn/xóa -
     const questions = await CourseDiscussion.find({
       lectureId,
       parentId: null,
+      status: { $nin: ['HIDDEN', 'DELETED'] },
     })
       .sort({ isPinned: -1, createdAt: -1 })
       .populate('userId', 'fullName email avatarUrl role')
@@ -510,9 +514,10 @@ export const getLectureDiscussions = async (
 
     const questionIds = questions.map((q) => q._id);
 
-    // Lấy toàn bộ phản hồi của các câu hỏi trên
+    // Lấy toàn bộ phản hồi của các câu hỏi trên (lọc bỏ nội dung vi phạm bị ẩn/xóa -
     const replies = await CourseDiscussion.find({
       parentId: { $in: questionIds },
+      status: { $nin: ['HIDDEN', 'DELETED'] },
     })
       .sort({ isPinned: -1, createdAt: 1 })
       .populate('userId', 'fullName email avatarUrl role')
@@ -709,8 +714,8 @@ export const deleteDiscussion = async (
     const isAuthor = discussion.userId.toString() === userId;
     const isInstructor = Boolean(
       course &&
-        course.instructorId &&
-        course.instructorId.toString() === userId,
+      course.instructorId &&
+      course.instructorId.toString() === userId,
     );
     const isAdmin = req.user.role === 'ADMIN';
 
@@ -808,7 +813,10 @@ export const markNotificationAsRead = async (
 
     res.json({ success: true, message: 'Đã đánh dấu đã đọc' });
   } catch (error) {
-    console.error('[DiscussionController] Error mark notification as read:', error);
+    console.error(
+      '[DiscussionController] Error mark notification as read:',
+      error,
+    );
     res.status(500).json({ success: false, message: 'Lỗi cập nhật thông báo' });
   }
 };
@@ -834,7 +842,10 @@ export const markAllNotificationsAsRead = async (
 
     res.json({ success: true, message: 'Đã đánh dấu đọc tất cả thông báo' });
   } catch (error) {
-    console.error('[DiscussionController] Error mark all notifications as read:', error);
+    console.error(
+      '[DiscussionController] Error mark all notifications as read:',
+      error,
+    );
     res.status(500).json({ success: false, message: 'Lỗi cập nhật thông báo' });
   }
 };

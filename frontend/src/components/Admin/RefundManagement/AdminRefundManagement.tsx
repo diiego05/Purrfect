@@ -41,6 +41,25 @@ export const AdminRefundManagement: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState<string>('');
   const [adminNotes, setAdminNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [copiedAcc, setCopiedAcc] = useState<boolean>(false);
+
+  const getBankCode = (bankName: string): string => {
+    const norm = (bankName || '').toLowerCase();
+    if (norm.includes('vietcombank') || norm.includes('vcb'))
+      return 'vietcombank';
+    if (norm.includes('mb') || norm.includes('quân đội')) return 'mbbank';
+    if (norm.includes('techcombank') || norm.includes('kỹ thương'))
+      return 'techcombank';
+    if (norm.includes('bidv')) return 'bidv';
+    if (norm.includes('vietinbank') || norm.includes('công thương'))
+      return 'vietinbank';
+    if (norm.includes('acb')) return 'acb';
+    if (norm.includes('vpbank') || norm.includes('thịnh vượng'))
+      return 'vpbank';
+    if (norm.includes('tpbank') || norm.includes('tiên phong')) return 'tpbank';
+    if (norm.includes('sacombank')) return 'sacombank';
+    return 'vietcombank';
+  };
 
   // Alert message
   const [alert, setAlert] = useState<{
@@ -287,7 +306,7 @@ export const AdminRefundManagement: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 1: HOÀN TIỀN HỌC VIÊN (UC33) */}
+      {/* TAB 1: HOÀN TIỀN HỌC VIÊN */}
       {activeTab === 'refunds' ? (
         <div className="adm-content">
           {/* Toolbar & Filter */}
@@ -567,7 +586,7 @@ export const AdminRefundManagement: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL DUYỆT / TỪ CHỐI HOÀN TIỀN (UC33) */}
+      {/* MODAL DUYỆT / TỪ CHỐI HOÀN TIỀN */}
       {selectedRefund && processingAction && (
         <div
           className="adm-modal-backdrop"
@@ -614,9 +633,20 @@ export const AdminRefundManagement: React.FC = () => {
 
               {processingAction === 'APPROVE' ? (
                 <div className="adm-modal-tip">
-                  ✓ Khi duyệt hoàn tiền, đơn hàng sẽ chuyển sang trạng thái
-                  REFUNDED, quyền truy cập bài học sẽ được thu hồi vĩnh viễn và
-                  doanh thu sẽ được trừ khỏi báo cáo của giảng viên.
+                  ✓ Khi duyệt hoàn tiền, số tiền hoàn{' '}
+                  <strong>{formatVND(selectedRefund.amount)}</strong> sẽ được tự
+                  động quy đổi thành{' '}
+                  <strong>
+                    {Math.floor(selectedRefund.amount / 1000).toLocaleString(
+                      'vi-VN',
+                    )}{' '}
+                    điểm PurrPoint
+                  </strong>{' '}
+                  (tỷ lệ cấu hình: 1.000 VNĐ = 1 point) và cộng trực tiếp vào ví
+                  điểm của học viên.
+                  <br />✓ Đơn hàng sẽ chuyển sang trạng thái REFUNDED, quyền
+                  truy cập bài học sẽ được thu hồi vĩnh viễn và doanh thu sẽ
+                  được trừ khỏi báo cáo của giảng viên.
                 </div>
               ) : (
                 <div className="adm-form-group">
@@ -701,29 +731,101 @@ export const AdminRefundManagement: React.FC = () => {
             </div>
 
             <form onSubmit={handleProcessWithdrawal} className="adm-modal-body">
-              <div className="adm-confirm-box">
-                <p>
-                  <strong>Giảng viên:</strong>{' '}
-                  {selectedWithdrawal.instructorId?.fullName} (
-                  {selectedWithdrawal.instructorId?.email})
-                </p>
-                <p>
-                  <strong>Số tiền rút:</strong>{' '}
-                  <span className="text-primary font-bold">
-                    {formatVND(selectedWithdrawal.amount)}
-                  </span>
-                </p>
-                <p>
-                  <strong>Ngân hàng:</strong> {selectedWithdrawal.bankName}
-                </p>
-                <p>
-                  <strong>Số tài khoản:</strong>{' '}
-                  {selectedWithdrawal.bankAccount}
-                </p>
-                <p>
-                  <strong>Chủ tài khoản:</strong>{' '}
-                  {selectedWithdrawal.accountHolder}
-                </p>
+              <div className="adm-confirm-withdrawal-card">
+                <div className="adm-withdrawal-info-side">
+                  <div className="adm-info-row">
+                    <span className="adm-info-label">Giảng viên:</span>
+                    <span className="adm-info-value">
+                      <strong>
+                        {selectedWithdrawal.instructorId?.fullName}
+                      </strong>{' '}
+                      ({selectedWithdrawal.instructorId?.email})
+                    </span>
+                  </div>
+                  <div className="adm-info-row">
+                    <span className="adm-info-label">Số tiền cần chi:</span>
+                    <span
+                      className="adm-info-value font-bold"
+                      style={{ fontSize: '1.2rem', color: '#16a34a' }}
+                    >
+                      {formatVND(selectedWithdrawal.amount)}
+                    </span>
+                  </div>
+                  <div className="adm-info-row">
+                    <span className="adm-info-label">Ngân hàng:</span>
+                    <span className="adm-info-value">
+                      <strong>{selectedWithdrawal.bankName}</strong>
+                    </span>
+                  </div>
+                  <div className="adm-info-row">
+                    <span className="adm-info-label">Số tài khoản:</span>
+                    <span
+                      className="adm-info-value"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}
+                    >
+                      <strong
+                        style={{ fontSize: '1.05rem', letterSpacing: '0.5px' }}
+                      >
+                        {selectedWithdrawal.bankAccount}
+                      </strong>
+                      <button
+                        type="button"
+                        className="btn-copy-acc"
+                        title="Sao chép số tài khoản"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigator.clipboard.writeText(
+                            selectedWithdrawal.bankAccount,
+                          );
+                          setCopiedAcc(true);
+                          setTimeout(() => setCopiedAcc(false), 2000);
+                        }}
+                      >
+                        {copiedAcc ? '✓ Đã chép' : 'Sao chép'}
+                      </button>
+                    </span>
+                  </div>
+                  <div className="adm-info-row">
+                    <span className="adm-info-label">Chủ tài khoản:</span>
+                    <span className="adm-info-value">
+                      <strong>{selectedWithdrawal.accountHolder}</strong>
+                    </span>
+                  </div>
+                  {selectedWithdrawal.notes && (
+                    <div className="adm-info-row">
+                      <span className="adm-info-label">Ghi chú từ GV:</span>
+                      <span className="adm-info-value">
+                        {selectedWithdrawal.notes}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="adm-withdrawal-qr-side">
+                  <div className="adm-qr-container">
+                    <img
+                      src={
+                        selectedWithdrawal.qrCodeUrl ||
+                        `https://img.vietqr.io/image/${getBankCode(selectedWithdrawal.bankName)}-${selectedWithdrawal.bankAccount}-compact2.png?amount=${selectedWithdrawal.amount}&accountName=${encodeURIComponent(selectedWithdrawal.accountHolder)}&addInfo=${encodeURIComponent('Purrfect chi tien')}`
+                      }
+                      alt="Mã QR thanh toán ngân hàng"
+                      className="adm-qr-image"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          `https://img.vietqr.io/image/vietcombank-${selectedWithdrawal.bankAccount}-compact2.png?amount=${selectedWithdrawal.amount}&accountName=${encodeURIComponent(selectedWithdrawal.accountHolder)}`;
+                      }}
+                    />
+                    <span className="adm-qr-caption">
+                      {selectedWithdrawal.qrCodeUrl
+                        ? 'Mã QR giảng viên tải lên'
+                        : 'Mã QR quét chuyển khoản'}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {processingAction === 'APPROVE' ? (
@@ -777,7 +879,7 @@ export const AdminRefundManagement: React.FC = () => {
                   {isSubmitting
                     ? 'Đang xử lý...'
                     : processingAction === 'APPROVE'
-                      ? 'Xác nhận Duyệt chi'
+                      ? 'Xác nhận'
                       : 'Xác nhận Từ chối'}
                 </button>
               </div>

@@ -1,5 +1,7 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
 
+export type DiscussionStatus = 'ACTIVE' | 'HIDDEN' | 'DELETED';
+
 export interface ICourseDiscussion extends Document {
   _id: mongoose.Types.ObjectId;
   courseId: mongoose.Types.ObjectId;
@@ -10,6 +12,7 @@ export interface ICourseDiscussion extends Document {
   upvoteCount: number;
   upvotedUsers: mongoose.Types.ObjectId[];
   isPinned: boolean;
+  status: DiscussionStatus;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +37,11 @@ export interface ICourseDiscussionModel extends Model<ICourseDiscussion> {
   updatePinStatus(
     replyId: string | mongoose.Types.ObjectId,
     isPinned: boolean,
+  ): Promise<ICourseDiscussion | null>;
+
+  hideOrDeleteContent(
+    targetId: string | mongoose.Types.ObjectId,
+    action?: 'HIDE' | 'DELETE',
   ): Promise<ICourseDiscussion | null>;
 }
 
@@ -85,6 +93,12 @@ const courseDiscussionSchema = new Schema<
     isPinned: {
       type: Boolean,
       default: false,
+      index: true,
+    },
+    status: {
+      type: String,
+      enum: ['ACTIVE', 'HIDDEN', 'DELETED'],
+      default: 'ACTIVE',
       index: true,
     },
   },
@@ -139,9 +153,25 @@ courseDiscussionSchema.statics.updatePinStatus = async function (
   replyId: string | mongoose.Types.ObjectId,
   isPinned: boolean = true,
 ): Promise<ICourseDiscussion | null> {
+  return this.findByIdAndUpdate(replyId, { $set: { isPinned } }, { new: true });
+};
+
+// Khớp Sequence Diagram 3.2.26: CourseDiscussion.hideOrDeleteContent(reportObject.targetId) -> contentRemoved()
+courseDiscussionSchema.statics.hideOrDeleteContent = async function (
+  targetId: string | mongoose.Types.ObjectId,
+  action: 'HIDE' | 'DELETE' = 'HIDE',
+): Promise<ICourseDiscussion | null> {
+  if (action === 'DELETE') {
+    const doc = await this.findByIdAndUpdate(
+      targetId,
+      { $set: { status: 'DELETED' } },
+      { new: true },
+    );
+    return doc;
+  }
   return this.findByIdAndUpdate(
-    replyId,
-    { $set: { isPinned } },
+    targetId,
+    { $set: { status: 'HIDDEN' } },
     { new: true },
   );
 };

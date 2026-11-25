@@ -1,0 +1,401 @@
+.public-instructor-page {
+  min-height: 80vh;
+  background: #f8fafc;
+  padding-bottom: 60px;
+}
+
+/* Breadcrumb */
+.public-ins-breadcrumb-bar {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 14px 24px;
+}
+
+.public-ins-breadcrumb-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #64748b;
+}
+
+.public-ins-breadcrumb-container span.link {
+  color: #0056d2;
+  cursor: pointer;
+}
+
+.public-ins-breadcrumb-container span.link:hover {
+  text-decoration: underline;
+}
+
+.public-ins-breadcrumb-container span.sep {
+  color: #cbd5e1;
+}
+
+.public-ins-breadcrumb-container span.current {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* Hero Banner */
+.public-ins-profile-hero {
+  background: linear-gradient(135deg, #0b192c 0%, #1e3a8a 100%);
+  color: #ffffff;
+  padding: 48px 24px;
+}
+
+.public-ins-hero-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+
+@media (max-width: 768px) {
+  .public-ins-hero-container {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+}
+
+.public-ins-hero-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.public-ins-hero-avatar {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  background: #ffffff;
+}
+
+.public-ins-hero-info {
+  flex: 1;
+}
+
+.public-ins-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #93c5fd;
+  margin-bottom: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.public-ins-hero-name {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 8px;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.public-ins-hero-headline {
+  font-size: 1.05rem;
+  color: #bfdbfe;
+  margin: 0 0 14px;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.public-ins-hero-bio {
+  font-size: 0.92rem;
+  color: #e2e8f0;
+  line-height: 1.6;
+  margin: 0 0 20px;
+  max-width: 800px;
+}
+
+/* Stats Row */
+.public-ins-hero-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .public-ins-hero-stats {
+    justify-content: center;
+  }
+}
+
+.public-ins-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.88rem;
+  color: #ffffff;
+}
+
+.public-ins-stat-pill strong {
+  font-size: 1.05rem;
+  color: #60a5fa;
+}
+
+/* Main Content: Courses Section */
+.public-ins-courses-section {
+  max-width: 1280px;
+  margin: 36px auto 0;
+  padding: 0 24px;
+}
+
+.public-ins-courses-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.public-ins-courses-heading {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.public-ins-filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.public-ins-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 14px;
+  width: 260px;
+  transition: all 0.2s;
+}
+
+.public-ins-search-box:focus-within {
+  border-color: #0056d2;
+  box-shadow: 0 0 0 3px rgba(0, 86, 210, 0.12);
+}
+
+.public-ins-search-box input {
+  border: none;
+  outline: none;
+  font-size: 0.88rem;
+  width: 100%;
+  color: #0f172a;
+}
+
+.public-ins-sort-select {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.88rem;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .public-ins-courses-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .public-ins-filter-controls {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 8px;
+  }
+  .public-ins-search-box {
+    width: 100%;
+  }
+  .public-ins-sort-select {
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Course Grid - 3 to 4 courses horizontally side by side
+   ========================================================================== */
+.public-instructor-page .public-ins-courses-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 24px !important;
+  margin-bottom: 36px !important;
+  width: 100% !important;
+}
+
+@media (max-width: 1200px) {
+  .public-instructor-page .public-ins-courses-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+  }
+}
+
+@media (max-width: 868px) {
+  .public-instructor-page .public-ins-courses-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+
+@media (max-width: 580px) {
+  .public-instructor-page .public-ins-courses-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* Card sizing safeguard */
+.public-instructor-page .public-ins-courses-grid .course-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.public-instructor-page .public-ins-courses-grid .course-card-thumb-wrapper {
+  width: 100% !important;
+  aspect-ratio: 16 / 10 !important;
+  height: auto !important;
+  max-height: 200px !important;
+  overflow: hidden !important;
+}
+
+.public-instructor-page .public-ins-courses-grid .course-card-thumb-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+/* Loading & Empty */
+.public-ins-loading-wrap,
+.public-ins-empty-wrap {
+  text-align: center;
+  padding: 60px 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.public-ins-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #0056d2;
+  border-radius: 50%;
+  animation: publicInsSpin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes publicInsSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.public-ins-empty-wrap h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px;
+}
+
+.public-ins-empty-wrap p {
+  font-size: 0.9rem;
+  margin: 0 0 20px;
+}
+
+.public-ins-btn-back {
+  padding: 10px 20px;
+  background: #0056d2;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Pagination */
+.public-ins-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 36px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.public-ins-pagination button {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.public-ins-pagination button:hover:not(:disabled) {
+  border-color: #0056d2;
+  color: #0056d2;
+  background: #eff6ff;
+  transform: translateY(-1px);
+}
+
+.public-ins-pagination button.active {
+  background: #0056d2;
+  border-color: #0056d2;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 86, 210, 0.25);
+}
+
+.public-ins-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.public-ins-pagination-ellipsis {
+  padding: 0 6px;
+  color: #94a3b8;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 2px;
+}

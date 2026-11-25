@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type {
   InstructorCourse,
-  InstructorStats,
   InstructorUserSummary,
 } from '../../../types/instructorCourse';
 import {
   fetchInstructorCourses,
   approveInstructorCourse,
   rejectInstructorCourse,
+  toggleCourseStatus,
 } from '../../../services/instructorCourseApi';
 import {
   IconlySearch,
@@ -15,7 +15,6 @@ import {
   IconlyClose,
   IconlyDanger,
   IconlyPlay,
-  IconlyTimeCircle,
   IconlyAiChip,
   IconlyShow,
   IconlyRefresh,
@@ -35,7 +34,6 @@ const REJECTION_SUGGESTIONS = [
 
 export const CourseApprovalManagement: React.FC = () => {
   const [courses, setCourses] = useState<InstructorCourse[]>([]);
-  const [stats, setStats] = useState<InstructorStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeStatus, setActiveStatus] = useState<string>('PENDING_APPROVAL');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
@@ -77,7 +75,6 @@ export const CourseApprovalManagement: React.FC = () => {
 
         if (res.success && res.data) {
           setCourses(res.data.courses || []);
-          setStats(res.data.stats || null);
         }
       } catch (err) {
         showToast(
@@ -107,7 +104,6 @@ export const CourseApprovalManagement: React.FC = () => {
 
         if (!ignore && res.success && res.data) {
           setCourses(res.data.courses || []);
-          setStats(res.data.stats || null);
         }
       } catch (err) {
         if (!ignore) {
@@ -132,7 +128,7 @@ export const CourseApprovalManagement: React.FC = () => {
     };
   }, [activeStatus, searchKeyword]);
 
-  // Kiểm tra điều kiện phê duyệt BR06.1 (Tối thiểu 1 chương và 3 bài học)
+  // Kiểm tra điều kiện phê duyệt   (Tối thiểu 1 chương và 3 bài học)
   const checkCompliance = (course: InstructorCourse) => {
     const secCount = course.sections?.length || 0;
     const lecCount = (course.sections || []).reduce(
@@ -199,6 +195,34 @@ export const CourseApprovalManagement: React.FC = () => {
         err instanceof Error
           ? err.message
           : 'Lỗi khi từ chối phê duyệt khóa học',
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Thay đổi trạng thái Ẩn / Bỏ ẩn khóa học
+  const handleToggleHideCourse = async (course: InstructorCourse) => {
+    setActionLoading(true);
+    try {
+      const res = await toggleCourseStatus(course._id);
+      showToast(
+        'success',
+        res.message ||
+          (course.status === 'PUBLISHED'
+            ? `Đã ẩn khóa học "${course.title}".`
+            : `Đã bỏ ẩn khóa học "${course.title}".`),
+      );
+      if (inspectingCourse?._id === course._id) {
+        setInspectingCourse(null);
+      }
+      await fetchCoursesList(false);
+    } catch (err) {
+      showToast(
+        'error',
+        err instanceof Error
+          ? err.message
+          : 'Lỗi khi thay đổi trạng thái ẩn/hiện khóa học',
       );
     } finally {
       setActionLoading(false);
@@ -289,51 +313,6 @@ export const CourseApprovalManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="approval-stats-grid">
-        <div className="approval-stat-card">
-          <div className="approval-stat-icon stat-icon-amber">
-            <IconlyTimeCircle size={22} color="currentColor" />
-          </div>
-          <div className="approval-stat-info">
-            <span className="approval-stat-value">
-              {stats?.pendingApproval ?? 0}
-            </span>
-            <span className="approval-stat-label">Chờ phê duyệt</span>
-          </div>
-        </div>
-
-        <div className="approval-stat-card">
-          <div className="approval-stat-icon stat-icon-green">
-            <IconlyTick size={22} color="currentColor" />
-          </div>
-          <div className="approval-stat-info">
-            <span className="approval-stat-value">{stats?.published ?? 0}</span>
-            <span className="approval-stat-label">Đã xuất bản (Hoạt động)</span>
-          </div>
-        </div>
-
-        <div className="approval-stat-card">
-          <div className="approval-stat-icon stat-icon-red">
-            <IconlyClose size={22} color="currentColor" />
-          </div>
-          <div className="approval-stat-info">
-            <span className="approval-stat-value">{stats?.rejected ?? 0}</span>
-            <span className="approval-stat-label">Bị từ chối</span>
-          </div>
-        </div>
-
-        <div className="approval-stat-card">
-          <div className="approval-stat-icon stat-icon-blue">
-            <IconlyAward size={22} color="currentColor" />
-          </div>
-          <div className="approval-stat-info">
-            <span className="approval-stat-value">{stats?.total ?? 0}</span>
-            <span className="approval-stat-label">Tổng số khóa học</span>
-          </div>
-        </div>
-      </div>
-
       {/* Filter and Search Bar */}
       <div className="approval-filter-bar">
         <div className="approval-tabs">
@@ -343,9 +322,6 @@ export const CourseApprovalManagement: React.FC = () => {
             onClick={() => setActiveStatus('PENDING_APPROVAL')}
           >
             <span>Chờ phê duyệt</span>
-            <span className="approval-tab-badge tab-badge-pending">
-              {stats?.pendingApproval ?? 0}
-            </span>
           </button>
 
           <button
@@ -354,7 +330,6 @@ export const CourseApprovalManagement: React.FC = () => {
             onClick={() => setActiveStatus('ALL')}
           >
             <span>Tất cả</span>
-            <span className="approval-tab-badge">{stats?.total ?? 0}</span>
           </button>
 
           <button
@@ -363,7 +338,6 @@ export const CourseApprovalManagement: React.FC = () => {
             onClick={() => setActiveStatus('PUBLISHED')}
           >
             <span>Đã xuất bản</span>
-            <span className="approval-tab-badge">{stats?.published ?? 0}</span>
           </button>
 
           <button
@@ -372,7 +346,6 @@ export const CourseApprovalManagement: React.FC = () => {
             onClick={() => setActiveStatus('REJECTED')}
           >
             <span>Bị từ chối</span>
-            <span className="approval-tab-badge">{stats?.rejected ?? 0}</span>
           </button>
 
           <button
@@ -381,7 +354,6 @@ export const CourseApprovalManagement: React.FC = () => {
             onClick={() => setActiveStatus('DRAFT')}
           >
             <span>Bản nháp</span>
-            <span className="approval-tab-badge">{stats?.draft ?? 0}</span>
           </button>
         </div>
 
@@ -661,29 +633,59 @@ export const CourseApprovalManagement: React.FC = () => {
                             <span>Kiểm tra</span>
                           </button>
 
-                          {/* Nút Phê duyệt */}
-                          {course.status !== 'PUBLISHED' && (
+                          {/* Nút Ẩn (khi đã xuất bản) */}
+                          {course.status === 'PUBLISHED' && (
                             <button
                               type="button"
-                              className="btn-action-approve"
-                              disabled={!compliance.passed}
-                              onClick={() => setApprovingCourse(course)}
-                              title={
-                                compliance.passed
-                                  ? 'Phê duyệt và xuất bản khóa học'
-                                  : 'Chưa đủ điều kiện xuất bản (Cần tối thiểu 1 chương và 3 bài học)'
-                              }
+                              className="btn-action-hide"
+                              disabled={actionLoading}
+                              onClick={() => handleToggleHideCourse(course)}
+                              title="Ẩn khóa học khỏi nền tảng"
                             >
-                              <IconlyTick size={14} color="#ffffff" />
-                              <span>Duyệt</span>
+                              <IconlyDanger size={13} color="currentColor" />
+                              <span>Ẩn</span>
                             </button>
                           )}
 
-                          {/* Nút Từ chối */}
-                          {course.status !== 'REJECTED' && (
+                          {/* Nút Bỏ ẩn (khi đang bị ẩn/vô hiệu hóa) */}
+                          {course.status === 'DISABLED' && (
+                            <button
+                              type="button"
+                              className="btn-action-unhide"
+                              disabled={actionLoading}
+                              onClick={() => handleToggleHideCourse(course)}
+                              title="Bỏ ẩn và mở lại khóa học"
+                            >
+                              <IconlyTick size={13} color="currentColor" />
+                              <span>Bỏ ẩn</span>
+                            </button>
+                          )}
+
+                          {/* Nút Phê duyệt (cho PENDING_APPROVAL, DRAFT, REJECTED) */}
+                          {course.status !== 'PUBLISHED' &&
+                            course.status !== 'DISABLED' && (
+                              <button
+                                type="button"
+                                className="btn-action-approve"
+                                disabled={!compliance.passed || actionLoading}
+                                onClick={() => setApprovingCourse(course)}
+                                title={
+                                  compliance.passed
+                                    ? 'Phê duyệt và xuất bản khóa học'
+                                    : 'Chưa đủ điều kiện xuất bản (Cần tối thiểu 1 chương và 3 bài học)'
+                                }
+                              >
+                                <IconlyTick size={14} color="#ffffff" />
+                                <span>Duyệt</span>
+                              </button>
+                            )}
+
+                          {/* Nút Từ chối (chỉ cho PENDING_APPROVAL) */}
+                          {course.status === 'PENDING_APPROVAL' && (
                             <button
                               type="button"
                               className="btn-action-reject"
+                              disabled={actionLoading}
                               onClick={() => {
                                 setRejectingCourse(course);
                                 setRejectionReason('');
@@ -1144,27 +1146,55 @@ export const CourseApprovalManagement: React.FC = () => {
               </span>
 
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="btn-action-reject"
-                  onClick={() => {
-                    setRejectingCourse(inspectingCourse);
-                    setRejectionReason('');
-                  }}
-                >
-                  <IconlyClose size={14} color="currentColor" />
-                  <span>Từ chối phê duyệt</span>
-                </button>
+                {inspectingCourse.status === 'PUBLISHED' ? (
+                  <button
+                    type="button"
+                    className="btn-action-hide"
+                    disabled={actionLoading}
+                    onClick={() => handleToggleHideCourse(inspectingCourse)}
+                  >
+                    <IconlyDanger size={14} color="currentColor" />
+                    <span>Ẩn khóa học</span>
+                  </button>
+                ) : inspectingCourse.status === 'DISABLED' ? (
+                  <button
+                    type="button"
+                    className="btn-action-unhide"
+                    disabled={actionLoading}
+                    onClick={() => handleToggleHideCourse(inspectingCourse)}
+                  >
+                    <IconlyTick size={14} color="currentColor" />
+                    <span>Bỏ ẩn khóa học</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="btn-action-reject"
+                      disabled={actionLoading}
+                      onClick={() => {
+                        setRejectingCourse(inspectingCourse);
+                        setRejectionReason('');
+                      }}
+                    >
+                      <IconlyClose size={14} color="currentColor" />
+                      <span>Từ chối phê duyệt</span>
+                    </button>
 
-                <button
-                  type="button"
-                  className="btn-action-approve"
-                  disabled={!checkCompliance(inspectingCourse).passed}
-                  onClick={() => setApprovingCourse(inspectingCourse)}
-                >
-                  <IconlyTick size={14} color="#ffffff" />
-                  <span>Phê duyệt xuất bản</span>
-                </button>
+                    <button
+                      type="button"
+                      className="btn-action-approve"
+                      disabled={
+                        !checkCompliance(inspectingCourse).passed ||
+                        actionLoading
+                      }
+                      onClick={() => setApprovingCourse(inspectingCourse)}
+                    >
+                      <IconlyTick size={14} color="#ffffff" />
+                      <span>Phê duyệt xuất bản</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

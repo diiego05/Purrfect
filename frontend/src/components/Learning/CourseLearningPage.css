@@ -493,7 +493,7 @@
   color: #64748b;
 }
 
-/* DISCUSSION PANE (UC22) */
+/* DISCUSSION PANE */
 .tab-pane-discussion {
   display: flex;
   flex-direction: column;

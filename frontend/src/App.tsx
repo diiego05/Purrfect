@@ -27,17 +27,28 @@ import SystemConfigManagement from './components/Admin/SystemConfig/SystemConfig
 import CouponManagement from './components/Admin/CouponManagement/CouponManagement';
 import { UserManagement } from './components/Admin/UserManagement/UserManagement';
 import { CourseApprovalManagement } from './components/Admin/CourseApproval/CourseApprovalManagement';
+import { AdminStatisticsPage } from './components/Admin/Statistics/AdminStatisticsPage';
+
 import { AdminRefundManagement } from './components/Admin/RefundManagement/AdminRefundManagement';
+
+import { AdminModerationPage } from './components/Admin/Moderation/AdminModerationPage';
+import { InstructorApplicationManagement } from './components/Admin/InstructorApplications/InstructorApplicationManagement';
+import { InstructorApplyPage } from './components/Instructor/InstructorApplyPage';
+import { PublicInstructorCoursesPage } from './components/Instructor/PublicInstructorCoursesPage';
+
 import { ProfilePage } from './components/Profile/ProfilePage';
 import { PlaylistsPage } from './components/Playlist/PlaylistsPage';
 import { PlaylistDetailPage } from './components/Playlist/PlaylistDetailPage';
 import { InstructorLayout } from './components/Instructor/InstructorLayout';
 import { InstructorCoursesPage } from './components/Instructor/InstructorCoursesPage';
+import { InstructorCourseCouponsPage } from './components/Instructor/InstructorCourseCouponsPage';
 
 import { InstructorReviewsPage } from './components/Instructor/InstructorReviewsPage';
 
 import { InstructorStudentsPage } from './components/Instructor/InstructorStudentsPage';
 import { InstructorStatisticsPage } from './components/Instructor/InstructorStatisticsPage';
+import { InstructorWithdrawalPage } from './components/Instructor/InstructorWithdrawalPage';
+import { InstructorRefundLogsPage } from './components/Instructor/InstructorRefundLogsPage';
 
 import { BannerCarousel } from './components/Banner/BannerCarousel';
 import { ChatbotWidget } from './components/Chatbot/ChatbotWidget';
@@ -94,7 +105,7 @@ function MainRouter() {
     );
   }
 
-  // Trang Chi tiết Playlist khóa học (/playlists/:id, /playlist/:id, /danh-sach-phat/:id) - UC29
+  // Trang Chi tiết Playlist khóa học (/playlists/:id, /playlist/:id, /danh-sach-phat/:id) -
   const playlistDetailMatch = normalizedPath.match(
     /^\/(?:playlists|playlist|danh-sach-phat)\/([^/]+)$/,
   );
@@ -111,7 +122,7 @@ function MainRouter() {
     );
   }
 
-  // Trang Quản lý Playlist khóa học (/playlists, /playlist, /danh-sach-phat) - UC29
+  // Trang Quản lý Playlist khóa học (/playlists, /playlist, /danh-sach-phat) -
   if (
     normalizedPath === '/playlists' ||
     normalizedPath === '/playlist' ||
@@ -213,6 +224,26 @@ function MainRouter() {
     );
   }
 
+  // Handle public instructor courses page: /instructors/:id, /giang-vien/:id, /instructor-courses/:id
+  const instructorCoursesMatch = normalizedPath.match(
+    /^\/(?:instructors|instructor-courses|giang-vien|instructor-profile)\/([^/]+)$/,
+  );
+  if (instructorCoursesMatch) {
+    const instructorId = decodeURIComponent(instructorCoursesMatch[1]);
+    return (
+      <div className="app-layout">
+        <Header />
+        <main className="main-content">
+          <PublicInstructorCoursesPage
+            key={instructorId}
+            instructorId={instructorId}
+          />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (normalizedPath === '/login' || normalizedPath === '/register') {
     return (
       <div className="app-layout">
@@ -232,7 +263,7 @@ function MainRouter() {
     );
   }
 
-  // Trang Hồ sơ cá nhân (/profile, /ho-so-ca-nhan, /tai-khoan) - UC04
+  // Trang Hồ sơ cá nhân (/profile, /ho-so-ca-nhan, /tai-khoan) -
   if (
     normalizedPath === '/profile' ||
     normalizedPath === '/ho-so-ca-nhan' ||
@@ -249,7 +280,7 @@ function MainRouter() {
     );
   }
 
-  // Trang Lịch sử mua hàng & Yêu cầu hoàn tiền (/purchase-history, /orders, /lich-su-mua-hang) - UC30
+  // Trang Lịch sử mua hàng & Yêu cầu hoàn tiền (/purchase-history, /orders, /lich-su-mua-hang) -
   if (
     normalizedPath === '/purchase-history' ||
     normalizedPath === '/orders' ||
@@ -284,7 +315,7 @@ function MainRouter() {
     );
   }
 
-  // Phân hệ Giảng viên (Instructor Dashboard) - Bảng điều khiển giống Admin (UC06)
+  // Phân hệ Giảng viên (Instructor Dashboard) - Bảng điều khiển giống Admin
   if (
     normalizedPath === '/instructor/statistics' ||
     normalizedPath === '/instructor/analytics' ||
@@ -324,7 +355,24 @@ function MainRouter() {
     );
   }
 
-  // Quản lý Đánh giá & Phản hồi của Giảng viên (UC23)
+  // Quản lý Mã giảm giá khóa học của Giảng viên (Trang đầy đủ - không dùng popup)
+  const instructorCouponsMatch = normalizedPath.match(
+    /^\/instructor\/(?:courses\/([^/]+)\/coupons|coupons\/([^/]+)|coupons)$/,
+  );
+  if (instructorCouponsMatch) {
+    const courseId =
+      instructorCouponsMatch[1] ||
+      instructorCouponsMatch[2] ||
+      new URLSearchParams(window.location.search).get('courseId') ||
+      '';
+    return (
+      <InstructorLayout activeTab="courses" pageTitle="Mã giảm giá khóa học">
+        <InstructorCourseCouponsPage courseId={courseId} />
+      </InstructorLayout>
+    );
+  }
+
+  // Quản lý Đánh giá & Phản hồi của Giảng viên
   if (
     normalizedPath === '/instructor/reviews' ||
     normalizedPath === '/giang-vien/danh-gia' ||
@@ -340,7 +388,49 @@ function MainRouter() {
     );
   }
 
+  // Quản lý Doanh thu & Rút tiền Giảng viên
+  if (
+    normalizedPath === '/instructor/withdrawals' ||
+    normalizedPath === '/instructor/rut-tien' ||
+    normalizedPath === '/giang-vien/rut-tien'
+  ) {
+    return (
+      <InstructorLayout
+        activeTab="withdrawals"
+        pageTitle="Quản lý Doanh thu & Rút tiền"
+      >
+        <InstructorWithdrawalPage />
+      </InstructorLayout>
+    );
+  }
+
+  // Nhật ký Hoàn trả khóa học & Biến động Doanh thu
+  if (
+    normalizedPath === '/instructor/refunds' ||
+    normalizedPath === '/instructor/hoan-tien' ||
+    normalizedPath === '/giang-vien/hoan-tien'
+  ) {
+    return (
+      <InstructorLayout
+        activeTab="refunds"
+        pageTitle="Nhật ký Hoàn trả khóa học"
+      >
+        <InstructorRefundLogsPage />
+      </InstructorLayout>
+    );
+  }
+
   // 3. Phân hệ Quản trị viên (Admin Dashboard)
+  if (
+    normalizedPath === '/admin/statistics' ||
+    normalizedPath === '/admin/thong-ke'
+  ) {
+    return (
+      <AdminLayout activeTab="statistics" pageTitle="Thống kê hệ thống">
+        <AdminStatisticsPage />
+      </AdminLayout>
+    );
+  }
   if (
     normalizedPath === '/admin/courses' ||
     normalizedPath === '/admin/course-approvals' ||
@@ -388,7 +478,7 @@ function MainRouter() {
     );
   }
 
-  // Quản lý Hoàn tiền & Rút tiền (UC33)
+  // Quản lý Hoàn tiền & Rút tiền
   if (
     normalizedPath === '/admin/refunds' ||
     normalizedPath === '/admin/withdrawals' ||
@@ -400,6 +490,44 @@ function MainRouter() {
         <AdminRefundManagement />
       </AdminLayout>
     );
+  }
+
+  // Quản lý Kiểm duyệt nội dung
+  if (
+    normalizedPath === '/admin/moderation' ||
+    normalizedPath === '/admin/kiem-duyet' ||
+    normalizedPath === '/admin/reports'
+  ) {
+    return (
+      <AdminLayout activeTab="moderation" pageTitle="Kiểm duyệt nội dung">
+        <AdminModerationPage />
+      </AdminLayout>
+    );
+  }
+
+  // Quản lý Phê duyệt Đơn đăng ký Giảng viên
+  if (
+    normalizedPath === '/admin/instructor-applications' ||
+    normalizedPath === '/admin/duyet-giang-vien' ||
+    normalizedPath === '/admin/don-giang-vien'
+  ) {
+    return (
+      <AdminLayout
+        activeTab="instructor-applications"
+        pageTitle="Duyệt đơn đăng ký Giảng viên"
+      >
+        <InstructorApplicationManagement />
+      </AdminLayout>
+    );
+  }
+
+  // Đăng ký làm Giảng viên (Instructor Application)
+  if (
+    normalizedPath === '/instructor/apply' ||
+    normalizedPath === '/dang-ky-giang-vien' ||
+    normalizedPath === '/become-instructor'
+  ) {
+    return <InstructorApplyPage />;
   }
 
   // 4. Chi tiết khóa học (Course Detail)

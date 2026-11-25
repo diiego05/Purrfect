@@ -97,6 +97,40 @@
   white-space: nowrap;
 }
 
+.course-instructor-line.clickable {
+  cursor: pointer;
+  width: fit-content;
+  transition: opacity 0.2s;
+}
+
+.course-instructor-line.clickable:hover {
+  opacity: 0.88;
+}
+
+.course-instructor-line.clickable:hover .instructor-name-link {
+  color: #0056d2;
+}
+
+.btn-view-instructor-courses {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #eff6ff;
+  color: #0056d2;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-view-instructor-courses:hover {
+  background: #0056d2;
+  color: #ffffff;
+}
+
 .instructor-avatar-circle {
   width: 36px;
   height: 36px;
@@ -762,7 +796,7 @@
 }
 
 /* ==========================================================================
-   Reviews Tab Enhancements (UC23)
+   Reviews Tab Enhancements
    ========================================================================== */
 
 .reviews-tab-top-row {
@@ -1021,7 +1055,7 @@
   color: #0f172a;
 }
 
-/* Role Badges for UC23 */
+/* Role Badges for   */
 .review-role-badge {
   display: inline-flex;
   align-items: center;
@@ -1414,13 +1448,77 @@
 }
 
 @media (max-width: 768px) {
+  .course-banner-hero {
+    padding: 24px 16px 36px;
+  }
   .course-hero-title {
-    font-size: 1.75rem;
+    font-size: 1.6rem;
+    line-height: 1.3;
+  }
+  .course-instructor-line {
+    white-space: normal;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .banner-cta-group {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: stretch;
+    width: 100%;
+  }
+  .btn-banner-enroll {
+    width: 100%;
+    flex: 1 1 100%;
+    text-align: center;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  .btn-banner-preview,
+  .btn-banner-cart {
+    flex: 1 1 calc(50% - 5px);
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+  .btn-banner-playlist {
+    flex: 1 1 calc(100% - 56px);
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+  .btn-banner-wishlist {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+  .banner-students-enrolled {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 4px;
+    text-align: center;
+    font-size: 0.88rem;
+  }
+  .floating-info-bar-wrapper {
+    margin-top: 16px;
+    padding: 0 16px;
   }
   .floating-info-bar {
     grid-template-columns: 1fr;
   }
   .info-bar-col {
+    padding: 16px 20px;
     border-right: none;
     border-bottom: 1px solid #f1f5f9;
   }
@@ -1433,6 +1531,45 @@
   .reviews-summary-box {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .course-hero-title {
+    font-size: 1.35rem;
+  }
+  .banner-cta-group {
+    gap: 8px;
+  }
+  .btn-banner-preview,
+  .btn-banner-cart {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 110px;
+    padding: 10px 8px;
+    font-size: 0.82rem;
+  }
+  .btn-banner-playlist {
+    flex: 1 1 calc(100% - 52px);
+    padding: 10px 10px;
+    font-size: 0.82rem;
+  }
+  .btn-banner-wishlist {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+  .banner-price-values {
+    gap: 8px;
+  }
+  .banner-current-price {
+    font-size: 1.5rem;
   }
 }
 
@@ -1938,4 +2075,29 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+.review-report-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.review-report-btn:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.review-report-btn:hover svg {
+  color: #dc2626;
 }

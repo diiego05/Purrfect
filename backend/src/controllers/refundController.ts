@@ -6,13 +6,15 @@ import { Course } from '../models/Course';
 import RefundRequest from '../models/RefundRequest';
 import { UserInteraction } from '../models/UserInteraction';
 import Certificate from '../models/Certificate';
+import { User } from '../models/User';
+import SystemConfig from '../models/SystemConfig';
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
 /**
- * Hàm kiểm tra 3 điều kiện hoàn tiền (BR30.1):
+ * Hàm kiểm tra 3 điều kiện hoàn tiền:
  * 1. Thời gian thanh toán tính đến hiện tại trong vòng 14 ngày.
- * 2. Số bài giảng đã hoàn thành (đánh dấu "Đã xem" >= 80%) không vượt quá 2 bài giảng.
+ * 2. Học viên chưa truy cập quá 2 bài giảng có phí (không phụ thuộc % tự đánh dấu tiến độ).
  * 3. Khóa học chưa phát sinh/chưa lấy chứng chỉ hoàn thành.
  */
 export const evaluateRefundConditions = async (
@@ -24,11 +26,17 @@ export const evaluateRefundConditions = async (
     | 'OVER_14_DAYS'
     | 'COMPLETED_3_OR_MORE'
     | 'CERTIFICATE_ISSUED'
-    | 'ALREADY_REQUESTED';
+    | 'ALREADY_REQUESTED'
+    | 'MANUAL_ENROLLMENT_NON_REFUNDABLE'
+    | 'EXCEEDED_MAX_REFUND_LIMIT';
   errorMessage?: string;
   daysPassed: number;
   completedLecturesCount: number;
   hasCertificate: boolean;
+  refundCount?: number;
+  maxRefunds?: number;
+  pointConversionRate?: number;
+  estimatedPoints?: number;
 }> => {
   const targetCourseId =
     order.courseId && typeof order.courseId === 'object' && order.courseId._id
@@ -39,6 +47,43 @@ export const evaluateRefundConditions = async (
   const paymentTime = new Date(order.createdAt).getTime();
   const diffTime = now - paymentTime;
   const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  // Lấy cấu hình tỷ lệ quy đổi PurrPoint và số lần hoàn tiền tối đa
+  const maxRefundsConfig = await SystemConfig.findOne({
+    keyName: 'MAX_REFUND_TIMES_PER_USER',
+  });
+  const maxRefunds = maxRefundsConfig
+    ? parseInt(maxRefundsConfig.valueText) || 3
+    : 3;
+
+  const rateConfig = await SystemConfig.findOne({
+    keyName: 'PURR_POINT_RATE_VND',
+  });
+  const pointConversionRate = rateConfig
+    ? parseInt(rateConfig.valueText) || 1000
+    : 1000;
+  const estimatedPoints = Math.floor((order.amount || 0) / pointConversionRate);
+
+  // Kiểm tra số lần đã hoàn tiền thành công của học viên
+  const approvedRefundsCount = await RefundRequest.countDocuments({
+    userId,
+    status: 'APPROVED',
+  });
+
+  if (approvedRefundsCount >= maxRefunds) {
+    return {
+      isEligible: false,
+      errorCode: 'EXCEEDED_MAX_REFUND_LIMIT',
+      errorMessage: `Bạn đã sử dụng hết số lần hoàn tiền tối đa cho phép trên nền tảng (${maxRefunds} lần).`,
+      daysPassed,
+      completedLecturesCount: 0,
+      hasCertificate: false,
+      refundCount: approvedRefundsCount,
+      maxRefunds,
+      pointConversionRate,
+      estimatedPoints,
+    };
+  }
 
   // Kiểm tra yêu cầu hoàn tiền đang tồn tại
   const existingRequest = await RefundRequest.findOne({
@@ -58,10 +103,31 @@ export const evaluateRefundConditions = async (
       daysPassed,
       completedLecturesCount: 0,
       hasCertificate: false,
+      refundCount: approvedRefundsCount,
+      maxRefunds,
+      pointConversionRate,
+      estimatedPoints,
     };
   }
 
-  // Điều kiện 1 (BR30.1 / Exception 2a): Trong vòng 14 ngày
+  // Khóa hoàn toàn hoàn tiền nếu là ghi danh thủ công từ giảng viên
+  if (order.isManualEnrollment) {
+    return {
+      isEligible: false,
+      errorCode: 'MANUAL_ENROLLMENT_NON_REFUNDABLE',
+      errorMessage:
+        'Khóa học này được ghi danh thủ công bởi giảng viên, không áp dụng chính sách hoàn tiền.',
+      daysPassed,
+      completedLecturesCount: 0,
+      hasCertificate: false,
+      refundCount: approvedRefundsCount,
+      maxRefunds,
+      pointConversionRate,
+      estimatedPoints,
+    };
+  }
+
+  // Điều kiện 1 (  / Exception 2a): Trong vòng 14 ngày
   if (diffTime > FOURTEEN_DAYS_MS) {
     return {
       isEligible: false,
@@ -74,53 +140,43 @@ export const evaluateRefundConditions = async (
     };
   }
 
-  // Điều kiện 2 (BR30.1 / Exception 2b): Số bài giảng đã hoàn thành không vượt quá 2 bài giảng
+  // Điều kiện 2: chỉ cần mở bài học là đã tính truy cập; không dùng trạng thái tự đánh dấu hoàn thành.
   const progressInteractions = await UserInteraction.find({
     userId,
     courseId: targetCourseId,
     actionType: 'PROGRESS',
   }).lean();
 
-  const completedLectureKeys = new Set<string>();
+  const accessedLectureKeys = new Set<string>();
   progressInteractions.forEach((item: any) => {
     const meta = (item.metadata || {}) as Record<string, any>;
     if (meta.action === 'ENTER_LEARNING_ROOM') return;
-
-    const isDone =
-      meta.isCompleted === true ||
-      meta.completed === true ||
-      meta.action === 'COMPLETED_LECTURE' ||
-      (typeof meta.watchPercent === 'number' && meta.watchPercent >= 80) ||
-      (typeof meta.progressPercent === 'number' && meta.progressPercent >= 80);
-
-    if (isDone) {
-      if (meta.lectureId) {
-        completedLectureKeys.add(String(meta.lectureId));
-      } else if (
-        meta.sectionIndex !== undefined &&
-        meta.lectureIndex !== undefined
-      ) {
-        completedLectureKeys.add(`${meta.sectionIndex}-${meta.lectureIndex}`);
-      } else if (meta.lectureTitle) {
-        completedLectureKeys.add(String(meta.lectureTitle));
-      }
+    if (meta.lectureId) {
+      accessedLectureKeys.add(String(meta.lectureId));
+    } else if (
+      meta.sectionIndex !== undefined &&
+      meta.lectureIndex !== undefined
+    ) {
+      accessedLectureKeys.add(`${meta.sectionIndex}-${meta.lectureIndex}`);
+    } else if (meta.lectureTitle) {
+      accessedLectureKeys.add(String(meta.lectureTitle));
     }
   });
 
-  const completedLecturesCount = completedLectureKeys.size;
+  const completedLecturesCount = accessedLectureKeys.size;
   if (completedLecturesCount >= 3) {
     return {
       isEligible: false,
       errorCode: 'COMPLETED_3_OR_MORE',
       errorMessage:
-        'Bạn đã hoàn thành từ 3 bài giảng trở lên, không đủ điều kiện hoàn tiền.',
+        'Bạn đã truy cập từ 3 bài giảng có phí trở lên, không đủ điều kiện hoàn tiền.',
       daysPassed,
       completedLecturesCount,
       hasCertificate: false,
     };
   }
 
-  // Điều kiện 3 (BR30.1 / Exception 2c): Khóa học chưa phát sinh/chưa lấy chứng chỉ hoàn thành
+  // Điều kiện 3 (  / Exception 2c): Khóa học chưa phát sinh/chưa lấy chứng chỉ hoàn thành
   const cert = await Certificate.findOne({
     userId,
     courseId: targetCourseId,
@@ -167,13 +223,11 @@ export const checkEligibility = async (
     const orderId = String(req.params.orderId || '');
 
     if (!userId) {
-      res
-        .status(401)
-        .json({
-          success: false,
-          isEligible: false,
-          errorMessage: 'Vui lòng đăng nhập.',
-        });
+      res.status(401).json({
+        success: false,
+        isEligible: false,
+        errorMessage: 'Vui lòng đăng nhập.',
+      });
       return;
     }
 
@@ -190,13 +244,11 @@ export const checkEligibility = async (
     );
 
     if (!order) {
-      res
-        .status(404)
-        .json({
-          success: false,
-          isEligible: false,
-          errorMessage: 'Không tìm thấy đơn hàng.',
-        });
+      res.status(404).json({
+        success: false,
+        isEligible: false,
+        errorMessage: 'Không tìm thấy đơn hàng.',
+      });
       return;
     }
 
@@ -224,19 +276,17 @@ export const checkEligibility = async (
     });
   } catch (error) {
     console.error('Lỗi kiểm tra điều kiện hoàn tiền:', error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        isEligible: false,
-        errorMessage: 'Lỗi server khi kiểm tra điều kiện hoàn tiền.',
-      });
+    res.status(500).json({
+      success: false,
+      isEligible: false,
+      errorMessage: 'Lỗi server khi kiểm tra điều kiện hoàn tiền.',
+    });
   }
 };
 
 /**
  * POST /api/refunds/request
- * Gửi yêu cầu hoàn tiền mới (Basic Flow 4, 5, 6 & BR30.1, BR30.2)
+ * Gửi yêu cầu hoàn tiền mới (Basic Flow 4, 5, 6 &  
  */
 export const createRefundRequest = async (
   req: AuthRequest,
@@ -286,7 +336,7 @@ export const createRefundRequest = async (
       return;
     }
 
-    // Kiểm tra tính hợp lệ của 3 điều kiện (BR30.1)
+    // Kiểm tra tính hợp lệ của 3 điều kiện
     const evaluation = await evaluateRefundConditions(userId, order);
     if (!evaluation.isEligible) {
       res.status(400).json({
@@ -316,7 +366,6 @@ export const createRefundRequest = async (
     });
     await refundRequest.save();
 
-    // BR30.2: Tạm khóa quyền truy cập phòng học và tạm dừng ghi nhận doanh thu giảng viên
     order.status = 'REFUND_PENDING';
     await order.save();
 
@@ -334,7 +383,7 @@ export const createRefundRequest = async (
 
 /**
  * POST /api/refunds/cancel/:id
- * Hủy yêu cầu hoàn tiền khi đang PENDING (Alternative Flow 4a & BR30.3)
+ * Hủy yêu cầu hoàn tiền khi đang PENDING (Alternative Flow 4a &
  */
 export const cancelRefundRequest = async (
   req: AuthRequest,
@@ -372,7 +421,6 @@ export const cancelRefundRequest = async (
     refundRequest.cancelledAt = new Date();
     await refundRequest.save();
 
-    // BR30.3: Khôi phục lại quyền vào học bình thường ngay lập tức cho Student và doanh thu giảng viên
     const order = await Order.findById(refundRequest.orderId);
     if (order && order.status === 'REFUND_PENDING') {
       order.status = 'PAID';
@@ -422,7 +470,7 @@ export const getMyRefundRequests = async (
 
 /**
  * GET /api/refunds/admin/requests
- * [Admin] Xem danh sách toàn bộ yêu cầu hoàn tiền (UC33)
+ * [Admin] Xem danh sách toàn bộ yêu cầu hoàn tiền
  */
 export const getAdminRefundRequests = async (
   req: AuthRequest,
@@ -474,7 +522,7 @@ export const getAdminRefundRequests = async (
 
 /**
  * POST /api/refunds/admin/process/:id
- * [Admin] Duyệt (APPROVE) hoặc Từ chối (REJECT) yêu cầu hoàn tiền (UC33)
+ * [Admin] Duyệt (APPROVE) hoặc Từ chối (REJECT) yêu cầu hoàn tiền
  */
 export const processAdminRefund = async (
   req: AuthRequest,
@@ -512,11 +560,28 @@ export const processAdminRefund = async (
     const order = await Order.findById(refundRequest.orderId);
 
     if (action === 'APPROVE') {
+      // Lấy cấu hình tỷ lệ quy đổi điểm PurrPoint (mặc định 1000 VNĐ = 1 Point)
+      const rateConfig = await SystemConfig.findOne({
+        keyName: 'PURR_POINT_RATE_VND',
+      });
+      const vndPerPoint = rateConfig
+        ? Math.max(1, parseInt(rateConfig.valueText) || 1000)
+        : 1000;
+      const pointsToAdd = Math.floor(refundRequest.amount / vndPerPoint);
+
       refundRequest.status = 'APPROVED';
       refundRequest.processedBy = adminId;
       refundRequest.processedAt = new Date();
+      refundRequest.pointsRefunded = pointsToAdd;
       if (adminNotes) refundRequest.adminNotes = adminNotes.trim();
       await refundRequest.save();
+
+      // Cộng điểm PurrPoint cho tài khoản học viên
+      if (pointsToAdd > 0) {
+        await User.findByIdAndUpdate(refundRequest.userId, {
+          $inc: { purrPoints: pointsToAdd },
+        });
+      }
 
       // Cập nhật trạng thái đơn hàng thành REFUNDED vĩnh viễn
       if (order) {
@@ -533,8 +598,9 @@ export const processAdminRefund = async (
 
       res.json({
         success: true,
-        message: 'Đã phê duyệt hoàn tiền thành công cho học viên.',
+        message: `Đã phê duyệt hoàn tiền thành công. Tiền hoàn đã được quy đổi thành ${pointsToAdd.toLocaleString('vi-VN')} điểm PurrPoint và cộng vào tài khoản học viên.`,
         refundRequest,
+        pointsRefunded: pointsToAdd,
       });
     } else {
       // REJECT
@@ -568,5 +634,91 @@ export const processAdminRefund = async (
   } catch (error) {
     console.error('Lỗi khi xử lý duyệt hoàn tiền Admin:', error);
     res.status(500).json({ message: 'Lỗi server khi xét duyệt hoàn tiền.' });
+  }
+};
+
+/**
+ * GET /api/refunds/instructor/requests
+ * Giảng viên xem nhật ký các đơn học viên yêu cầu hoàn tiền khóa học của mình
+ */
+export const getInstructorRefundRequests = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const instructorId = req.user?._id;
+    if (!instructorId) {
+      res
+        .status(401)
+        .json({ message: 'Vui lòng đăng nhập tài khoản Giảng viên.' });
+      return;
+    }
+
+    // 1. Tìm tất cả các khóa học của giảng viên này
+    const myCourses = await Course.find({
+      $or: [
+        { instructorId: new mongoose.Types.ObjectId(instructorId) },
+        { instructorId: String(instructorId) },
+      ],
+    }).select('_id title price slug thumbnailUrl');
+
+    const courseIds = myCourses.map((c: any) => c._id);
+
+    // 2. Tìm tất cả RefundRequest thuộc các khóa học này
+    const requests = await RefundRequest.find({
+      courseId: { $in: courseIds },
+    })
+      .sort({ createdAt: -1 })
+      .populate('userId', 'fullName email avatarUrl')
+      .populate('courseId', 'title slug thumbnailUrl price')
+      .populate('orderId', 'amount paymentMethod status createdAt')
+      .lean();
+
+    // 3. Thống kê tác động doanh thu
+    const totalRequests = requests.length;
+    const pendingCount = requests.filter(
+      (r: any) => r.status === 'PENDING',
+    ).length;
+    const approvedCount = requests.filter(
+      (r: any) => r.status === 'APPROVED',
+    ).length;
+    const rejectedCount = requests.filter(
+      (r: any) => r.status === 'REJECTED',
+    ).length;
+
+    // Tổng số tiền đã hoàn trả (doanh thu bị giảm trừ)
+    const refundedRevenue = requests
+      .filter((r: any) => r.status === 'APPROVED')
+      .reduce(
+        (sum: number, r: any) =>
+          sum + (r.orderId?.amount || r.refundAmount || 0),
+        0,
+      );
+
+    const pendingRefundRevenue = requests
+      .filter((r: any) => r.status === 'PENDING')
+      .reduce(
+        (sum: number, r: any) =>
+          sum + (r.orderId?.amount || r.refundAmount || 0),
+        0,
+      );
+
+    res.json({
+      success: true,
+      data: {
+        totalRequests,
+        pendingCount,
+        approvedCount,
+        rejectedCount,
+        refundedRevenue,
+        pendingRefundRevenue,
+        requests,
+      },
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách hoàn tiền của giảng viên:', error);
+    res
+      .status(500)
+      .json({ message: 'Lỗi server khi tải dữ liệu hoàn tiền giảng viên.' });
   }
 };

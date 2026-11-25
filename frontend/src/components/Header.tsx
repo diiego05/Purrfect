@@ -21,6 +21,7 @@ import {
   IconlyAward,
   IconlyFolder,
   IconlyLogout,
+  IconlyWork,
   IconlyDocument,
   IconlySparkles,
   IconlyTimeCircle,
@@ -54,6 +55,14 @@ export const Header: FC = () => {
   } = useCartWishlist();
   const { isOpen: isChatOpen, toggleChat, openChat } = useChatbot();
 
+  const refreshCategories = () => {
+    fetchCategories().then((cats) => {
+      if (cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
+  };
+
   // Load platform categories from backend
   useEffect(() => {
     let isMounted = true;
@@ -62,8 +71,19 @@ export const Header: FC = () => {
         setCategories(cats);
       }
     });
+
+    const handleFocus = () => {
+      fetchCategories(true).then((cats) => {
+        if (isMounted && cats && cats.length > 0) {
+          setCategories(cats);
+        }
+      });
+    };
+    window.addEventListener('focus', handleFocus);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 
@@ -75,6 +95,7 @@ export const Header: FC = () => {
     if (exploreTimerRef.current) clearTimeout(exploreTimerRef.current);
     setTempClosed(false);
     setExploreOpen(true);
+    refreshCategories();
   };
 
   const handleExploreMouseLeave = () => {
@@ -180,7 +201,10 @@ export const Header: FC = () => {
               className={`header-explore-btn ${exploreOpen && !tempClosed ? 'active' : ''}`}
               onClick={() => {
                 setTempClosed(false);
-                setExploreOpen((prev) => !prev);
+                setExploreOpen((prev) => {
+                  if (!prev) refreshCategories();
+                  return !prev;
+                });
               }}
               aria-expanded={exploreOpen && !tempClosed}
               aria-haspopup="true"
@@ -214,6 +238,10 @@ export const Header: FC = () => {
                   {language === 'vi'
                     ? 'Tất cả lĩnh vực đào tạo'
                     : 'All Learning Paths'}
+                </span>
+                <span className="mega-menu-count">
+                  {categories.length}{' '}
+                  {language === 'vi' ? 'ngành học' : 'categories'}
                 </span>
               </div>
 
@@ -428,10 +456,10 @@ export const Header: FC = () => {
             )}
           </div>
 
-          {/* Wishlist Button - Cạnh bên Avatar */}
+          {/* Wishlist Button - Ẩn trên mobile, hiện trên desktop */}
           <button
             type="button"
-            className="header-icon-btn"
+            className="header-icon-btn header-wishlist-btn"
             title={language === 'vi' ? 'Khóa học yêu thích' : 'Wishlist'}
             aria-label="Khóa học yêu thích"
             onClick={() => navigate('/wishlist')}
@@ -558,6 +586,24 @@ export const Header: FC = () => {
             <IconlySparkles size={20} color="currentColor" />
           </button>
 
+          {/* Điểm PurrPoint cạnh bên Avatar - Chỉ xem, không click */}
+          {isAuthenticated && user && (
+            <div
+              className="header-purrpoint-chip"
+              title={
+                language === 'vi'
+                  ? `Điểm thưởng PurrPoint: ${(user.purrPoints || 0).toLocaleString('vi-VN')} điểm`
+                  : `PurrPoints: ${(user.purrPoints || 0).toLocaleString('vi-VN')} pts`
+              }
+            >
+              <span className="purrpoint-coin-icon">🪙</span>
+              <span className="purrpoint-num">
+                {(user.purrPoints || 0).toLocaleString('vi-VN')}
+              </span>
+              <span className="purrpoint-unit">pts</span>
+            </div>
+          )}
+
           {/* Avatar & User Dropdown */}
           <div className="header-popover-anchor" ref={avatarRef}>
             <button
@@ -616,7 +662,32 @@ export const Header: FC = () => {
                         {user.fullName || user.email}
                       </p>
                       <p className="dropdown-user-email">{user.email}</p>
-                      <span className="dropdown-role-badge">{user.role}</span>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          marginTop: '4px',
+                        }}
+                      >
+                        <span className="dropdown-role-badge">{user.role}</span>
+                        <span
+                          style={{
+                            background: '#fef3c7',
+                            color: '#b45309',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          🪙 {(user.purrPoints || 0).toLocaleString('vi-VN')}{' '}
+                          pts
+                        </span>
+                      </div>
                     </div>
                     <div className="dropdown-separator" />
                     <a
@@ -695,6 +766,36 @@ export const Header: FC = () => {
                         <IconlyDocument size={16} color="#059669" />
                         <span>
                           {language === 'vi' ? 'Giảng viên' : 'Instructor'}
+                        </span>
+                      </button>
+                    )}
+                    {user.role === 'STUDENT' && (
+                      <button
+                        type="button"
+                        className="dropdown-link"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          color: '#4f46e5',
+                          fontWeight: 600,
+                          background: 'none',
+                          border: 'none',
+                          width: '100%',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          padding: '10px 16px',
+                        }}
+                        onClick={() => {
+                          setAvatarMenuOpen(false);
+                          navigate('/instructor/apply');
+                        }}
+                      >
+                        <IconlyWork size={16} color="#4f46e5" />
+                        <span>
+                          {language === 'vi'
+                            ? 'Đăng ký làm Giảng viên'
+                            : 'Teach on Purrfect'}
                         </span>
                       </button>
                     )}
@@ -786,6 +887,29 @@ export const Header: FC = () => {
                         {language === 'vi'
                           ? 'Lịch sử mua hàng'
                           : 'Purchase History'}
+                      </span>
+                    </a>
+                    <a
+                      href="/wishlist"
+                      className="dropdown-link dropdown-wishlist-link"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontWeight: 600,
+                        color: '#1e293b',
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setAvatarMenuOpen(false);
+                        navigate('/wishlist');
+                      }}
+                    >
+                      <IconlyHeart size={16} color="#e11d48" />
+                      <span>
+                        {language === 'vi'
+                          ? `Khóa học yêu thích${wishlistCount > 0 ? ` (${wishlistCount})` : ''}`
+                          : `Wishlist${wishlistCount > 0 ? ` (${wishlistCount})` : ''}`}
                       </span>
                     </a>
                     <div className="dropdown-separator" />

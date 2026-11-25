@@ -6,6 +6,7 @@ import { Course, ICourse } from '../models/Course';
 import { Category } from '../models/Category';
 import { Skill } from '../models/Skill';
 import Order from '../models/Order';
+import { User } from '../models/User';
 import { UserInteraction } from '../models/UserInteraction';
 import { AuthRequest } from '../middlewares/auth';
 import {
@@ -31,12 +32,12 @@ export const initialCategories = [
     description: 'UI/UX Design, đồ họa và truyền thông',
   },
   {
-    name: 'Kinh doanh & Quản lý',
+    name: 'Kinh doanh & Quản trị',
     slug: 'business',
     description: 'Khởi nghiệp, marketing và quản trị',
   },
   {
-    name: 'Trí tuệ nhân tạo',
+    name: 'Trí tuệ nhân tạo & Dữ liệu',
     slug: 'ai-data',
     description: 'AI, Machine Learning và Data Science',
   },
@@ -592,6 +593,8 @@ export const getCourses = async (
   try {
     const {
       category,
+      instructor,
+      instructorId,
       search,
       sort = 'newest',
       page = '1',
@@ -602,6 +605,25 @@ export const getCourses = async (
       status: 'PUBLISHED',
       isDeleted: false,
     };
+
+    const targetInstructor = instructor || instructorId;
+    if (targetInstructor && targetInstructor !== 'all') {
+      if (mongoose.Types.ObjectId.isValid(targetInstructor as string)) {
+        filter.instructorId = new mongoose.Types.ObjectId(
+          targetInstructor as string,
+        );
+      } else {
+        const insUser = await User.findOne({
+          $or: [
+            { fullName: { $regex: targetInstructor as string, $options: 'i' } },
+            { name: { $regex: targetInstructor as string, $options: 'i' } },
+          ],
+        });
+        if (insUser) {
+          filter.instructorId = insUser._id;
+        }
+      }
+    }
 
     if (category && category !== 'all') {
       let cat = await Category.findOne({ slug: category as string });
@@ -640,6 +662,10 @@ export const getCourses = async (
     const [courses, total] = await Promise.all([
       Course.find(filter)
         .populate('categoryId', 'name slug')
+        .populate(
+          'instructorId',
+          'fullName name avatarUrl avatar email headline bio',
+        )
         .sort(sortOption)
         .skip(skip)
         .limit(limitNum),
@@ -713,6 +739,94 @@ export const getCourseBySlug = async (
     res.status(500).json({
       success: false,
       message: 'Lỗi máy chủ',
+    });
+  }
+};
+
+/**
+ * GET /api/courses/instructor/:instructorId
+ * Lấy thông tin công khai và toàn bộ danh sách khóa học của giảng viên
+ */
+export const getPublicInstructorCourses = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const instructorId = String(req.params.instructorId || '');
+    if (!instructorId) {
+      res.status(400).json({ success: false, message: 'Thiếu mã giảng viên.' });
+      return;
+    }
+
+    let instructor: any = null;
+    if (mongoose.Types.ObjectId.isValid(instructorId)) {
+      instructor = await User.findById(instructorId).select(
+        '_id fullName name email avatarUrl avatar headline bio role createdAt',
+      );
+    }
+    if (!instructor) {
+      instructor = await User.findOne({
+        $or: [
+          { fullName: { $regex: new RegExp(`^${instructorId}$`, 'i') } },
+          { name: { $regex: new RegExp(`^${instructorId}$`, 'i') } },
+        ],
+      }).select(
+        '_id fullName name email avatarUrl avatar headline bio role createdAt',
+      );
+    }
+
+    // Tìm tất cả khóa học của giảng viên này (chỉ lấy PUBLISHED và chưa xóa)
+    const targetId = instructor ? instructor._id : instructorId;
+    const courses = await Course.find({
+      $or: [{ instructorId: targetId }, { instructorId: String(targetId) }],
+      status: 'PUBLISHED',
+      isDeleted: false,
+    })
+      .populate('categoryId', 'name slug')
+      .populate('skillIds', 'name slug')
+      .populate('instructorId', 'fullName name avatarUrl email headline')
+      .sort({ totalStudents: -1, createdAt: -1 });
+
+    const totalStudents = courses.reduce(
+      (sum, c) => sum + (c.totalStudents || 0),
+      0,
+    );
+    const validRatings = courses
+      .map((c) => c.averageRating)
+      .filter((r): r is number => typeof r === 'number' && r > 0);
+    const averageRating =
+      validRatings.length > 0
+        ? Number(
+            (
+              validRatings.reduce((a, b) => a + b, 0) / validRatings.length
+            ).toFixed(1),
+          )
+        : 4.9;
+
+    res.json({
+      success: true,
+      data: {
+        instructor: instructor || {
+          _id: targetId,
+          fullName: 'Giảng viên Purrfect Academy',
+          avatarUrl:
+            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=160&q=80',
+          headline: 'Chuyên gia đào tạo & Cố vấn cấp cao tại Purrfect Academy',
+          bio: 'Với nhiều năm kinh nghiệm thực chiến trong ngành, giảng viên mang đến những khóa học chất lượng cao, bài giảng trực quan và bám sát dự án thực tế.',
+        },
+        stats: {
+          totalCourses: courses.length,
+          totalStudents,
+          averageRating,
+        },
+        courses,
+      },
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy thông tin giảng viên và khóa học:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi lấy thông tin giảng viên.',
     });
   }
 };
@@ -920,19 +1034,27 @@ export const getMyEnrolledCourses = async (
     // Tổng hợp danh sách courseId duy nhất
     const courseOrderMap = new Map<
       string,
-      { status: string; enrolledAt: Date }
+      { status: string; enrolledAt: Date; isManualEnrollment?: boolean }
     >();
     orders.forEach((o) => {
       const cId = o.courseId?.toString();
       if (cId && !courseOrderMap.has(cId)) {
-        courseOrderMap.set(cId, { status: o.status, enrolledAt: o.createdAt });
+        courseOrderMap.set(cId, {
+          status: o.status,
+          enrolledAt: o.createdAt,
+          isManualEnrollment: Boolean(o.isManualEnrollment),
+        });
       }
     });
 
     enrollInteractions.forEach((ei) => {
       const cId = ei.courseId?.toString();
       if (cId && !courseOrderMap.has(cId)) {
-        courseOrderMap.set(cId, { status: 'PAID', enrolledAt: ei.createdAt });
+        courseOrderMap.set(cId, {
+          status: 'PAID',
+          enrolledAt: ei.createdAt,
+          isManualEnrollment: Boolean((ei.metadata as any)?.enrolledBy),
+        });
       }
     });
 
@@ -993,6 +1115,7 @@ export const getMyEnrolledCourses = async (
       const orderInfo = courseOrderMap.get(cId) || {
         status: 'PAID',
         enrolledAt: course.createdAt,
+        isManualEnrollment: false,
       };
 
       let totalLectures = 0;
@@ -1024,6 +1147,7 @@ export const getMyEnrolledCourses = async (
         durationText: course.durationText,
         enrolledAt: orderInfo.enrolledAt,
         accessStatus: orderInfo.status, // 'PAID' or 'REFUND_PENDING'
+        isManualEnrollment: Boolean(orderInfo.isManualEnrollment),
         totalLectures,
         completedLectures: completedCount,
         progressPercent,

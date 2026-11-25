@@ -1,0 +1,353 @@
+.instructor-apply-main {
+  min-height: calc(100vh - 160px);
+  padding: 40px 16px 60px;
+  background: #f8fafc;
+}
+
+.instructor-apply-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.instructor-apply-hero {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.instructor-apply-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #eef2ff;
+  color: #4f46e5;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.instructor-apply-hero h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.instructor-apply-hero p {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.6;
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.instructor-apply-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 80px 0;
+  color: #64748b;
+}
+
+.apply-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spinApply 0.8s linear infinite;
+}
+
+@keyframes spinApply {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Status Cards */
+.instructor-apply-status-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+}
+
+.instructor-apply-status-card.approved {
+  border: 1px solid #a7f3d0;
+}
+.instructor-apply-status-card.pending {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+}
+.instructor-apply-status-card.rejected {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+}
+.instructor-apply-status-card.admin-restricted {
+  border: 1px solid #fecaca;
+  background: #fff5f5;
+}
+.instructor-apply-status-card.unauth {
+  border: 1px solid #e0e7ff;
+  background: #f8faff;
+}
+
+.status-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.status-icon.approved {
+  background: #d1fae5;
+}
+.status-icon.pending {
+  background: #fef3c7;
+}
+.status-icon.rejected {
+  background: #fee2e2;
+}
+.status-icon.admin {
+  background: #fee2e2;
+}
+.status-icon.unauth {
+  background: #e0e7ff;
+}
+
+.instructor-apply-status-card h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 10px;
+}
+
+.instructor-apply-status-card p {
+  font-size: 0.92rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+
+.rejected-hint {
+  display: block;
+  font-size: 0.85rem;
+  color: #991b1b;
+  font-weight: 500;
+}
+
+/* Alerts */
+.apply-alert-success {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+
+.apply-alert-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+
+/* Main Form Card */
+.instructor-apply-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  padding: 36px 36px 40px;
+}
+
+.apply-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.apply-card-title h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.instructor-apply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.instructor-apply-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.instructor-apply-form label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.instructor-apply-form input,
+.instructor-apply-form textarea,
+.instructor-apply-form select {
+  padding: 11px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  font-size: 0.9rem;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.instructor-apply-form input:focus,
+.instructor-apply-form textarea:focus,
+.instructor-apply-form select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.instructor-apply-form input.input-readonly {
+  background: #f8fafc;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.instructor-apply-form textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.apply-form-footer {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-apply-submit {
+  padding: 13px 24px;
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-apply-submit:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.btn-apply-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.apply-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.apply-action-group {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.btn-apply-primary {
+  padding: 11px 24px;
+  background: #059669;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-apply-primary:hover {
+  background: #047857;
+}
+
+.btn-apply-primary.btn-apply-admin {
+  background: #dc2626;
+}
+
+.btn-apply-primary.btn-apply-admin:hover {
+  background: #b91c1c;
+}
+
+.btn-apply-secondary {
+  padding: 11px 24px;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.btn-apply-secondary:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+@media (max-width: 640px) {
+  .form-row-2 {
+    grid-template-columns: 1fr;
+  }
+  .instructor-apply-card {
+    padding: 24px 20px;
+  }
+}

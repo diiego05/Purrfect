@@ -31,9 +31,11 @@ import {
   IconlyLock,
   IconlyEdit,
   IconlyDelete,
+  IconlyDanger,
 } from '../Onboarding/IconlyIcons';
 import './CourseDetailPage.css';
 import { AddToPlaylistModal } from '../Playlist/AddToPlaylistModal';
+import { ReportModal } from '../Common/ReportModal';
 
 interface CourseDetailPageProps {
   slug: string;
@@ -55,13 +57,13 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
     useState<boolean>(false);
   const [actionMessage, setActionMessage] = useState<string>('');
 
-  // Đánh giá & Phản hồi (UC23)
+  // Đánh giá & Phản hồi
   const [reviews, setReviews] = useState<CourseReviewItem[]>([]);
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
   const [reviewToastMsg, setReviewToastMsg] = useState<string>('');
 
-  // Giảng viên / Admin phản hồi trực tiếp (UC23)
+  // Giảng viên / Admin phản hồi trực tiếp
   const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState<string>('');
   const [replyError, setReplyError] = useState<string>('');
@@ -79,8 +81,11 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
   const [studentRating, setStudentRating] = useState<number>(5);
   const [studentComment, setStudentComment] = useState<string>('');
   const [studentReviewError, setStudentReviewError] = useState<string>('');
+
   const [submittingStudentReview, setSubmittingStudentReview] =
     useState<boolean>(false);
+  const [reportingReview, setReportingReview] =
+    useState<CourseReviewItem | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -113,7 +118,7 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
     };
   }, [slug, isAuthenticated]);
 
-  // Tải danh sách đánh giá từ API (UC23)
+  // Tải danh sách đánh giá từ API
   const loadReviews = useCallback(() => {
     if (!course?._id) return;
     reviewApi
@@ -169,7 +174,7 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
     };
   }, [course, activeTab, isEnrolled]);
 
-  // Giảng viên / Admin gửi phản hồi trực tiếp (UC23 Basic Flow 4)
+  // Giảng viên / Admin gửi phản hồi trực tiếp (  Basic Flow 4)
   const handleSendReply = async (reviewId: string) => {
     setReplyError('');
     const trimmed = replyContent.trim();
@@ -550,6 +555,13 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
       : 'Kỹ năng chuyên sâu';
 
   // Giảng viên
+  const instructorId =
+    typeof course.instructorId === 'object' && course.instructorId?._id
+      ? String(course.instructorId._id)
+      : typeof course.instructorId === 'string'
+        ? course.instructorId
+        : '';
+
   const instructorName =
     typeof course.instructorId === 'object' &&
     (course.instructorId?.fullName || course.instructorId?.name)
@@ -680,7 +692,20 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
               <h1 className="course-hero-title">{course.title}</h1>
 
               {/* Thông tin giảng viên */}
-              <div className="course-instructor-line">
+              <div
+                className="course-instructor-line clickable"
+                onClick={() => {
+                  const targetParam =
+                    instructorId || encodeURIComponent(instructorName);
+                  if (targetParam) {
+                    navigate(`/instructors/${targetParam}`);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                style={{ cursor: 'pointer' }}
+                title={`Xem tất cả khóa học của giảng viên ${instructorName}`}
+              >
                 <img
                   src={instructorAvatar}
                   alt={instructorName}
@@ -808,10 +833,7 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                       type="button"
                       className={`btn-banner-wishlist ${inWishlist ? 'active' : ''}`}
                       onClick={async () => {
-                        const res = await toggleWishlist(course);
-                        if (res.isWishlisted) {
-                          navigate('/wishlist');
-                        }
+                        await toggleWishlist(course);
                       }}
                       title={inWishlist ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
                       aria-label="Yêu thích"
@@ -1185,9 +1207,28 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                     src={instructorAvatar}
                     alt={instructorName}
                     className="instructor-large-avatar"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      const targetParam =
+                        instructorId || encodeURIComponent(instructorName);
+                      if (targetParam) navigate(`/instructors/${targetParam}`);
+                    }}
+                    title="Bấm để xem tất cả khóa học của giảng viên này"
                   />
                   <div>
-                    <h2 className="instructor-fullname">{instructorName}</h2>
+                    <h2
+                      className="instructor-fullname"
+                      style={{ cursor: 'pointer', color: '#0056d2' }}
+                      onClick={() => {
+                        const targetParam =
+                          instructorId || encodeURIComponent(instructorName);
+                        if (targetParam)
+                          navigate(`/instructors/${targetParam}`);
+                      }}
+                      title="Bấm để xem tất cả khóa học của giảng viên này"
+                    >
+                      {instructorName}
+                    </h2>
                     <p className="instructor-role">{instructorHeadline}</p>
                     <div className="instructor-stats-row">
                       <span className="stat-item">
@@ -1217,11 +1258,24 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                   </div>
                 </div>
                 <p className="instructor-bio-text">{instructorBio}</p>
+                <div style={{ marginTop: '18px' }}>
+                  <button
+                    type="button"
+                    className="btn-view-instructor-courses"
+                    onClick={() => {
+                      const targetParam =
+                        instructorId || encodeURIComponent(instructorName);
+                      if (targetParam) navigate(`/instructors/${targetParam}`);
+                    }}
+                  >
+                    Xem tất cả khóa học của giảng viên {instructorName} →
+                  </button>
+                </div>
               </section>
             </div>
           )}
 
-          {/* Tab 4: Đánh giá & Phản hồi (UC23) */}
+          {/* Tab 4: Đánh giá & Phản hồi */}
           {activeTab === 'reviews' && (
             <div className="tab-pane-fade">
               <section className="detail-section-card">
@@ -1375,7 +1429,7 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                   </div>
                 )}
 
-                {/* Danh sách các Đánh giá & Phản hồi (UC23) */}
+                {/* Danh sách các Đánh giá & Phản hồi */}
                 <div className="course-reviews-container">
                   {reviewsLoading ? (
                     <div className="reviews-loading-state">
@@ -1452,6 +1506,21 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                                   </span>
                                 </div>
                               </div>
+                              {isAuthenticated &&
+                                user?.id !==
+                                  (typeof rev.userId === 'object'
+                                    ? rev.userId?._id
+                                    : rev.userId) && (
+                                  <button
+                                    type="button"
+                                    className="review-report-btn"
+                                    title="Báo cáo vi phạm"
+                                    onClick={() => setReportingReview(rev)}
+                                  >
+                                    <IconlyDanger size={14} color="#94a3b8" />
+                                    <span>Báo cáo</span>
+                                  </button>
+                                )}
                             </div>
 
                             {/* Nội dung nhận xét của học viên */}
@@ -1459,7 +1528,7 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                               {rev.comment}
                             </p>
 
-                            {/* Phản hồi chính thức của Giảng viên / Quản trị viên (UC23) */}
+                            {/* Phản hồi chính thức của Giảng viên / Quản trị viên */}
                             {hasReply && (
                               <div
                                 className={`review-official-reply-card ${
@@ -1710,6 +1779,16 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
           courseTitle={course.title}
           isOpen={isPlaylistModalOpen}
           onClose={() => setIsPlaylistModalOpen(false)}
+        />
+      )}
+
+      {reportingReview && (
+        <ReportModal
+          isOpen={Boolean(reportingReview)}
+          onClose={() => setReportingReview(null)}
+          targetType="REVIEW"
+          targetId={reportingReview._id}
+          targetTitle={reportingReview.comment}
         />
       )}
     </div>

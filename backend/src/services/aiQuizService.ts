@@ -70,7 +70,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
     // -------------------------------------------------------------
     const easyTemplates = [
       {
-        q: `[Cơ bản] Khái niệm định nghĩa ban đầu và vai trò cốt lõi của "${topic}" là gì?`,
+        q: `Khái niệm định nghĩa ban đầu và vai trò cốt lõi của "${topic}" là gì?`,
         opts: [
           `Là tập hợp các nguyên tắc và kiến thức nền tảng giúp người mới bắt đầu dễ dàng tiếp cận sản phẩm.`,
           `Là một thư viện toán học nâng cao chỉ dành cho chuyên gia thuật toán.`,
@@ -81,7 +81,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
         exp: `Ở mức cơ bản, ${topic} cung cấp các khái niệm định nghĩa và nền tảng cốt lõi nhất để người học nắm vững bản chất nhập môn.`,
       },
       {
-        q: `[Cơ bản] Yếu tố nào sau đây được xem là thành phần khởi đầu quan trọng nhất trong "${topic}"?`,
+        q: `Yếu tố nào sau đây được xem là thành phần khởi đầu quan trọng nhất trong "${topic}"?`,
         opts: [
           `Thiết lập môi trường làm việc chuẩn và nắm rõ các thuật ngữ cơ bản.`,
           `Tối ưu hóa bộ nhớ cấp phát ở tầng hạt nhân hệ điều hành.`,
@@ -92,7 +92,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
         exp: `Để bắt đầu với ${topic}, việc cài đặt môi trường và hiểu rõ các thuật ngữ nền tảng là bước đi tiên quyết.`,
       },
       {
-        q: `[Cơ bản] Lợi ích trực quan và dễ nhận thấy nhất khi một người mới áp dụng "${topic}" là:`,
+        q: `Lợi ích trực quan và dễ nhận thấy nhất khi một người mới áp dụng "${topic}" là:`,
         opts: [
           `Mã nguồn và quy trình làm việc trở nên rõ ràng, có trật tự và dễ hiểu hơn.`,
           `Giúp giảm chi phí máy chủ xuống đúng bằng 0 mà không cần cấu hình.`,
@@ -103,7 +103,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
         exp: `Nắm bắt ${topic} giúp người học hình thành tư duy bài bản, mã nguồn mạch lạc và dễ bảo trì ngay từ đầu.`,
       },
       {
-        q: `[Cơ bản] Trong "${topic}", đối tượng nào dưới đây là người dùng / học viên phù hợp nhất?`,
+        q: `Trong "${topic}", đối tượng nào dưới đây là người dùng / học viên phù hợp nhất?`,
         opts: [
           `Bất kỳ ai muốn củng cố nền tảng vững chắc và hiểu rõ các khái niệm căn bản.`,
           `Chỉ dành riêng cho các tiến sĩ khoa học máy tính có hơn 10 năm kinh nghiệm.`,
@@ -114,7 +114,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
         exp: `Kiến thức cơ bản về ${topic} hướng đến tất cả học viên muốn trang bị hiểu biết cốt lõi trước khi nâng cao.`,
       },
       {
-        q: `[Cơ bản] Lời khuyên tốt nhất cho người mới bắt đầu học chủ đề "${topic}" là:`,
+        q: `Lời khuyên tốt nhất cho người mới bắt đầu học chủ đề "${topic}" là:`,
         opts: [
           `Thực hành theo các ví dụ mẫu từng bước một, ghi chú thuật ngữ và kiểm tra kết quả thường xuyên.`,
           `Học thuộc lòng toàn bộ lý thuyết mà không cần mở máy tính thực hành.`,
@@ -162,7 +162,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
     // -------------------------------------------------------------
     const hardTemplates = [
       {
-        q: `[Nâng cao] Khi vận hành "${topic}" trong hệ thống tải cao (High-Concurrency / Big Scale), hiện tượng nghẽn cổ chai (Bottleneck) phổ biến nhất xuất phát từ đâu?`,
+        q: `Khi vận hành "${topic}" trong hệ thống tải cao (High-Concurrency / Big Scale), hiện tượng nghẽn cổ chai (Bottleneck) phổ biến nhất xuất phát từ đâu?`,
         opts: [
           `Tranh chấp tài nguyên I/O, khóa bản ghi không tối ưu dẫn đến thread starvation hoặc CPU context switching cao.`,
           `Do hệ điều hành không hỗ trợ font chữ tiếng Việt khi render văn bản.`,
@@ -173,7 +173,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
         exp: `Trong các hệ thống phân tán và tải cao của ${topic}, nghẽn tài nguyên thường xảy ra ở I/O lock, kết nối cơ sở dữ liệu và chi phí context-switching quá lớn.`,
       },
       {
-        q: `[Nâng cao] Về mặt kiến trúc giải pháp cho "${topic}", sự đánh đổi (Trade-off) theo định lý CAP giữa Tính sẵn sàng cao (Availability) và Tính nhất quán mạnh (Strong Consistency) được giải quyết như thế nào?`,
+        q: `Về mặt kiến trúc giải pháp cho "${topic}", sự đánh đổi (Trade-off) theo định lý CAP giữa Tính sẵn sàng cao (Availability) và Tính nhất quán mạnh (Strong Consistency) được giải quyết như thế nào?`,
         opts: [
           `Áp dụng mô hình Nhất quán sau cùng (Eventual Consistency) kết hợp cơ chế hàng đợi bất đồng bộ (Message Broker) để giảm thiểu độ trễ.`,
           `Bỏ qua hoàn toàn tính bảo mật để đạt được cả 3 yếu tố Consistency, Availability và Partition Tolerance 100%.`,
@@ -184,7 +184,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
         exp: `Trong hệ thống hiện đại của ${topic}, mô hình Eventual Consistency kèm message queue bất đồng bộ là giải pháp tiêu chuẩn để cân bằng giữa throughput và tính toàn vẹn dữ liệu.`,
       },
       {
-        q: `[Nâng cao] Kỹ thuật phòng thủ đa lớp (Defense-in-depth) nào là quan trọng nhất để triệt tiêu lỗ hổng injection và giả mạo phiên làm việc trong "${topic}"?`,
+        q: `Kỹ thuật phòng thủ đa lớp (Defense-in-depth) nào là quan trọng nhất để triệt tiêu lỗ hổng injection và giả mạo phiên làm việc trong "${topic}"?`,
         opts: [
           `Validate chặt chẽ schema đầu vào, sử dụng parameterized queries, mã hóa dữ liệu nhạy cảm at-rest/in-transit và áp dụng RBAC nghiêm ngặt.`,
           `Chỉ kiểm tra quyền hạn ở giao diện người dùng (Frontend UI) và tin tưởng hoàn toàn dữ liệu gửi lên API.`,
@@ -195,7 +195,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
         exp: `Bảo mật nâng cao đòi hỏi xác thực chặt chẽ ở backend (zero-trust), truy vấn có tham số hóa và phân quyền theo nguyên tắc đặc quyền tối thiểu.`,
       },
       {
-        q: `[Nâng cao] Khi phát hiện hiện tượng rò rỉ bộ nhớ (Memory Leak) hoặc độ trễ p99 tăng vọt bất thường trong module "${topic}", bước chẩn đoán chuyên sâu chuẩn xác nhất là:`,
+        q: `Khi phát hiện hiện tượng rò rỉ bộ nhớ (Memory Leak) hoặc độ trễ p99 tăng vọt bất thường trong module "${topic}", bước chẩn đoán chuyên sâu chuẩn xác nhất là:`,
         opts: [
           `Thu thập Heap Snapshot, kích hoạt CPU Profiler để bóc tách Allocation Timeline và phân tích Call-stack tại thời điểm spike.`,
           `Tắt toàn bộ hệ thống cảnh báo và âm thầm khởi động lại server mỗi 5 phút một lần.`,
@@ -206,7 +206,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
         exp: `Phương pháp chuẩn để điều tra memory leak và latency p99 là sử dụng Heap Snapshot, profiling flame-graph và tracing phân tán.`,
       },
       {
-        q: `[Nâng cao] Để giải quyết triệt để tình trạng Race Condition khi nhiều tiến trình đồng thời cập nhật trạng thái chung trong "${topic}", phương án nào sau đây tối ưu nhất?`,
+        q: `Để giải quyết triệt để tình trạng Race Condition khi nhiều tiến trình đồng thời cập nhật trạng thái chung trong "${topic}", phương án nào sau đây tối ưu nhất?`,
         opts: [
           `Sử dụng khóa lạc quan (Optimistic Locking với Versioning) hoặc Distributed Lock (Redis Redlock/Zookeeper) kèm thao tác nguyên tử (Atomic Operations).`,
           `Cho phép ghi đè tự do mà không kiểm tra phiên bản dữ liệu.`,
@@ -255,7 +255,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
   // -------------------------------------------------------------
   const mediumTemplates = [
     {
-      q: `[Trung bình] Quy trình các bước chuẩn để triển khai thành công một tính năng trong "${topic}" là gì?`,
+      q: `Quy trình các bước chuẩn để triển khai thành công một tính năng trong "${topic}" là gì?`,
       opts: [
         `Phân tích yêu cầu -> Thiết kế giải pháp -> Hiện thực mã nguồn -> Viết kiểm thử tự động -> Đánh giá và bàn giao.`,
         `Viết mã nguồn ngay lập tức và đưa thẳng lên môi trường thực tế mà không cần kiểm thử.`,
@@ -266,7 +266,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
       exp: `Quy trình phát triển phần mềm chuẩn mực luôn gồm các bước từ phân tích, thiết kế, triển khai đến kiểm thử bài bản.`,
     },
     {
-      q: `[Trung bình] Khi so sánh giải pháp của "${topic}" với cách làm thủ công truyền thống, ưu điểm nổi bật nhất là:`,
+      q: `Khi so sánh giải pháp của "${topic}" với cách làm thủ công truyền thống, ưu điểm nổi bật nhất là:`,
       opts: [
         `Tăng tính tự động hóa, giảm thiểu sai sót do con người và dễ dàng mở rộng quy mô.`,
         `Làm cho dự án chậm hơn và tăng gấp đôi số lượng nhân sự cần thiết.`,
@@ -277,7 +277,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
       exp: `Tự động hóa và chuẩn hóa quy trình giúp tối ưu năng suất và triệt tiêu các lỗi ngớ ngẩn do thao tác tay.`,
     },
     {
-      q: `[Trung bình] Trong tình huống thực tế của "${topic}", cách xử lý lỗi ngoại lệ (Exception Handling) chuẩn mực nhất là:`,
+      q: `Trong tình huống thực tế của "${topic}", cách xử lý lỗi ngoại lệ (Exception Handling) chuẩn mực nhất là:`,
       opts: [
         `Bắt lỗi tại tầng phù hợp, ghi log truy vết rõ ràng và trả về thông báo lỗi thân thiện cho client.`,
         `Bỏ qua khối catch để chương trình tự động crash khi có lỗi xảy ra.`,
@@ -288,7 +288,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
       exp: `Xử lý lỗi chuẩn luôn kết hợp logging phục vụ bảo trì và phản hồi an toàn, thân thiện cho người dùng.`,
     },
     {
-      q: `[Trung bình] Tiêu chí nào là quan trọng nhất để đánh giá chất lượng sản phẩm hoàn thành trong "${topic}"?`,
+      q: `Tiêu chí nào là quan trọng nhất để đánh giá chất lượng sản phẩm hoàn thành trong "${topic}"?`,
       opts: [
         `Đáp ứng đúng và đủ yêu cầu nghiệp vụ, chạy ổn định, mã nguồn sạch và có tài liệu hướng dẫn đầy đủ.`,
         `Chỉ cần giao diện có nhiều màu sắc bắt mắt, nghiệp vụ sai sót cũng không ảnh hưởng.`,
@@ -299,7 +299,7 @@ function createFallbackQuiz(params: GenerateQuizParams): IQuizData {
       exp: `Chất lượng phần mềm đo lường bằng tính đúng đắn của nghiệp vụ, độ tin cậy và khả năng dễ đọc, dễ duy trì.`,
     },
     {
-      q: `[Trung bình] Khi cấu hình các tham số môi trường (Environment Variables) cho "${topic}", nguyên tắc nào bắt buộc tuân theo?`,
+      q: `Khi cấu hình các tham số môi trường (Environment Variables) cho "${topic}", nguyên tắc nào bắt buộc tuân theo?`,
       opts: [
         `Lưu trữ biến môi trường ở file .env riêng biệt, không commit thông tin bí mật lên Git công khai.`,
         `Viết thẳng mật khẩu và API key trực tiếp vào mã nguồn công khai để mọi người dễ dùng chung.`,

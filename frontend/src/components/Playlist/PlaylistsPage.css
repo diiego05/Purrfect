@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Playlists Page & Modal Styles (UC29: Quản lý Playlist)
+   Playlists Page & Modal Styles (   Quản lý Playlist)
    ========================================================================== */
 
 .playlists-page-container {
@@ -1008,21 +1008,123 @@
     padding: 20px 16px 60px;
   }
 
+  .playlists-header {
+    margin-bottom: 20px;
+  }
+
+  .playlists-header-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .playlists-title-group {
+    max-width: 100%;
+  }
+
+  .playlists-badge {
+    font-size: 11.5px;
+  }
+
   .playlists-main-title {
-    font-size: 24px;
+    font-size: 22px;
+    line-height: 1.3;
+  }
+
+  .playlists-main-desc {
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  .playlists-header-top .playlist-btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 11px 18px;
+  }
+
+  .playlists-tabs-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 20px;
+    border-bottom: none;
+  }
+
+  .playlists-nav-tabs {
+    display: flex;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-bottom: 1.5px solid #e2e8f0;
+    gap: 4px;
+    padding-bottom: 0;
+  }
+
+  .playlists-tab-btn {
+    padding: 10px 14px;
+    font-size: 13.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .playlists-toolbar {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 0 !important;
+  }
+
+  .playlists-search-box {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .my-playlists-subtabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .my-subtab-btn {
+    font-size: 13px;
+    padding: 8px 14px;
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .playlist-limit-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .playlist-limit-banner button {
+    align-self: flex-start;
+    white-space: nowrap;
+    padding: 7px 18px !important;
+    font-size: 13px !important;
   }
 
   .playlists-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
-  .playlists-toolbar {
-    flex-direction: column;
-    align-items: stretch;
+  .playlist-card-body {
+    padding: 14px 16px 16px;
   }
 
-  .playlists-search-box {
-    max-width: 100%;
+  .playlist-card-title {
+    font-size: 16px;
+  }
+
+  .playlist-card-desc {
+    font-size: 13px;
   }
 
   .playlist-course-row {

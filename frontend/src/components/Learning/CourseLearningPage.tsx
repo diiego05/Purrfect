@@ -301,6 +301,8 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
         actionType: 'PROGRESS',
         courseId: course._id,
         metadata: {
+          action: 'OPEN_LECTURE',
+          lectureId: String(lecture._id || ''),
           lectureTitle: lecture.title,
           sectionIndex,
           lectureIndex,
@@ -502,7 +504,7 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
         {/* CỘT TRÁI: VIDEO / TÀI LIỆU STAGE & NỘI DUNG CHI TIẾT */}
         <main className="learning-main-stage">
           <div className="learning-player-wrapper">
-            {/* Banner cảnh báo BR30.2: Tạm khóa do yêu cầu hoàn tiền đang chờ duyệt */}
+            {/* Banner cảnh báo    Tạm khóa do yêu cầu hoàn tiền đang chờ duyệt */}
             {refundStatus === 'REFUND_PENDING' && !isOwnerOrAdmin && (
               <div
                 style={{
@@ -523,7 +525,7 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                 <span>
                   ⚠️ <strong>Quyền truy cập phòng học tạm thời bị khóa:</strong>{' '}
                   Đơn hàng của bạn đang có yêu cầu hoàn tiền chờ Admin xét duyệt
-                  (BR30.2).
+                  .
                 </span>
                 <button
                   type="button"

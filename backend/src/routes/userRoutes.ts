@@ -3,6 +3,7 @@ import {
   getAllUsers,
   toggleUserStatus,
   updateUserRole,
+  updateUserPoints,
   createUser,
   deleteUser,
 } from '../controllers/userController';
@@ -17,6 +18,7 @@ router.get('/', getAllUsers);
 router.post('/', createUser);
 router.patch('/:id/status', toggleUserStatus);
 router.patch('/:id/role', updateUserRole);
+router.patch('/:id/points', updateUserPoints);
 router.delete('/:id', deleteUser);
 
 export default router;

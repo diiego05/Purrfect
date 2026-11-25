@@ -298,7 +298,7 @@ export const getPlaylistById = async (
  * 4. Tạo playlist mới
  * POST /api/playlists
  * Basic Flow bước 1 & 2
- * Exception 1b & BR29.1: Giới hạn số lượng playlist tối đa
+ * Exception 1b &    Giới hạn số lượng playlist tối đa
  */
 export const createPlaylist = async (
   req: AuthRequest,
@@ -327,7 +327,6 @@ export const createPlaylist = async (
       return;
     }
 
-    // BR29.1 & Exception 1b: Kiểm tra số lượng playlist tối đa
     const currentCount = await Playlist.countDocuments({
       userId: req.user._id,
     });
@@ -366,7 +365,7 @@ export const createPlaylist = async (
 /**
  * 5. Cập nhật thông tin hoặc sắp xếp playlist
  * PUT /api/playlists/:id
- * Alternative Flow 5a1, BR29.3, Exception 3a4
+ * Alternative Flow 5a1,    Exception 3a4
  */
 export const updatePlaylist = async (
   req: AuthRequest,
@@ -389,7 +388,6 @@ export const updatePlaylist = async (
       return;
     }
 
-    // BR29.3 & Exception 3a4: Chỉ chủ sở hữu mới có quyền chỉnh sửa
     if (!playlist.userId.equals(req.user._id)) {
       res.status(403).json({
         success: false,
@@ -485,7 +483,6 @@ export const deletePlaylist = async (
       return;
     }
 
-    // BR29.3 & Exception 3a4: Chỉ chủ sở hữu mới có quyền xóa
     if (!playlist.userId.equals(req.user._id)) {
       res.status(403).json({
         success: false,
@@ -512,9 +509,9 @@ export const deletePlaylist = async (
  * 7. Thêm khóa học vào playlist
  * POST /api/playlists/:id/courses
  * Basic Flow bước 3 & 4
- * BR29.2 & Exception 4b: Tránh thêm trùng lặp
- * BR29.1 & Exception 3b: Giới hạn số khóa học tối đa trong 1 playlist
- * BR29.3 & Exception 3a4: Chỉ chủ sở hữu mới được thêm khóa học
+ *   & Exception 4b: Tránh thêm trùng lặp
+ *   & Exception 3b: Giới hạn số khóa học tối đa trong 1 playlist
+ *   & Exception 3a4: Chỉ chủ sở hữu mới được thêm khóa học
  */
 export const addCourseToPlaylist = async (
   req: AuthRequest,
@@ -544,7 +541,6 @@ export const addCourseToPlaylist = async (
       return;
     }
 
-    // BR29.3 & Exception 3a4
     if (!playlist.userId.equals(req.user._id)) {
       res.status(403).json({
         success: false,
@@ -564,7 +560,6 @@ export const addCourseToPlaylist = async (
       return;
     }
 
-    // BR29.2 & Exception 4b: Kiểm tra khóa học đã có trong playlist chưa
     const alreadyExists = playlist.courses.some(
       (cId) => cId.toString() === courseId.toString(),
     );
@@ -576,7 +571,6 @@ export const addCourseToPlaylist = async (
       return;
     }
 
-    // BR29.1 & Exception 3b: Kiểm tra số lượng khóa học tối đa trong 1 playlist
     if (playlist.courses.length >= MAX_COURSES_PER_PLAYLIST) {
       res.status(400).json({
         success: false,
@@ -633,7 +627,6 @@ export const removeCourseFromPlaylist = async (
       return;
     }
 
-    // BR29.3 & Exception 3a4
     if (!playlist.userId.equals(req.user._id)) {
       res.status(403).json({
         success: false,
@@ -664,8 +657,7 @@ export const removeCourseFromPlaylist = async (
 /**
  * 9. Theo dõi / Bỏ theo dõi Playlist công khai
  * POST /api/playlists/:id/follow
- * Alternative Flow 3a2, 3a3, BR29.3
- */
+ * Alternative Flow 3a2, 3a3,    */
 export const toggleFollowPlaylist = async (
   req: AuthRequest,
   res: Response,

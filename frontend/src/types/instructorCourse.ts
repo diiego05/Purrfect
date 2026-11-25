@@ -29,12 +29,12 @@ export interface LectureItem {
   type: LectureType;
   contentUrl?: string;
   fileName?: string;
-  fileSize?: number; // bytes (max 2GB - BR06.2)
+  fileSize?: number; // bytes (max 2GB)
   durationMinutes: number;
   isPreview: boolean;
   order: number;
-  compressionStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; // BR06.5
-  transcript?: string; // BR06.5 trích xuất phụ đề cho RAG Chatbot
+  compressionStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  transcript?: string; // trích xuất phụ đề cho RAG Chatbot
   transcriptStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   quizData?: QuizDataItem;
 }
@@ -117,6 +117,7 @@ export interface EnrolledStudentItem {
     totalLectures: number;
   };
   paymentMethod: 'VNPAY' | 'FREE';
+  isManualEnrollment?: boolean;
   amount: number;
   enrolledAt: string;
   status: 'ACTIVE' | 'COMPLETED' | 'BLOCKED';

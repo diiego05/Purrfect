@@ -56,7 +56,6 @@ export const ProfilePage: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // BR04.2 & Exception Flow 4a: Kiểm tra tệp tin ảnh đại diện hợp lệ
   const handleAvatarFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -174,7 +173,6 @@ export const ProfilePage: React.FC = () => {
       }
     }
 
-    // BR04.3: Chỉ gửi bio nếu là Instructor
     const isInstructor = user?.role === 'INSTRUCTOR';
     const payload = {
       fullName: trimmedName,
@@ -394,7 +392,7 @@ export const ProfilePage: React.FC = () => {
 
             <div className="profile-form-divider" />
 
-            {/* Thông tin cố định / Bảo mật tài khoản (BR04.1) */}
+            {/* Thông tin cố định / Bảo mật tài khoản */}
             <div className="profile-section-title-group">
               <h2 className="profile-section-heading">Thông tin tài khoản</h2>
               <p className="profile-section-sub">
@@ -536,7 +534,7 @@ export const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* BR04.3: Phần giới thiệu bản thân (Chỉ dành riêng cho Instructor) */}
+            {/*    Phần giới thiệu bản thân (Chỉ dành riêng cho Instructor) */}
             {isInstructor ? (
               <div className="form-group bio-form-group">
                 <div className="bio-label-row">

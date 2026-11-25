@@ -238,7 +238,7 @@ export const CourseDetail: FC<CourseDetailProps> = ({ slug }) => {
             </div>
           </section>
 
-          {/* Platform Policies (BR21.1) */}
+          {/* Platform Policies */}
           <section className="course-card-box course-policy-box">
             <h2 className="box-title">🛡️ Cam kết & Chính sách từ Purrfect</h2>
             <div className="policy-list">

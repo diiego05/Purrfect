@@ -9,51 +9,86 @@ export const defaultCategories: Category[] = [
     name: 'Kỹ năng số',
     slug: 'digital-skills',
     description: 'Tin học, tự động hóa & kỹ năng hiện đại',
-    courseCount: 2,
+    courseCount: 12,
   },
   {
     name: 'Lập trình & Phát triển',
     slug: 'development',
     description: 'Web, Mobile, Backend & Cloud Architecture',
-    courseCount: 3,
+    courseCount: 16,
   },
   {
     name: 'Thiết kế & Sáng tạo',
     slug: 'design',
     description: 'UI/UX, Đồ họa & Visual Storytelling',
-    courseCount: 2,
+    courseCount: 13,
   },
   {
-    name: 'Kinh doanh & Quản lý',
+    name: 'Kinh doanh & Quản trị',
     slug: 'business',
     description: 'Khởi nghiệp, Marketing & Quản trị',
-    courseCount: 3,
+    courseCount: 13,
   },
   {
-    name: 'Trí tuệ nhân tạo',
+    name: 'Trí tuệ nhân tạo & Dữ liệu',
     slug: 'ai-data',
     description: 'AI, LLMs, Machine Learning & Data Science',
-    courseCount: 2,
+    courseCount: 13,
+  },
+  {
+    name: 'Ngoại ngữ & Giao tiếp',
+    slug: 'languages',
+    description: 'Tiếng Anh giao tiếp, IELTS, tiếng Trung, tiếng Nhật',
+    courseCount: 14,
+  },
+  {
+    name: 'Tài chính & Đầu tư',
+    slug: 'finance',
+    description: 'Quản lý tài chính cá nhân, chứng khoán & đầu tư',
+    courseCount: 14,
+  },
+  {
+    name: 'Sức khỏe & Đời sống',
+    slug: 'health-wellness',
+    description: 'Dinh dưỡng Eat Clean, Yoga trị liệu & thiền chánh niệm',
+    courseCount: 14,
+  },
+  {
+    name: 'TEST',
+    slug: 'test-1',
+    description: 'Danh mục kiểm thử hệ thống',
+    courseCount: 1,
   },
 ];
+
+let cachedCategories: Category[] | null = null;
 
 /**
  * Lấy danh sách danh mục (categories) của nền tảng
  */
-export const fetchCategories = async (): Promise<Category[]> => {
+export const fetchCategories = async (
+  forceRefresh = false,
+): Promise<Category[]> => {
+  if (cachedCategories && cachedCategories.length > 0 && !forceRefresh) {
+    return cachedCategories;
+  }
   try {
-    const res = await fetch(`${API_BASE}/categories`);
+    let res = await fetch('/api/categories');
+    if (!res.ok) {
+      res = await fetch(`${API_BASE}/categories`);
+    }
     if (!res.ok) throw new Error('Không thể tải danh mục');
     const json = await parseJsonSafe<{
       success?: boolean;
       data?: Category[];
     }>(res, 'Không thể tải danh mục');
     if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+      cachedCategories = json.data;
       return json.data;
     }
-    return defaultCategories;
+    return cachedCategories || defaultCategories;
   } catch {
-    return defaultCategories;
+    return cachedCategories || defaultCategories;
   }
 };
 
@@ -435,6 +470,7 @@ export interface EnrolledCourseItem {
   durationText?: string;
   enrolledAt: string;
   accessStatus: 'PAID' | 'REFUND_PENDING';
+  isManualEnrollment?: boolean;
   totalLectures: number;
   completedLectures: number;
   progressPercent: number;
@@ -456,4 +492,37 @@ export const fetchMyEnrolledCourses = async (): Promise<{
     res,
     'Lỗi khi tải danh sách khóa học của tôi',
   );
+};
+
+export interface PublicInstructorProfileData {
+  instructor: {
+    _id: string;
+    fullName: string;
+    email?: string;
+    avatarUrl?: string;
+    headline?: string;
+    bio?: string;
+  };
+  stats: {
+    totalCourses: number;
+    totalStudents: number;
+    averageRating: number;
+  };
+  courses: Course[];
+}
+
+export const fetchInstructorCourses = async (
+  instructorId: string,
+): Promise<PublicInstructorProfileData | null> => {
+  try {
+    const res = await fetch(
+      `${API_BASE}/instructor/${encodeURIComponent(instructorId)}`,
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data || null;
+  } catch (err) {
+    console.error('Lỗi khi fetch thông tin và khóa học của giảng viên:', err);
+    return null;
+  }
 };

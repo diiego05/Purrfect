@@ -26,9 +26,11 @@ const generateTokens = async (userId: string, email: string, role: string) => {
   const accessToken = jwt.sign({ id: userId, email, role }, secret, {
     expiresIn: '7d',
   });
-  const refreshToken = jwt.sign({ id: userId, email }, refreshSecret, {
-    expiresIn: '30d',
-  });
+  const refreshToken = jwt.sign(
+    { id: userId, email, nonce: Math.random().toString(36).substring(2) },
+    refreshSecret,
+    { expiresIn: '30d' },
+  );
 
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await RefreshToken.create({
@@ -247,8 +249,10 @@ export const verifyRegisterOtp = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { email, code } = req.body;
-    if (!email || !code) {
+    // Frontend gửi trường `otp`; vẫn chấp nhận `code` để tương thích API cũ.
+    const { email, code, otp } = req.body;
+    const verificationCode = String(code || otp || '').trim();
+    if (!email || !verificationCode) {
       res
         .status(400)
         .json({ success: false, message: 'Vui lòng cung cấp email và mã OTP' });
@@ -258,7 +262,7 @@ export const verifyRegisterOtp = async (
     const normalizedEmail = email.trim().toLowerCase();
     const otpRecord = await Otp.findOne({
       email: normalizedEmail,
-      code: String(code).trim(),
+      code: verificationCode,
       type: 'REGISTER',
       isUsed: false,
       expiresAt: { $gt: new Date() },
@@ -308,6 +312,16 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     if (user.status === 'BLOCKED') {
+      if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+        const unlockDate = new Date(user.lockedUntil).toLocaleDateString(
+          'vi-VN',
+        );
+        res.status(403).json({
+          success: false,
+          message: `Tài khoản của bạn đã bị tạm khóa do vi phạm tiêu chuẩn cộng đồng. Tài khoản sẽ được mở khóa vào ngày ${unlockDate}.`,
+        });
+        return;
+      }
       res.status(403).json({
         success: false,
         message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.',
@@ -353,6 +367,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         role: user.role,
         avatarUrl: user.avatarUrl,
         phoneNumber: user.phoneNumber,
+        purrPoints: user.purrPoints || 0,
         onboardingCompleted: user.onboardingCompleted ?? false,
       },
     });
@@ -451,6 +466,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         role: newUser.role,
         avatarUrl: newUser.avatarUrl,
         phoneNumber: newUser.phoneNumber,
+        purrPoints: 0,
         onboardingCompleted: false,
       },
     });
@@ -797,7 +813,6 @@ export const uploadAvatar = async (
       return;
     }
 
-    // BR04.2: Tệp ảnh đại diện tải lên phải có dung lượng không vượt quá 5MB và chỉ chấp nhận jpg, png hoặc webp
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
     const ext = req.file.originalname
       ? req.file.originalname.split('.').pop()?.toLowerCase()
@@ -871,7 +886,7 @@ export const uploadAvatar = async (
   }
 };
 
-// 10. Cập nhật hồ sơ cá nhân (UC04)
+// 10. Cập nhật hồ sơ cá nhân
 export const updateProfile = async (
   req: AuthRequest,
   res: Response,
@@ -884,7 +899,6 @@ export const updateProfile = async (
 
     const { fullName, phoneNumber, bio, avatarUrl } = req.body;
 
-    // BR04.1: Người dùng không được phép tự thay đổi địa chỉ thư điện tử đăng nhập và vai trò tài khoản
     // (Bỏ qua hoàn toàn req.body.email và req.body.role nếu client gửi kèm)
 
     // 1. Kiểm tra họ và tên
@@ -924,7 +938,6 @@ export const updateProfile = async (
       req.user.phoneNumber = trimmedPhone;
     }
 
-    // BR04.3: Trường thông tin giới thiệu bản thân chỉ hiển thị và cho phép cập nhật đối với tài khoản có vai trò giảng viên
     if (bio !== undefined) {
       if (req.user.role === 'INSTRUCTOR') {
         const trimmedBio = String(bio).trim();
@@ -957,6 +970,7 @@ export const updateProfile = async (
         avatarUrl: req.user.avatarUrl,
         phoneNumber: req.user.phoneNumber,
         bio: req.user.bio,
+        purrPoints: req.user.purrPoints || 0,
         onboardingCompleted: req.user.onboardingCompleted ?? false,
       },
     });
@@ -1002,6 +1016,7 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
       avatarUrl: req.user.avatarUrl,
       phoneNumber: req.user.phoneNumber,
       bio: req.user.bio,
+      purrPoints: req.user.purrPoints || 0,
       onboardingCompleted: req.user.onboardingCompleted ?? false,
     },
   });

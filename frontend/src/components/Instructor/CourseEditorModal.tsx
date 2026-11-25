@@ -154,14 +154,13 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     setErrorMsg('');
   };
 
-  // Xử lý tải file bài giảng lên (BR06.2, BR06.5)
+  // Xử lý tải file bài giảng lên (
   const handleSimulateFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // BR06.2: Dung lượng tối đa cho mỗi tệp tải lên là 2GB
     const MAX_SIZE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB
     if (file.size > MAX_SIZE_BYTES) {
       // Exception 5b & 5b1:
@@ -384,7 +383,6 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
 
   // Lưu nháp (Alternative Flow 7a, 7a1)
   const handleSaveDraft = async () => {
-    // BR06.3: Nếu có giá khuyến mãi, phải nhỏ hơn giá gốc
     const p = Number(price) || 0;
     const dp = Number(discountPrice) || 0;
     if (dp > 0 && dp >= p) {
@@ -414,9 +412,9 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     }
   };
 
-  // Gửi phê duyệt lên Admin (Basic Flow Step 7, 8; BR06.1; Exception 8a)
+  // Gửi phê duyệt lên Admin (Basic Flow Step 7, 8;    Exception 8a)
   const handleSubmitApproval = async () => {
-    // 1. Kiểm tra thông tin cơ bản bắt buộc (BR06.1)
+    // 1. Kiểm tra thông tin cơ bản bắt buộc
     if (!title.trim()) {
       setErrorMsg('Vui lòng nhập Tiêu đề khóa học');
       setActiveTab('general');
@@ -433,7 +431,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       return;
     }
 
-    // 2. BR06.3: Kiểm tra giá khuyến mãi
+    // 2.    Kiểm tra giá khuyến mãi
     const p = Number(price) || 0;
     const dp = Number(discountPrice) || 0;
     if (dp > 0 && dp >= p) {
@@ -442,7 +440,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       return;
     }
 
-    // 3. BR06.1 & Exception 8a: Có ít nhất 1 chương và 3 bài giảng có nội dung
+    // 3.   & Exception 8a: Có ít nhất 1 chương và 3 bài giảng có nội dung
     if (sections.length < 1) {
       setErrorMsg(
         'Khóa học phải có tối thiểu 1 chương và 3 bài giảng có nội dung trước khi gửi duyệt',
@@ -1206,52 +1204,6 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                       </span>
                     </div>
                   )}
-              </div>
-
-              <div
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '12px 14px',
-                  fontSize: '12.5px',
-                  color: '#475569',
-                  lineHeight: '1.6',
-                }}
-              >
-                <strong
-                  style={{
-                    color: '#0f172a',
-                    display: 'block',
-                    marginBottom: '4px',
-                  }}
-                >
-                  Huy hiệu khóa học tự động (Smart Badge System):
-                </strong>
-                Hệ thống tự động phân loại và cấp huy hiệu theo hiệu suất thực
-                tế:
-                <ul style={{ margin: '4px 0 0 18px', padding: 0 }}>
-                  <li>
-                    <span style={{ color: '#059669', fontWeight: 600 }}>
-                      NEW
-                    </span>
-                    : Dành cho khóa học mới ra mắt gần đây.
-                  </li>
-                  <li>
-                    <span style={{ color: '#dc2626', fontWeight: 600 }}>
-                      HOT
-                    </span>
-                    : Dành cho khóa học mới ra có lượng truy cập và quan tâm
-                    cao.
-                  </li>
-                  <li>
-                    <span style={{ color: '#d97706', fontWeight: 600 }}>
-                      BESTSELLER
-                    </span>
-                    : Dành cho khóa học có số lượng học viên ghi danh đông đảo
-                    nhất.
-                  </li>
-                </ul>
               </div>
             </div>
           )}

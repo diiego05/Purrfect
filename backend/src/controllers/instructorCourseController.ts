@@ -219,10 +219,16 @@ export const getInstructorCourseById = async (
     }
 
     // Kiểm tra quyền sở hữu (trừ Admin)
+    const courseInstructorId = (course.instructorId as any)?._id
+      ? (course.instructorId as any)._id.toString()
+      : course.instructorId?.toString();
+    const currentUserId =
+      req.user?._id?.toString() || (req.user as any)?.id?.toString();
+
     if (
       req.user?.role !== 'ADMIN' &&
-      course.instructorId &&
-      course.instructorId.toString() !== req.user?._id.toString()
+      courseInstructorId &&
+      courseInstructorId !== currentUserId
     ) {
       res.status(403).json({
         success: false,
@@ -283,7 +289,7 @@ export const createCourseDraft = async (
       return;
     }
 
-    // Quy tắc BR06.3: Nếu có áp dụng giá khuyến mãi thì phải nhỏ hơn giá gốc ban đầu
+    // Quy tắc    Nếu có áp dụng giá khuyến mãi thì phải nhỏ hơn giá gốc ban đầu
     const priceNum = Number(price) || 0;
     const discountPriceNum = Number(discountPrice) || 0;
     if (discountPriceNum > 0 && discountPriceNum >= priceNum) {
@@ -417,7 +423,6 @@ export const updateCourse = async (
       status,
     } = req.body;
 
-    // BR06.3: Nếu áp dụng mức giá khuyến mãi thì giá khuyến mãi phải nhỏ hơn giá gốc ban đầu
     const newPrice = price !== undefined ? Number(price) : course.price;
     const newDiscountPrice =
       discountPrice !== undefined
@@ -586,7 +591,7 @@ Yêu cầu định dạng:
 }
 
 /**
- * 5. Tải lên tệp video hoặc tài liệu bài giảng (BR06.2, BR06.5)
+ * 5. Tải lên tệp video hoặc tài liệu bài giảng (
  * Kích hoạt xử lý nén video và trích xuất transcript phục vụ AI RAG Chatbot
  * POST /api/instructor/courses/:id/upload-lecture
  */
@@ -651,7 +656,7 @@ export const uploadLectureMedia = async (
       }
     }
 
-    // Quy tắc BR06.2: Dung lượng tối đa cho mỗi tệp tải lên là 2GB (2 * 1024^3 bytes)
+    // Quy tắc    Dung lượng tối đa cho mỗi tệp tải lên là 2GB (2 * 1024^3 bytes)
     const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB = 2,147,483,648 bytes
     const sizeNumber = file?.size || Number(fileSize) || 0;
 
@@ -684,7 +689,6 @@ export const uploadLectureMedia = async (
       return;
     }
 
-    // BR06.5: Quy trình nén chuẩn hóa & tự động trích xuất phụ đề (transcript) phục vụ RAG Chatbot
     const isVideoType = isVideo;
 
     // URL nội dung bài giảng mặc định
@@ -721,7 +725,7 @@ export const uploadLectureMedia = async (
       }
     }
 
-    // Xử lý transcript phụ đề phục vụ AI RAG Chatbot (BR06.5)
+    // Xử lý transcript phụ đề phục vụ AI RAG Chatbot
     const titleVal = lectureTitle || actualFileName || 'Bài giảng mới';
     let extractedTranscript =
       typeof req.body.transcript === 'string' ? req.body.transcript.trim() : '';
@@ -782,7 +786,7 @@ export const uploadLectureMedia = async (
 /**
  * 6. Gửi yêu cầu phê duyệt khóa học lên Admin
  * POST /api/instructor/courses/:id/submit-approval
- * Basic Flow Step 7, 8; BR06.1; Exception 8a, 8a1
+ * Basic Flow Step 7, 8;    Exception 8a, 8a1
  */
 export const submitCourseForApproval = async (
   req: AuthRequest,
@@ -818,7 +822,7 @@ export const submitCourseForApproval = async (
       return;
     }
 
-    // Kiểm tra thông tin cơ bản bắt buộc (BR06.1)
+    // Kiểm tra thông tin cơ bản bắt buộc
     if (
       !course.title ||
       !course.title.trim() ||
@@ -836,7 +840,6 @@ export const submitCourseForApproval = async (
       return;
     }
 
-    // BR06.1 & Exception 8a: Có tối thiểu 1 chương học và ít nhất 3 bài giảng có nội dung trước khi gửi duyệt
     const sections = course.sections || [];
     if (sections.length < 1) {
       res.status(400).json({
@@ -892,7 +895,7 @@ export const submitCourseForApproval = async (
 };
 
 /**
- * 7. Xóa hoặc Ngừng kinh doanh khóa học (BR06.4)
+ * 7. Xóa hoặc Ngừng kinh doanh khóa học
  * DELETE /api/instructor/courses/:id
  */
 export const deleteOrDisableCourse = async (
@@ -928,7 +931,7 @@ export const deleteOrDisableCourse = async (
       return;
     }
 
-    // Quy tắc BR06.4: Đối với khóa học đã xuất bản và đã có học viên ghi danh,
+    // Quy tắc    Đối với khóa học đã xuất bản và đã có học viên ghi danh,
     // giảng viên chỉ được phép ngừng kinh doanh khóa học chứ không được xóa vĩnh viễn dữ liệu
     const hasEnrolledStudents = (course.totalStudents || 0) > 0;
     const isPublished = course.status === 'PUBLISHED';
@@ -1179,7 +1182,7 @@ export const approveCourse = async (
       return;
     }
 
-    // Quy tắc BR06.1: Phải có ít nhất 1 chương và 3 bài giảng có nội dung
+    // Quy tắc    Phải có ít nhất 1 chương và 3 bài giảng có nội dung
     const sectionsCount = course.sections?.length || 0;
     const lecturesCount = (course.sections || []).reduce(
       (acc, s) => acc + (s.lectures?.length || 0),
@@ -1554,6 +1557,7 @@ interface EnrolledRecord {
   amount: number;
   enrolledAt: Date;
   status: 'ACTIVE' | 'COMPLETED' | 'BLOCKED';
+  isManualEnrollment?: boolean;
   progress?: number;
   completedLectures?: number;
 }
@@ -1776,6 +1780,7 @@ export const getInstructorStudents = async (
           totalLectures,
         },
         paymentMethod: ord.paymentMethod,
+        isManualEnrollment: Boolean(ord.isManualEnrollment),
         amount: ord.amount,
         enrolledAt: ord.createdAt,
         status: 'ACTIVE',
@@ -1819,6 +1824,7 @@ export const getInstructorStudents = async (
             totalLectures,
           },
           paymentMethod: 'FREE',
+          isManualEnrollment: Boolean((it.metadata as any)?.enrolledBy),
           amount: 0,
           enrolledAt: it.createdAt,
           status: 'ACTIVE',
@@ -2402,7 +2408,6 @@ export const enrollManualStudent = async (
       studentPhone,
       courseId,
       paymentMethod = 'FREE',
-      amount = 0,
     } = req.body;
 
     if (!studentName || !studentEmail || !courseId) {
@@ -2421,6 +2426,46 @@ export const enrollManualStudent = async (
       return;
     }
 
+    if (
+      String(course.instructorId) !== String(req.user._id) &&
+      req.user.role !== 'ADMIN'
+    ) {
+      res
+        .status(403)
+        .json({
+          success: false,
+          message: 'Bạn không có quyền ghi danh cho khóa học này.',
+        });
+      return;
+    }
+    if (paymentMethod !== 'FREE') {
+      res
+        .status(400)
+        .json({
+          success: false,
+          message: 'Ghi danh thủ công chỉ hỗ trợ hình thức miễn phí.',
+        });
+      return;
+    }
+
+    // Kiểm tra số lượng học viên đã được thêm miễn phí thủ công (tối đa 10 người / khóa học)
+    const manualCount = await Order.countDocuments({
+      courseId: course._id,
+      isManualEnrollment: true,
+      status: 'PAID',
+    });
+
+    if (manualCount >= 10) {
+      res.status(400).json({
+        success: false,
+        message:
+          'Khóa học này đã đạt giới hạn tối đa 10 học viên được thêm miễn phí bởi giảng viên.',
+        currentCount: manualCount,
+        maxCount: 10,
+      });
+      return;
+    }
+
     // Tìm hoặc tạo User học viên theo email
     let studentUser = await User.findOne({
       email: studentEmail.trim().toLowerCase(),
@@ -2435,20 +2480,19 @@ export const enrollManualStudent = async (
       });
     }
 
-    // Tạo đơn hàng Order PAID
+    // Tạo đơn hàng Order PAID (chế độ miễn phí hoàn toàn theo quy định mới)
     const orderCode = `PURR_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const finalAmount =
-      Number(amount) || (paymentMethod === 'FREE' ? 0 : course.price || 0);
 
     const order = await Order.create({
       orderCode,
       userId: studentUser._id,
       courseId: course._id,
-      amount: finalAmount,
+      amount: 0,
       originalAmount: course.price || 0,
-      discountAmount: Math.max(0, (course.price || 0) - finalAmount),
+      discountAmount: course.price || 0,
       status: 'PAID',
-      paymentMethod: paymentMethod === 'VNPAY' ? 'VNPAY' : 'FREE',
+      paymentMethod: 'FREE',
+      isManualEnrollment: true,
     });
 
     // Tạo tương tác ENROLL
@@ -2466,8 +2510,10 @@ export const enrollManualStudent = async (
 
     res.status(201).json({
       success: true,
-      message: `Đã ghi danh thành công học viên ${studentName} vào khóa học "${course.title}"!`,
+      message: `Đã ghi danh thành công học viên ${studentName} vào khóa học "${course.title}"! (${manualCount + 1}/10 học viên miễn phí)`,
       data: order,
+      manualEnrollmentCount: manualCount + 1,
+      maxManualEnrollment: 10,
     });
   } catch (error) {
     console.error(

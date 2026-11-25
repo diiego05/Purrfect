@@ -105,4 +105,47 @@ export const couponApi = {
     }
     return data;
   },
+
+  /** Instructor: Lấy danh sách mã giảm giá của khóa học (tối đa 5 mã) */
+  getInstructorCourseCoupons: async (
+    courseId: string,
+  ): Promise<{ coupons: Coupon[]; totalCount: number; maxCoupons: number }> => {
+    const res = await authFetch(`${BASE}/instructor/course/${courseId}`);
+    return parseApiJson<{
+      coupons: Coupon[];
+      totalCount: number;
+      maxCoupons: number;
+      message?: string;
+    }>(res, 'Lỗi khi lấy danh sách mã giảm giá của khóa học.');
+  },
+
+  /** Instructor: Tạo mã giảm giá 10% cho khóa học (tối đa 5 mã) */
+  createInstructorCourseCoupon: async (
+    courseId: string,
+    payload: {
+      code: string;
+      description?: string;
+      totalUsageLimit?: number;
+    },
+  ): Promise<{ message: string; coupon: Coupon; remainingSlots: number }> => {
+    const res = await authFetch(`${BASE}/instructor/course/${courseId}`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return parseApiJson<{
+      message: string;
+      coupon: Coupon;
+      remainingSlots: number;
+    }>(res, 'Lỗi khi tạo mã giảm giá cho khóa học.');
+  },
+
+  /** Instructor: Xóa mã giảm giá của khóa học */
+  deleteInstructorCourseCoupon: async (
+    couponId: string,
+  ): Promise<{ message: string }> => {
+    const res = await authFetch(`${BASE}/instructor/${couponId}`, {
+      method: 'DELETE',
+    });
+    return parseApiJson<{ message: string }>(res, 'Lỗi khi xóa mã giảm giá.');
+  },
 };

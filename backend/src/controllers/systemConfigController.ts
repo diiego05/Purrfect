@@ -17,6 +17,18 @@ const DEFAULT_CONFIGS = [
     description: 'Số tiền rút tối thiểu (VND)',
   },
   {
+    keyName: 'PURR_POINT_RATE_VND',
+    valueText: '1000',
+    group: 'FINANCE' as const,
+    description: 'Tỷ lệ quy đổi điểm PurrPoint khi hoàn tiền (VNĐ / 1 Point)',
+  },
+  {
+    keyName: 'MAX_REFUND_TIMES_PER_USER',
+    valueText: '3',
+    group: 'FINANCE' as const,
+    description: 'Số lần hoàn tiền tối đa cho mỗi tài khoản học viên',
+  },
+  {
     keyName: 'HOME_HERO_TITLE',
     valueText: 'Nền tảng học trực tuyến hàng đầu',
     group: 'UI' as const,
@@ -215,7 +227,7 @@ export const seedDefaultConfigs = async (): Promise<void> => {
     );
   }
   await SystemConfig.updateOne(
-    { keyName: 'PLATFORM_NAME', valueText: 'Learnova' },
+    { keyName: 'PLATFORM_NAME', valueText: 'Purrfect' },
     { $set: { valueText: 'Purrfect' } },
   );
   await SystemConfig.updateOne(

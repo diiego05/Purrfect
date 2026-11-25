@@ -6,8 +6,6 @@ import { formatVND } from '../../utils/format';
 import {
   IconlyBuy,
   IconlyDelete,
-  IconlyShield,
-  IconlyAward,
   IconlyTimeCircle,
   IconlyStar,
 } from '../Onboarding/IconlyIcons';
@@ -61,7 +59,7 @@ export const CartPage: React.FC = () => {
           {cartCount > 0 && (
             <button
               type="button"
-              className="cart-page-clear-btn"
+              className="cart-page-clear-all-btn"
               onClick={clearCart}
               title={
                 language === 'vi'
@@ -104,10 +102,10 @@ export const CartPage: React.FC = () => {
           </div>
         ) : (
           /* Cart List & Summary Layout */
-          <div className="cart-page-grid-layout">
+          <div className="cart-page-layout-grid">
             {/* Cột trái: Danh sách khóa học */}
             <div className="cart-page-items-col">
-              <ul className="cart-page-items-list">
+              <ul className="cart-page-list">
                 {cartItems.map((item) => {
                   const c = item.courseId;
                   if (!c) return null;
@@ -131,7 +129,7 @@ export const CartPage: React.FC = () => {
                       className="cart-page-item-card"
                     >
                       <div
-                        className="cart-page-item-thumb"
+                        className="cart-page-item-thumb-box"
                         onClick={() => handleGoToCourse(c.slug)}
                       >
                         <img
@@ -260,26 +258,6 @@ export const CartPage: React.FC = () => {
                     ? 'Bằng việc tiếp tục, bạn đồng ý với Điều khoản dịch vụ và Chính sách hoàn tiền của Purrfect.'
                     : 'By proceeding, you agree to Purrfect Terms of Service and Refund Policy.'}
                 </p>
-
-                {/* Trust Badges */}
-                <div className="cart-trust-badges">
-                  <div className="trust-badge-item">
-                    <IconlyShield size={16} color="#16a34a" />
-                    <span>
-                      {language === 'vi'
-                        ? 'Bảo mật thanh toán VNPAY SSL'
-                        : 'VNPAY SSL Secure Payment'}
-                    </span>
-                  </div>
-                  <div className="trust-badge-item">
-                    <IconlyAward size={16} color="#0056d2" />
-                    <span>
-                      {language === 'vi'
-                        ? 'Cấp chứng chỉ tốt nghiệp xác thực'
-                        : 'Verified Certificate on Completion'}
-                    </span>
-                  </div>
-                </div>
               </div>
             </aside>
           </div>

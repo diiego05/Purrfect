@@ -12,7 +12,8 @@ export interface DirectCheckoutPayload {
   courseId: string;
   couponCode?: string;
   bankCode?: string;
-  paymentMethod?: 'DIRECT' | 'BANK_TRANSFER' | 'VNPAY' | 'MOCK' | 'FREE';
+  paymentMethod?:
+    'DIRECT' | 'BANK_TRANSFER' | 'VNPAY' | 'MOCK' | 'FREE' | 'PURR_POINTS';
 }
 
 export interface DirectCheckoutResponse {
@@ -150,12 +151,13 @@ export const paymentApi = {
   async validateCoupon(
     code: string,
     orderAmount: number,
+    courseId?: string,
   ): Promise<ValidateCouponResponse> {
     try {
       const res = await fetch('/api/coupons/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, orderAmount }),
+        body: JSON.stringify({ code, orderAmount, courseId }),
       });
       return await parseJsonSafe<ValidateCouponResponse>(
         res,
@@ -230,7 +232,7 @@ export const paymentApi = {
   },
 
   /**
-   * Lấy lịch sử giao dịch mua hàng của học viên (UC30 Trigger)
+   * Lấy lịch sử giao dịch mua hàng của học viên (  Trigger)
    */
   async getMyOrders(): Promise<{
     orders: Array<{
@@ -248,6 +250,7 @@ export const paymentApi = {
         | 'REFUND_PENDING'
         | 'REFUNDED';
       paymentMethod: string;
+      isManualEnrollment?: boolean;
       courseId?: {
         _id: string;
         title: string;

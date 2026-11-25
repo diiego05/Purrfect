@@ -135,12 +135,10 @@ courseReviewSchema.statics.deleteInstructorReply = async function (
       },
     },
     { new: true },
-  )
-    .populate('userId', 'fullName email avatarUrl role');
+  ).populate('userId', 'fullName email avatarUrl role');
 };
 
 // Khớp Sequence Diagram 3.2.26: CourseDiscussion.hideOrDeleteContent(reportObject.targetId) -> contentRemoved()
-// BR26.2: Nếu nội dung bị gỡ là đánh giá khóa học, tính lại điểm sao trung bình
 courseReviewSchema.statics.hideOrDeleteContent = async function (
   targetId: string | mongoose.Types.ObjectId,
   action: 'HIDE' | 'DELETE' = 'HIDE',
@@ -152,7 +150,6 @@ courseReviewSchema.statics.hideOrDeleteContent = async function (
     { new: true },
   );
 
-  // BR26.2: Tính toán lại điểm sao trung bình sau khi loại trừ đánh giá vi phạm
   if (review) {
     const Course = mongoose.model('Course');
     const activeReviews = await this.find({
@@ -164,10 +161,15 @@ courseReviewSchema.statics.hideOrDeleteContent = async function (
         (sum: number, r: ICourseReview) => sum + r.rating,
         0,
       );
-      const averageRating = Math.round((totalRating / activeReviews.length) * 10) / 10;
-      await Course.findByIdAndUpdate(review.courseId, { $set: { averageRating } });
+      const averageRating =
+        Math.round((totalRating / activeReviews.length) * 10) / 10;
+      await Course.findByIdAndUpdate(review.courseId, {
+        $set: { averageRating },
+      });
     } else {
-      await Course.findByIdAndUpdate(review.courseId, { $set: { averageRating: 0 } });
+      await Course.findByIdAndUpdate(review.courseId, {
+        $set: { averageRating: 0 },
+      });
     }
   }
 

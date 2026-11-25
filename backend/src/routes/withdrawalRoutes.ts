@@ -15,13 +15,13 @@ const router = Router();
 
 // Instructor routes
 router.get(
-  '/instructor/balance',
+  ['/instructor/balance', '/balance'],
   authenticateToken,
   requireInstructor,
   getInstructorBalance,
 );
 router.post(
-  '/instructor/request',
+  ['/instructor/request', '/request'],
   authenticateToken,
   requireInstructor,
   createWithdrawalRequest,

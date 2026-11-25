@@ -328,3 +328,122 @@
     padding: 1.25rem;
   }
 }
+
+/* Route Guard Screens */
+.admin-guard-container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.admin-guard-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #0056d2;
+  border-radius: 50%;
+  animation: spinAdminGuard 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spinAdminGuard {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin-guard-container p {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.admin-guard-card {
+  max-width: 480px;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.admin-guard-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.admin-guard-icon.unauth {
+  background: #e0f2fe;
+}
+
+.admin-guard-icon.forbidden {
+  background: #fee2e2;
+}
+
+.admin-guard-card h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 12px;
+}
+
+.admin-guard-card p {
+  font-size: 0.92rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+.admin-guard-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-guard-primary {
+  padding: 12px 24px;
+  background: #0056d2;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-guard-primary:hover {
+  background: #0043a8;
+}
+
+.btn-guard-secondary {
+  padding: 12px 24px;
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.btn-guard-secondary:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}

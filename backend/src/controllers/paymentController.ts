@@ -5,6 +5,8 @@ import Order from '../models/Order';
 import { Course } from '../models/Course';
 import Coupon from '../models/Coupon';
 import { UserInteraction } from '../models/UserInteraction';
+import { User } from '../models/User';
+import SystemConfig from '../models/SystemConfig';
 import {
   createVNPayPaymentUrl,
   verifyVNPaySignature,
@@ -102,7 +104,8 @@ export const createPaymentUrl = async (
       if (
         coupon &&
         coupon.usedCount < coupon.totalUsageLimit &&
-        originalPrice >= coupon.minOrderAmount
+        originalPrice >= coupon.minOrderAmount &&
+        (!coupon.courseId || coupon.courseId.toString() === courseId.toString())
       ) {
         if (coupon.discountType === 'PERCENT') {
           discountAmount = (originalPrice * coupon.discountValue) / 100;
@@ -373,7 +376,8 @@ export const directCheckout = async (
       if (
         coupon &&
         coupon.usedCount < coupon.totalUsageLimit &&
-        originalPrice >= coupon.minOrderAmount
+        originalPrice >= coupon.minOrderAmount &&
+        (!coupon.courseId || coupon.courseId.toString() === courseId.toString())
       ) {
         if (coupon.discountType === 'PERCENT') {
           discountAmount = (originalPrice * coupon.discountValue) / 100;
@@ -395,11 +399,32 @@ export const directCheckout = async (
     const effectivePaymentMethod =
       finalAmount <= 0
         ? 'FREE'
-        : paymentMethod === 'VNPAY'
-          ? 'VNPAY'
-          : paymentMethod === 'BANK_TRANSFER'
-            ? 'BANK_TRANSFER'
-            : 'DIRECT';
+        : paymentMethod === 'PURR_POINTS'
+          ? 'PURR_POINTS'
+          : paymentMethod === 'VNPAY'
+            ? 'VNPAY'
+            : paymentMethod === 'BANK_TRANSFER'
+              ? 'BANK_TRANSFER'
+              : 'DIRECT';
+
+    if (effectivePaymentMethod === 'PURR_POINTS') {
+      const rateConfig = await SystemConfig.findOne({
+        keyName: 'PURR_POINT_RATE_VND',
+      }).lean();
+      const rate = Math.max(1, Number(rateConfig?.valueText) || 1000);
+      const requiredPoints = Math.ceil(finalAmount / rate);
+      const user = await User.findById(userId);
+      if (!user || user.purrPoints < requiredPoints) {
+        res
+          .status(400)
+          .json({
+            message: `Không đủ PurrPoint. Cần ${requiredPoints.toLocaleString('vi-VN')} điểm.`,
+          });
+        return;
+      }
+      user.purrPoints -= requiredPoints;
+      await user.save();
+    }
 
     const paidOrder = new Order({
       orderCode,
@@ -692,7 +717,6 @@ export const checkEnrollment = async (
       if (c) targetCourseId = c._id.toString();
     }
 
-    // BR30.2: Nếu đơn hàng đang chờ hoàn tiền (REFUND_PENDING) hoặc đã hoàn tiền (REFUNDED), tạm khóa quyền truy cập
     const refundOrBlockedOrder = await Order.findOne({
       userId,
       courseId: targetCourseId,

@@ -8,12 +8,18 @@ export interface RefundEligibilityResponse {
     | 'OVER_14_DAYS'
     | 'COMPLETED_3_OR_MORE'
     | 'CERTIFICATE_ISSUED'
-    | 'ALREADY_REQUESTED';
+    | 'ALREADY_REQUESTED'
+    | 'MANUAL_ENROLLMENT_NON_REFUNDABLE'
+    | 'EXCEEDED_MAX_REFUND_LIMIT';
   errorMessage?: string;
   message?: string;
   daysPassed: number;
   completedLecturesCount: number;
   hasCertificate: boolean;
+  refundCount?: number;
+  maxRefunds?: number;
+  pointConversionRate?: number;
+  estimatedPoints?: number;
   order?: {
     _id: string;
     orderCode: string;
@@ -62,6 +68,7 @@ export interface RefundRequestItem {
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   rejectionReason?: string;
   adminNotes?: string;
+  pointsRefunded?: number;
   processedBy?: {
     _id: string;
     fullName: string;
@@ -74,7 +81,7 @@ export interface RefundRequestItem {
 }
 
 export const refundApi = {
-  // Kiểm tra điều kiện hoàn tiền (BR30.1)
+  // Kiểm tra điều kiện hoàn tiền
   async checkEligibility(orderId: string): Promise<RefundEligibilityResponse> {
     const res = await authFetch(`/api/refunds/eligibility/${orderId}`);
     return parseJsonSafe<RefundEligibilityResponse>(
@@ -83,7 +90,7 @@ export const refundApi = {
     );
   },
 
-  // Gửi yêu cầu hoàn tiền (UC30 Basic Flow 4, 5)
+  // Gửi yêu cầu hoàn tiền (  Basic Flow 4, 5)
   async createRefundRequest(
     orderId: string,
     reason: string,
@@ -101,7 +108,7 @@ export const refundApi = {
     return parseJsonSafe(res, 'Lỗi khi gửi yêu cầu hoàn tiền');
   },
 
-  // Hủy yêu cầu hoàn tiền khi đang PENDING (UC30 Alternative Flow 4a & BR30.3)
+  // Hủy yêu cầu hoàn tiền khi đang PENDING (  Alternative Flow 4a &
   async cancelRefundRequest(
     requestId: string,
   ): Promise<{ success: boolean; message: string }> {
@@ -120,7 +127,7 @@ export const refundApi = {
     return parseJsonSafe(res, 'Không thể tải danh sách yêu cầu hoàn tiền');
   },
 
-  // [Admin] Lấy danh sách toàn bộ yêu cầu hoàn tiền (UC33)
+  // [Admin] Lấy danh sách toàn bộ yêu cầu hoàn tiền
   async getAdminRefundRequests(
     status?: string,
     search?: string,
@@ -134,7 +141,7 @@ export const refundApi = {
     return parseJsonSafe(res, 'Lỗi tải danh sách yêu cầu hoàn tiền admin');
   },
 
-  // [Admin] Phê duyệt hoặc Từ chối yêu cầu hoàn tiền (UC33)
+  // [Admin] Phê duyệt hoặc Từ chối yêu cầu hoàn tiền
   async processAdminRefund(
     requestId: string,
     action: 'APPROVE' | 'REJECT',
@@ -147,5 +154,22 @@ export const refundApi = {
       body: JSON.stringify({ action, rejectionReason, adminNotes }),
     });
     return parseJsonSafe(res, 'Lỗi khi xử lý yêu cầu hoàn tiền');
+  },
+
+  // [Giảng viên] Lấy nhật ký yêu cầu hoàn tiền của học viên đối với khóa học của mình
+  async getInstructorRefundRequests(): Promise<{
+    success: boolean;
+    data: {
+      totalRequests: number;
+      pendingCount: number;
+      approvedCount: number;
+      rejectedCount: number;
+      refundedRevenue: number;
+      pendingRefundRevenue: number;
+      requests: RefundRequestItem[];
+    };
+  }> {
+    const res = await authFetch('/api/refunds/instructor/requests');
+    return parseJsonSafe(res, 'Không thể tải nhật ký hoàn tiền giảng viên');
   },
 };

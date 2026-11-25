@@ -12,11 +12,28 @@ export interface GenerateQuizRequest {
   difficulty?: 'Easy' | 'Medium' | 'Hard';
 }
 
+export interface AiQuizQuotaResponse {
+  success: boolean;
+  data: {
+    limit: number;
+    used: number;
+    remaining: number;
+    resetDate: string;
+  };
+  message?: string;
+}
+
 export interface GenerateQuizResponse {
   success: boolean;
   data: QuizDataItem;
   isAiGenerated: boolean;
   message?: string;
+  quota?: {
+    limit: number;
+    used: number;
+    remaining: number;
+    resetDate: string;
+  };
 }
 
 export interface GradeEssayRequest {
@@ -37,6 +54,17 @@ export interface GradeEssayResponse {
 }
 
 export const aiQuizApi = {
+  /**
+   * Lấy số lượt quota tạo Quiz AI trong tuần của giảng viên (tối đa 5 lượt/tuần)
+   */
+  async getQuota(): Promise<AiQuizQuotaResponse> {
+    const res = await authFetch(`${API_BASE}/quota`);
+    return parseJsonSafe<AiQuizQuotaResponse>(
+      res,
+      'Không thể kiểm tra hạn mức AI Quiz',
+    );
+  },
+
   /**
    * Gọi AI sinh câu hỏi trắc nghiệm & tự luận
    */

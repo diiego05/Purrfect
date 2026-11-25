@@ -15,6 +15,7 @@ export interface WithdrawalRequestItem {
   bankAccount: string;
   accountHolder: string;
   notes?: string;
+  qrCodeUrl?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   rejectionReason?: string;
   adminNotes?: string;
@@ -28,15 +29,38 @@ export interface WithdrawalRequestItem {
   updatedAt: string;
 }
 
+export interface OrderClearanceItem {
+  orderId: string;
+  orderCode: string;
+  courseId: string;
+  courseTitle: string;
+  amount: number;
+  createdAt: string;
+  status: 'PENDING_CLEARANCE' | 'CLEARED' | 'REFUND_PENDING' | 'REFUNDED';
+  statusLabel: string;
+  isCleared: boolean;
+  isPendingClearance: boolean;
+  reason: string;
+  daysPassed: number;
+  daysRemaining: number;
+  completedLecturesCount: number;
+  hasCertificate?: boolean;
+}
+
 export interface InstructorBalanceData {
   totalRevenue: number;
+  pendingClearanceAmount: number;
+  clearedRevenue: number;
   availableBalance: number;
   pendingWithdrawalAmount: number;
   approvedWithdrawalAmount: number;
   minWithdrawal: number;
   coursesCount: number;
   ordersCount: number;
+  pendingOrdersCount?: number;
+  clearedOrdersCount?: number;
   withdrawals: WithdrawalRequestItem[];
+  orderClearanceDetails?: OrderClearanceItem[];
 }
 
 export const withdrawalApi = {
@@ -56,6 +80,7 @@ export const withdrawalApi = {
     bankAccount: string;
     accountHolder: string;
     notes?: string;
+    qrCodeUrl?: string;
   }): Promise<{
     success: boolean;
     message: string;

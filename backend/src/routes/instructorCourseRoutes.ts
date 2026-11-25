@@ -61,7 +61,7 @@ router.use(authenticateToken, requireInstructor);
 router.post('/upload-thumbnail', uploadFields, uploadCourseThumbnail);
 router.post('/:id/upload-thumbnail', uploadFields, uploadCourseThumbnail);
 
-// 5. Tải lên tệp bài giảng (Nén video & trích xuất transcript cho AI RAG - BR06.2, BR06.5)
+// 5. Tải lên tệp bài giảng (Nén video & trích xuất transcript cho AI RAG -
 // Hỗ trợ cả route không cần id và route có id
 router.post('/upload-lecture', lectureFields, uploadLectureMedia);
 router.post('/:id/upload-lecture', lectureFields, uploadLectureMedia);
@@ -89,14 +89,14 @@ router.post('/', createCourseDraft);
 // 4. Cập nhật thông tin chung, đề cương bài giảng và học phí
 router.put('/:id', updateCourse);
 
-// 6. Gửi yêu cầu phê duyệt lên Admin (BR06.1, Exception 8a)
+// 6. Gửi yêu cầu phê duyệt lên Admin (   Exception 8a)
 router.post('/:id/submit-approval', submitCourseForApproval);
 
-// Phê duyệt hoặc từ chối khóa học (Chỉ dành cho Admin - BR06.1)
+// Phê duyệt hoặc từ chối khóa học (Chỉ dành cho Admin -
 router.post('/:id/approve', requireAdmin, approveCourse);
 router.post('/:id/reject', requireAdmin, rejectCourse);
 
-// 7. Xóa hoặc chuyển trạng thái ngừng kinh doanh (BR06.4)
+// 7. Xóa hoặc chuyển trạng thái ngừng kinh doanh
 router.delete('/:id', deleteOrDisableCourse);
 
 // 8. Tạm dừng kinh doanh hoặc mở bán lại

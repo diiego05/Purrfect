@@ -4,6 +4,7 @@ import { formatVND } from '../../utils/format';
 import { useCartWishlist } from '../../context/CartWishlistContext';
 import { useAuth } from '../../context/AuthContext';
 import { IconlyHeart, IconlyBuy } from '../Onboarding/IconlyIcons';
+import './Courses.css';
 
 interface CourseCardProps {
   course: Course;

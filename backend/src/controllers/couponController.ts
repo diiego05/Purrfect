@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import Coupon from '../models/Coupon';
+import { Course } from '../models/Course';
 import { recordAuditLog } from '../utils/auditLogger';
+import { AuthRequest } from '../middlewares/auth';
 
-type AuthRequest = Request & { user?: { id: string } };
+type LegacyAuthRequest = Request & { user?: { id: string } };
 
 // GET /api/coupons - [Admin] get all coupons with optional filter
 export const getAllCoupons = async (
@@ -109,7 +112,7 @@ export const createCoupon = async (
 
     const normalizedCode = code.trim().toUpperCase();
 
-    // Check duplicate code (BR18.1)
+    // Check duplicate code
     const existing = await Coupon.findOne({ code: normalizedCode });
     if (existing) {
       res
@@ -118,7 +121,7 @@ export const createCoupon = async (
       return;
     }
 
-    // 2. Validate Discount Type & Value (BR18.2)
+    // 2. Validate Discount Type & Value
     if (!discountType || !['PERCENT', 'FIXED_AMOUNT'].includes(discountType)) {
       res.status(400).json({
         message: 'Loại giảm giá không hợp lệ (PERCENT hoặc FIXED_AMOUNT).',
@@ -139,7 +142,7 @@ export const createCoupon = async (
       return;
     }
 
-    // 3. Validate Date Range (BR18.1)
+    // 3. Validate Date Range
     if (!validFrom || !validTo) {
       res
         .status(400)
@@ -206,7 +209,7 @@ export const createCoupon = async (
     await coupon.save();
 
     await recordAuditLog({
-      adminId: req.user?.id || 'unknown',
+      adminId: req.user?._id || 'unknown',
       action: 'CREATE_COUPON',
       targetType: 'Coupon',
       targetId: String(coupon._id),
@@ -365,7 +368,7 @@ export const updateCoupon = async (
     await coupon.save();
 
     await recordAuditLog({
-      adminId: req.user?.id || 'unknown',
+      adminId: req.user?._id || 'unknown',
       action: 'UPDATE_COUPON',
       targetType: 'Coupon',
       targetId: String(coupon._id),
@@ -397,7 +400,7 @@ export const deleteCoupon = async (
     }
 
     await recordAuditLog({
-      adminId: req.user?.id || 'unknown',
+      adminId: req.user?._id || 'unknown',
       action: 'DELETE_COUPON',
       targetType: 'Coupon',
       targetId: String(id),
@@ -428,7 +431,7 @@ export const toggleCouponStatus = async (
     await coupon.save();
 
     await recordAuditLog({
-      adminId: req.user?.id || 'unknown',
+      adminId: req.user?._id || 'unknown',
       action: 'TOGGLE_COUPON',
       targetType: 'Coupon',
       targetId: String(coupon._id),
@@ -447,15 +450,16 @@ export const toggleCouponStatus = async (
   }
 };
 
-// POST /api/coupons/validate - validate and calculate discount (BR18.3)
+// POST /api/coupons/validate - validate and calculate discount
 export const validateCoupon = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    const { code, orderAmount } = req.body as {
+    const { code, orderAmount, courseId } = req.body as {
       code: string;
       orderAmount: number;
+      courseId?: string;
     };
 
     if (!code || !code.trim()) {
@@ -492,6 +496,17 @@ export const validateCoupon = async (
         message: 'Mã giảm giá hiện đang tạm ngừng kích hoạt.',
       });
       return;
+    }
+
+    // Check course-specific restriction if applicable
+    if (coupon.courseId) {
+      if (!courseId || coupon.courseId.toString() !== courseId.toString()) {
+        res.status(400).json({
+          valid: false,
+          message: 'Mã giảm giá này chỉ áp dụng cho khóa học được chỉ định.',
+        });
+        return;
+      }
     }
 
     const now = new Date();
@@ -531,7 +546,7 @@ export const validateCoupon = async (
       return;
     }
 
-    // Calculate discount amount (BR18.2)
+    // Calculate discount amount
     let discountAmount = 0;
     if (coupon.discountType === 'PERCENT') {
       discountAmount = (numOrderAmount * coupon.discountValue) / 100;
@@ -560,11 +575,245 @@ export const validateCoupon = async (
         maxDiscountAmount: coupon.maxDiscountAmount,
         minOrderAmount: coupon.minOrderAmount,
         description: coupon.description,
+        courseId: coupon.courseId,
       },
     });
   } catch {
     res
       .status(500)
       .json({ valid: false, message: 'Lỗi server khi kiểm tra mã giảm giá.' });
+  }
+};
+
+// GET /api/coupons/instructor/course/:courseId - Get all coupons of a course for instructor
+export const getInstructorCourseCoupons = async (
+  req: LegacyAuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const courseId = String(req.params.courseId);
+    const instructorId =
+      (req.user as any)?._id?.toString() || req.user?.id?.toString();
+
+    if (!instructorId) {
+      res
+        .status(401)
+        .json({ message: 'Không xác định được danh tính giảng viên.' });
+      return;
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      res.status(400).json({ message: 'Mã khóa học không hợp lệ.' });
+      return;
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      res.status(404).json({ message: 'Không tìm thấy khóa học.' });
+      return;
+    }
+
+    const isOwner = course.instructorId?.toString() === instructorId;
+    const isAdmin = (req.user as any)?.role === 'ADMIN';
+
+    if (!isOwner && !isAdmin) {
+      res
+        .status(403)
+        .json({
+          message: 'Bạn không có quyền quản lý mã giảm giá của khóa học này.',
+        });
+      return;
+    }
+
+    const coupons = await Coupon.find({ courseId }).sort({ createdAt: -1 });
+
+    res.json({
+      coupons,
+      totalCount: coupons.length,
+      maxCoupons: 5,
+    });
+  } catch {
+    res
+      .status(500)
+      .json({
+        message: 'Lỗi server khi lấy danh sách mã giảm giá của khóa học.',
+      });
+  }
+};
+
+// POST /api/coupons/instructor/course/:courseId - Create a 10% coupon for instructor's course (max 5)
+export const createInstructorCourseCoupon = async (
+  req: LegacyAuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const courseId = String(req.params.courseId);
+    const instructorId =
+      (req.user as any)?._id?.toString() || req.user?.id?.toString();
+    const { code, description } = req.body as {
+      code: string;
+      description?: string;
+    };
+
+    if (!instructorId) {
+      res
+        .status(401)
+        .json({ message: 'Không xác định được danh tính giảng viên.' });
+      return;
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      res.status(400).json({ message: 'Mã khóa học không hợp lệ.' });
+      return;
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      res.status(404).json({ message: 'Không tìm thấy khóa học.' });
+      return;
+    }
+
+    const isOwner = course.instructorId?.toString() === instructorId;
+    const isAdmin = (req.user as any)?.role === 'ADMIN';
+
+    if (!isOwner && !isAdmin) {
+      res
+        .status(403)
+        .json({
+          message: 'Bạn không có quyền tạo mã giảm giá cho khóa học này.',
+        });
+      return;
+    }
+
+    // Check count of coupons for this course (max 5)
+    const currentCount = await Coupon.countDocuments({ courseId });
+    if (currentCount >= 5) {
+      res.status(400).json({
+        message:
+          'Khóa học này đã tạo tối đa 5 mã giảm giá. Không thể tạo thêm.',
+      });
+      return;
+    }
+
+    // Validate Code format according to platform rules: 4-20 uppercase alphanumeric
+    if (!code || !code.trim()) {
+      res.status(400).json({ message: 'Mã giảm giá không được để trống.' });
+      return;
+    }
+
+    const normalizedCode = code.trim().toUpperCase();
+    const codeRegex = /^[A-Z0-9]{4,20}$/;
+    if (!codeRegex.test(normalizedCode)) {
+      res.status(400).json({
+        message:
+          'Mã giảm giá chỉ được chứa chữ cái in hoa và chữ số, độ dài từ 4 đến 20 ký tự (Ví dụ: PURR10, PYTHON10).',
+      });
+      return;
+    }
+
+    // Check unique code in DB
+    const existingCoupon = await Coupon.findOne({ code: normalizedCode });
+    if (existingCoupon) {
+      res.status(409).json({
+        message:
+          'Mã giảm giá này đã tồn tại trên hệ thống. Vui lòng đặt mã khác.',
+      });
+      return;
+    }
+
+    const now = new Date();
+    const oneYearLater = new Date();
+    oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+
+    const newCoupon = new Coupon({
+      code: normalizedCode,
+      description:
+        description?.trim() || `Mã giảm giá 10% cho khóa học "${course.title}"`,
+      discountType: 'PERCENT',
+      discountValue: 10, // Giảm cố định 10% theo quy định nền tảng
+      maxDiscountAmount: null,
+      minOrderAmount: 0,
+      totalUsageLimit: 5, // Cố định mỗi mã chỉ sử dụng tối đa 5 lần
+      usedCount: 0,
+      validFrom: now,
+      validTo: oneYearLater,
+      isActive: true,
+      courseId: new mongoose.Types.ObjectId(courseId),
+      instructorId: new mongoose.Types.ObjectId(instructorId),
+    });
+
+    await newCoupon.save();
+
+    await recordAuditLog({
+      action: 'INSTRUCTOR_CREATE_COUPON',
+      adminId: instructorId,
+      targetType: 'COUPON',
+      targetId: newCoupon._id.toString(),
+      details: {
+        code: normalizedCode,
+        courseId,
+        discountValue: 10,
+        discountType: 'PERCENT',
+        totalUsageLimit: 5,
+      },
+    });
+
+    res.status(201).json({
+      message: 'Tạo mã giảm giá 10% cho khóa học thành công!',
+      coupon: newCoupon,
+      remainingSlots: 5 - (currentCount + 1),
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: 'Lỗi server khi tạo mã giảm giá cho khóa học.',
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+};
+
+// DELETE /api/coupons/instructor/:id - Delete instructor's course coupon
+export const deleteInstructorCoupon = async (
+  req: LegacyAuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    const instructorId =
+      (req.user as any)?._id?.toString() || req.user?.id?.toString();
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: 'ID mã giảm giá không hợp lệ.' });
+      return;
+    }
+
+    const coupon = await Coupon.findById(id);
+    if (!coupon) {
+      res.status(404).json({ message: 'Không tìm thấy mã giảm giá.' });
+      return;
+    }
+
+    const isOwner = coupon.instructorId?.toString() === instructorId;
+    const isAdmin = (req.user as any)?.role === 'ADMIN';
+
+    if (!isOwner && !isAdmin) {
+      res
+        .status(403)
+        .json({ message: 'Bạn không có quyền xóa mã giảm giá này.' });
+      return;
+    }
+
+    await Coupon.findByIdAndDelete(id);
+
+    await recordAuditLog({
+      action: 'INSTRUCTOR_DELETE_COUPON',
+      adminId: instructorId || 'UNKNOWN',
+      targetType: 'COUPON',
+      targetId: id,
+      details: { code: coupon.code, courseId: coupon.courseId },
+    });
+
+    res.json({ message: 'Xóa mã giảm giá thành công.' });
+  } catch {
+    res.status(500).json({ message: 'Lỗi server khi xóa mã giảm giá.' });
   }
 };

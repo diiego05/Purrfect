@@ -40,7 +40,7 @@ export const fetchPlaylistDetail = async (
 
 /**
  * Tạo playlist mới
- * (BR29.1, Exception 1b)
+ * (   Exception 1b)
  */
 export const createPlaylist = async (payload: {
   name: string;
@@ -56,7 +56,7 @@ export const createPlaylist = async (payload: {
 
 /**
  * Cập nhật thông tin hoặc sắp xếp danh sách khóa học
- * (BR29.3, Exception 3a4)
+ * (   Exception 3a4)
  */
 export const updatePlaylist = async (
   id: string,
@@ -89,7 +89,7 @@ export const deletePlaylist = async (
 
 /**
  * Thêm khóa học vào playlist
- * (BR29.2: Tránh trùng lặp, BR29.1: Tối đa số khóa học)
+ * (   Tránh trùng lặp,    Tối đa số khóa học)
  */
 export const addCourseToPlaylist = async (
   playlistId: string,
@@ -120,7 +120,7 @@ export const removeCourseFromPlaylist = async (
 
 /**
  * Theo dõi / Bỏ theo dõi playlist công khai
- * (Alternative flow 3a2, 3a3, BR29.3)
+ * (Alternative flow 3a2, 3a3,
  */
 export const toggleFollowPlaylist = async (
   playlistId: string,

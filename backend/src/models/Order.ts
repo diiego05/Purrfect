@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export type OrderStatus =
   'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'REFUND_PENDING' | 'REFUNDED';
 export type PaymentMethod =
-  'VNPAY' | 'FREE' | 'DIRECT' | 'BANK_TRANSFER' | 'MOCK';
+  'VNPAY' | 'FREE' | 'DIRECT' | 'BANK_TRANSFER' | 'MOCK' | 'PURR_POINTS';
 
 export interface IOrder extends Document {
   _id: mongoose.Types.ObjectId;
@@ -16,6 +16,7 @@ export interface IOrder extends Document {
   couponCode?: string;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
+  isManualEnrollment?: boolean;
   vnpayDetails?: {
     transactionNo?: string;
     bankCode?: string;
@@ -86,8 +87,13 @@ const orderSchema = new Schema<IOrder>(
     },
     paymentMethod: {
       type: String,
-      enum: ['VNPAY', 'FREE', 'DIRECT', 'BANK_TRANSFER', 'MOCK'],
+      enum: ['VNPAY', 'FREE', 'DIRECT', 'BANK_TRANSFER', 'MOCK', 'PURR_POINTS'],
       default: 'VNPAY',
+    },
+    isManualEnrollment: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
     vnpayDetails: {
       transactionNo: { type: String, default: '' },

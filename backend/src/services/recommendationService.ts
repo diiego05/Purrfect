@@ -173,7 +173,12 @@ export async function getPersonalizedRecommendations(
       limit,
     };
 
-    const pythonRecommendedIds = await callPythonAIService(pythonPayload);
+    // Dữ liệu onboarding lưu ObjectId; dịch vụ AI ngoài chỉ hiểu slug nên không
+    // dùng kết quả của nó cho người đã làm khảo sát. Local scorer phía dưới so
+    // khớp ObjectId chính xác với category/skill đã chọn.
+    const pythonRecommendedIds = survey
+      ? null
+      : await callPythonAIService(pythonPayload);
     if (pythonRecommendedIds && pythonRecommendedIds.length > 0) {
       const courseMap = new Map(allCourses.map((c) => [c._id.toString(), c]));
       const recommended = pythonRecommendedIds

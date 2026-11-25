@@ -275,7 +275,7 @@ export const authApi = {
     return parseJsonSafe<AuthResponse>(res, 'Lỗi khi tải ảnh đại diện lên');
   },
 
-  // 13. Cập nhật hồ sơ cá nhân (UC04)
+  // 13. Cập nhật hồ sơ cá nhân
   async updateProfile(data: {
     fullName?: string;
     phoneNumber?: string;

@@ -781,7 +781,7 @@ export const PlaylistsPage: React.FC = () => {
           {/* Subtab 1: Playlist tôi đã tạo */}
           {mySubtab === 'created' && (
             <>
-              {/* Giới hạn số lượng playlist theo BR29.1 */}
+              {/* Giới hạn số lượng playlist theo   */}
               <div className="playlist-limit-banner">
                 <span>
                   Bạn đã tạo <strong>{myCreatedPlaylists.length}</strong> /{' '}

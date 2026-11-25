@@ -8,6 +8,7 @@ import {
   recordCourseInteraction,
   streamLectureDocument,
   getMyEnrolledCourses,
+  getPublicInstructorCourses,
 } from '../controllers/courseController';
 import { getOnboardingData } from '../controllers/onboardingController';
 import {
@@ -45,6 +46,9 @@ router.get('/lectures/document-stream', streamLectureDocument);
 
 // Lấy danh sách khóa học của học viên hiện tại (Khóa học của tôi)
 router.get('/my-courses', authenticateToken, getMyEnrolledCourses);
+
+// Lấy thông tin công khai & tất cả khóa học của giảng viên
+router.get('/instructor/:instructorId', getPublicInstructorCourses);
 
 // Lấy chi tiết khóa học theo slug
 router.get('/:slug', getCourseBySlug);

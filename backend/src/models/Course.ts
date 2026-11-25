@@ -32,12 +32,12 @@ export interface ILecture {
   type: 'VIDEO' | 'DOCUMENT' | 'QUIZ';
   contentUrl?: string;
   fileName?: string;
-  fileSize?: number; // bytes (<= 2GB - BR06.2)
+  fileSize?: number; // bytes (<= 2GB)
   durationMinutes: number;
   isPreview: boolean;
   order: number;
-  compressionStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; // BR06.5
-  transcript?: string; // BR06.5 trích xuất phụ đề cho RAG Chatbot
+  compressionStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  transcript?: string; // trích xuất phụ đề cho RAG Chatbot
   transcriptStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   quizData?: IQuizData; // Dữ liệu bài kiểm tra trắc nghiệm & tự luận nếu type === 'QUIZ'
 }

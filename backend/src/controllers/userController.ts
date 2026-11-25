@@ -230,9 +230,15 @@ export const toggleUserStatus = async (
       return;
     }
 
+    const updateFields: Record<string, unknown> = { status };
+    if (status === 'ACTIVE') {
+      updateFields.isLocked = false;
+      updateFields.lockedUntil = null;
+    }
+
     const user = await User.findByIdAndUpdate(
       id,
-      { status },
+      { $set: updateFields },
       { new: true, runValidators: true },
     ).select('-passwordHash');
 
@@ -321,6 +327,66 @@ export const updateUserRole = async (
     res.status(500).json({
       success: false,
       message: 'Lỗi máy chủ khi cập nhật vai trò người dùng',
+    });
+  }
+};
+
+/**
+ * PATCH /api/users/:id/points
+ * [Admin] Điều chỉnh điểm PurrPoint của người dùng
+ */
+export const updateUserPoints = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { points, mode = 'SET' } = req.body as {
+      points: number;
+      mode?: 'SET' | 'ADD';
+    };
+
+    const numPoints = Number(points);
+    if (isNaN(numPoints)) {
+      res.status(400).json({
+        success: false,
+        message: 'Điểm PurrPoint không hợp lệ',
+      });
+      return;
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng',
+      });
+      return;
+    }
+
+    if (mode === 'ADD') {
+      user.purrPoints = Math.max(0, (user.purrPoints || 0) + numPoints);
+    } else {
+      user.purrPoints = Math.max(0, numPoints);
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `Đã cập nhật điểm PurrPoint thành công: ${user.purrPoints.toLocaleString('vi-VN')} points`,
+      data: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        purrPoints: user.purrPoints,
+      },
+    });
+  } catch (error) {
+    console.error('[UserManagement] Error updating points:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi máy chủ khi cập nhật điểm người dùng',
     });
   }
 };

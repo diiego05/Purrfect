@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Playlist Detail Page Styles (Trang chi tiết Playlist - UC29)
+   Playlist Detail Page Styles (Trang chi tiết Playlist -
    ========================================================================== */
 
 .playlist-detail-page {
@@ -606,6 +606,27 @@
 }
 
 @media (max-width: 768px) {
+  .playlist-hero-card {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .playlist-hero-title {
+    font-size: 20px;
+    line-height: 1.35;
+  }
+
+  .playlist-hero-actions {
+    width: 100%;
+  }
+
+  .btn-playlist-primary,
+  .btn-playlist-follow {
+    flex: 1 1 auto;
+    justify-content: center;
+    text-align: center;
+  }
+
   .playlist-course-card {
     flex-direction: column;
     align-items: flex-start;

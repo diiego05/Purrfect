@@ -14,6 +14,8 @@ export interface ICoupon extends Document {
   validFrom: Date;
   validTo: Date;
   isActive: boolean;
+  courseId?: mongoose.Types.ObjectId;
+  instructorId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -75,6 +77,16 @@ const CouponSchema = new Schema<ICoupon>(
     isActive: {
       type: Boolean,
       default: true,
+      index: true,
+    },
+    courseId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Course',
+      index: true,
+    },
+    instructorId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
       index: true,
     },
   },
