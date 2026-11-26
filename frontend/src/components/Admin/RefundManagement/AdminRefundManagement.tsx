@@ -43,24 +43,6 @@ export const AdminRefundManagement: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [copiedAcc, setCopiedAcc] = useState<boolean>(false);
 
-  const getBankCode = (bankName: string): string => {
-    const norm = (bankName || '').toLowerCase();
-    if (norm.includes('vietcombank') || norm.includes('vcb'))
-      return 'vietcombank';
-    if (norm.includes('mb') || norm.includes('quân đội')) return 'mbbank';
-    if (norm.includes('techcombank') || norm.includes('kỹ thương'))
-      return 'techcombank';
-    if (norm.includes('bidv')) return 'bidv';
-    if (norm.includes('vietinbank') || norm.includes('công thương'))
-      return 'vietinbank';
-    if (norm.includes('acb')) return 'acb';
-    if (norm.includes('vpbank') || norm.includes('thịnh vượng'))
-      return 'vpbank';
-    if (norm.includes('tpbank') || norm.includes('tiên phong')) return 'tpbank';
-    if (norm.includes('sacombank')) return 'sacombank';
-    return 'vietcombank';
-  };
-
   // Alert message
   const [alert, setAlert] = useState<{
     type: 'success' | 'error';
@@ -805,27 +787,20 @@ export const AdminRefundManagement: React.FC = () => {
                   )}
                 </div>
 
-                <div className="adm-withdrawal-qr-side">
-                  <div className="adm-qr-container">
-                    <img
-                      src={
-                        selectedWithdrawal.qrCodeUrl ||
-                        `https://img.vietqr.io/image/${getBankCode(selectedWithdrawal.bankName)}-${selectedWithdrawal.bankAccount}-compact2.png?amount=${selectedWithdrawal.amount}&accountName=${encodeURIComponent(selectedWithdrawal.accountHolder)}&addInfo=${encodeURIComponent('Purrfect chi tien')}`
-                      }
-                      alt="Mã QR thanh toán ngân hàng"
-                      className="adm-qr-image"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          `https://img.vietqr.io/image/vietcombank-${selectedWithdrawal.bankAccount}-compact2.png?amount=${selectedWithdrawal.amount}&accountName=${encodeURIComponent(selectedWithdrawal.accountHolder)}`;
-                      }}
-                    />
-                    <span className="adm-qr-caption">
-                      {selectedWithdrawal.qrCodeUrl
-                        ? 'Mã QR giảng viên tải lên'
-                        : 'Mã QR quét chuyển khoản'}
-                    </span>
+                {selectedWithdrawal.qrCodeUrl && (
+                  <div className="adm-withdrawal-qr-side">
+                    <div className="adm-qr-container">
+                      <img
+                        src={selectedWithdrawal.qrCodeUrl}
+                        alt="Mã QR giảng viên tải lên"
+                        className="adm-qr-image"
+                      />
+                      <span className="adm-qr-caption">
+                        Mã QR giảng viên tải lên
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {processingAction === 'APPROVE' ? (

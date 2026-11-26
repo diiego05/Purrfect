@@ -43,7 +43,7 @@ interface CourseDetailPageProps {
 
 export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
   const { navigate, isAuthenticated, user } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { addToCart, isInCart, toggleWishlist, isInWishlist } =
     useCartWishlist();
   const [course, setCourse] = useState<Course | null>(null);
@@ -855,18 +855,23 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
                     }
                     setIsPlaylistModalOpen(true);
                   }}
-                  title="Lưu khóa học vào Playlist"
+                  title={t(
+                    'cd_tooltip_add_playlist',
+                    'Lưu khóa học vào Playlist',
+                  )}
                 >
                   <IconlyFolder size={18} color="#0056d2" />
-                  <span>Lưu vào Playlist</span>
+                  <span>{t('cd_btn_add_playlist', 'Lưu vào Playlist')}</span>
                 </button>
                 <div className="banner-students-enrolled">
                   <strong>
                     {course.totalStudents
-                      ? course.totalStudents.toLocaleString('vi-VN')
+                      ? course.totalStudents.toLocaleString(
+                          language === 'vi' ? 'vi-VN' : 'en-US',
+                        )
                       : '1.408.583'}
                   </strong>{' '}
-                  đã đăng ký
+                  {t('cd_students_enrolled_suffix', 'đã đăng ký')}
                 </div>
               </div>
             </div>
@@ -977,50 +982,38 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
           {activeTab === 'overview' && (
             <div className="tab-pane-fade">
               <section className="detail-section-card">
-                <h2 className="section-heading">Những gì bạn sẽ học được</h2>
+                <h2 className="section-heading">{t('cd_what_you_learn')}</h2>
                 <div className="learning-outcomes-grid">
                   <div className="outcome-item">
                     <span className="outcome-check">
                       <IconlyTick size={14} color="#059669" />
                     </span>
-                    <span>
-                      Nắm vững các nguyên lý thực chiến và kỹ năng giải quyết
-                      vấn đề từ căn bản đến chuyên sâu.
-                    </span>
+                    <span>{t('cd_outcome_1')}</span>
                   </div>
                   <div className="outcome-item">
                     <span className="outcome-check">
                       <IconlyTick size={14} color="#059669" />
                     </span>
-                    <span>
-                      Thao tác tự tin với các công cụ hàng đầu, tối ưu hóa quy
-                      trình làm việc chuyên nghiệp.
-                    </span>
+                    <span>{t('cd_outcome_2')}</span>
                   </div>
                   <div className="outcome-item">
                     <span className="outcome-check">
                       <IconlyTick size={14} color="#059669" />
                     </span>
-                    <span>
-                      Xây dựng các dự án thực tế để hoàn thiện hồ sơ năng lực
-                      (Portfolio) gây ấn tượng với nhà tuyển dụng.
-                    </span>
+                    <span>{t('cd_outcome_3')}</span>
                   </div>
                   <div className="outcome-item">
                     <span className="outcome-check">
                       <IconlyTick size={14} color="#059669" />
                     </span>
-                    <span>
-                      Tư duy phân tích dữ liệu và áp dụng linh hoạt trong môi
-                      trường doanh nghiệp hiện đại.
-                    </span>
+                    <span>{t('cd_outcome_4')}</span>
                   </div>
                 </div>
               </section>
 
               {skillsList.length > 0 && (
                 <section className="detail-section-card">
-                  <h2 className="section-heading">Kỹ năng bạn sẽ tích lũy</h2>
+                  <h2 className="section-heading">{t('cd_skills_you_gain')}</h2>
                   <div className="skills-badge-wrap">
                     {skillsList.map((skill, idx) => (
                       <span key={idx} className="skill-chip">
@@ -1032,11 +1025,14 @@ export const CourseDetailPage: FC<CourseDetailPageProps> = ({ slug }) => {
               )}
 
               <section className="detail-section-card">
-                <h2 className="section-heading">Mô tả chi tiết khóa học</h2>
+                <h2 className="section-heading">
+                  {t('cd_detailed_description')}
+                </h2>
                 <p className="course-long-desc">
-                  {course.description ||
-                    course.shortDescription ||
-                    'Khóa học được thiết kế bởi các chuyên gia đầu ngành, mang lại trải nghiệm học tập thực tế và tương tác cao. Mỗi bài học đều có bài tập ứng dụng kèm lời giải chi tiết giúp bạn nhanh chóng làm chủ kỹ năng.'}
+                  {(language === 'en'
+                    ? course.descriptionEn || course.shortDescriptionEn
+                    : course.description || course.shortDescription) ||
+                    t('cd_description_fallback')}
                 </p>
               </section>
             </div>

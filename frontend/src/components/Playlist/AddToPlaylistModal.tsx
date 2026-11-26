@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   fetchMyPlaylists,
   addCourseToPlaylist,
@@ -28,6 +29,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
   onClose,
 }) => {
   const { isAuthenticated, navigate } = useAuth();
+  const { t } = useLanguage();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -85,12 +87,12 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="playlist-modal-header">
-            <h3 className="playlist-modal-title">Thêm vào Playlist</h3>
+            <h3 className="playlist-modal-title">{t('playlist_add_title')}</h3>
             <button
               type="button"
               className="playlist-modal-close-btn"
               onClick={handleClose}
-              aria-label="Đóng"
+              aria-label={t('playlist_close')}
             >
               <IconlyClose size={18} />
             </button>
@@ -106,8 +108,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                 fontSize: '14.5px',
               }}
             >
-              Vui lòng đăng nhập để tạo và lưu khóa học vào danh sách phát cá
-              nhân của bạn.
+              {t('playlist_login_required')}
             </p>
             <button
               type="button"
@@ -118,7 +119,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                 navigate('/login');
               }}
             >
-              Đăng nhập ngay
+              {t('playlist_login_now')}
             </button>
           </div>
         </div>
@@ -220,7 +221,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
       >
         <div className="playlist-modal-header">
           <div className="playlist-modal-header-info">
-            <h3 className="playlist-modal-title">Thêm vào Playlist</h3>
+            <h3 className="playlist-modal-title">{t('playlist_add_title')}</h3>
             <p className="playlist-modal-subtitle" title={courseTitle}>
               {courseTitle}
             </p>
@@ -229,7 +230,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
             type="button"
             className="playlist-modal-close-btn"
             onClick={handleClose}
-            aria-label="Đóng"
+            aria-label={t('playlist_close')}
           >
             <IconlyClose size={18} />
           </button>
@@ -252,14 +253,14 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
           {loading ? (
             <div className="playlist-loading-state">
               <div className="playlist-spinner" />
-              <span>Đang tải danh sách playlist...</span>
+              <span>{t('playlist_loading')}</span>
             </div>
           ) : (
             <div className="playlist-list-container">
               {playlists.length === 0 && !showCreateForm ? (
                 <div className="playlist-empty-state">
                   <IconlyFolder size={36} color="#94a3b8" />
-                  <p>Bạn chưa có playlist nào.</p>
+                  <p>{t('playlist_empty')}</p>
                   <button
                     type="button"
                     className="playlist-btn-primary"
@@ -267,7 +268,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                     onClick={() => setShowCreateForm(true)}
                   >
                     <IconlyPlus size={16} color="#ffffff" />
-                    <span>Tạo playlist đầu tiên</span>
+                    <span>{t('playlist_create_first')}</span>
                   </button>
                 </div>
               ) : (
@@ -292,8 +293,11 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                               {pl.name}
                             </span>
                             <span className="playlist-picker-sub">
-                              {pl.courses?.length || 0} khóa học •{' '}
-                              {pl.isPublic ? 'Công khai' : 'Riêng tư'}
+                              {pl.courses?.length || 0}{' '}
+                              {t('playlist_course_unit')} •{' '}
+                              {pl.isPublic
+                                ? t('playlist_public')
+                                : t('playlist_private')}
                             </span>
                           </div>
                         </div>
@@ -302,7 +306,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                           {isAlreadyIn ? (
                             <span className="playlist-badge-added">
                               <IconlyTick size={14} color="#16a34a" />
-                              <span>Đã thêm</span>
+                              <span>{t('playlist_added')}</span>
                             </span>
                           ) : (
                             <button
@@ -311,7 +315,9 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                               disabled={isRowLoading}
                               onClick={() => handleAddCourse(pl)}
                             >
-                              {isRowLoading ? 'Đang thêm...' : '+ Thêm vào'}
+                              {isRowLoading
+                                ? t('playlist_adding')
+                                : `+ ${t('playlist_add')}`}
                             </button>
                           )}
                         </div>
@@ -331,13 +337,14 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
             >
               <div className="form-field">
                 <label className="form-label" htmlFor="quick-pl-name">
-                  Tên playlist mới <span style={{ color: '#ef4444' }}>*</span>
+                  {t('playlist_name_new')}{' '}
+                  <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <input
                   id="quick-pl-name"
                   type="text"
                   className="playlist-input"
-                  placeholder="Ví dụ: Lộ trình Web Dev 2026..."
+                  placeholder={t('playlist_name_placeholder')}
                   value={newPlaylistName}
                   onChange={(e) => setNewPlaylistName(e.target.value)}
                   maxLength={100}
@@ -352,9 +359,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                     checked={isPublic}
                     onChange={(e) => setIsPublic(e.target.checked)}
                   />
-                  <span>
-                    Đặt ở chế độ công khai để người khác cùng theo dõi
-                  </span>
+                  <span>{t('playlist_make_public')}</span>
                 </label>
               </div>
 
@@ -364,14 +369,16 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                   className="playlist-btn-secondary"
                   onClick={() => setShowCreateForm(false)}
                 >
-                  Hủy
+                  {t('playlist_cancel')}
                 </button>
                 <button
                   type="submit"
                   className="playlist-btn-primary"
                   disabled={isCreating || !newPlaylistName.trim()}
                 >
-                  {isCreating ? 'Đang tạo...' : 'Tạo & Thêm khóa học'}
+                  {isCreating
+                    ? t('playlist_creating')
+                    : t('playlist_create_and_add')}
                 </button>
               </div>
             </form>
@@ -383,7 +390,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                 onClick={() => setShowCreateForm(true)}
               >
                 <IconlyPlus size={16} color="#0056d2" />
-                <span>+ Tạo playlist mới</span>
+                <span>+ {t('playlist_create_new')}</span>
               </button>
             )
           )}

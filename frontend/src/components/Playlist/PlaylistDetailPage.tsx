@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   fetchPlaylistDetail,
   updatePlaylist,
@@ -34,6 +35,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
   playlistId,
 }) => {
   const { isAuthenticated, navigate } = useAuth();
+  const { language, t } = useLanguage();
 
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -283,7 +285,9 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
         >
           <IconlyFolder size={56} color="#475569" />
           <div className="playlist-hero-cover-overlay">
-            <span className="playlist-hero-cover-pill">0 khóa học</span>
+            <span className="playlist-hero-cover-pill">
+              0 {t('playlist_course_unit')}
+            </span>
           </div>
         </div>
       );
@@ -303,7 +307,9 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
           <div className="playlist-hero-cover-overlay">
             <span className="playlist-hero-cover-pill">
               <IconlyPlay size={14} color="#ffffff" />
-              <span>{courses.length} khóa học</span>
+              <span>
+                {courses.length} {t('playlist_course_unit')}
+              </span>
             </span>
           </div>
         </div>
@@ -328,7 +334,9 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
         <div className="playlist-hero-cover-overlay">
           <span className="playlist-hero-cover-pill">
             <IconlyPlay size={14} color="#ffffff" />
-            <span>{courses.length} khóa học</span>
+            <span>
+              {courses.length} {t('playlist_course_unit')}
+            </span>
           </span>
         </div>
       </div>
@@ -385,16 +393,16 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
             className="playlist-back-btn"
             onClick={() => navigate('/playlists')}
           >
-            ← Quay lại danh sách phát
+            ← {t('playlist_back')}
           </button>
 
           <nav className="playlist-breadcrumbs" aria-label="Breadcrumb">
             <span className="clickable" onClick={() => navigate('/')}>
-              Trang chủ
+              {t('playlist_home')}
             </span>
             <span className="crumb-separator">/</span>
             <span className="clickable" onClick={() => navigate('/playlists')}>
-              Danh sách phát
+              {t('playlist_list')}
             </span>
             <span className="crumb-separator">/</span>
             <span className="crumb-current" title={playlist.name}>
@@ -418,19 +426,22 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                   playlist.isPublic ? 'public' : 'private'
                 }`}
               >
-                {playlist.isPublic ? 'Công khai' : 'Riêng tư'}
+                {playlist.isPublic
+                  ? t('playlist_public')
+                  : t('playlist_private')}
               </span>
 
               {playlist.isOwner && (
-                <span className="playlist-pill-owner">👑 Playlist của bạn</span>
+                <span className="playlist-pill-owner">
+                  👑 {t('playlist_yours')}
+                </span>
               )}
             </div>
 
             <h1 className="playlist-hero-title">{playlist.name}</h1>
 
             <p className="playlist-hero-desc">
-              {playlist.description ||
-                'Chưa có mô tả chi tiết cho danh sách phát này.'}
+              {playlist.description || t('playlist_no_description')}
             </p>
 
             {/* Thông tin tác giả tạo playlist */}
@@ -442,19 +453,19 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     playlist.userId?.email || 'author',
                   )}`
                 }
-                alt={playlist.userId?.fullName || 'Tác giả'}
+                alt={playlist.userId?.fullName || t('playlist_author')}
                 className="playlist-hero-author-avatar"
               />
               <div className="playlist-hero-author-info">
                 <span className="playlist-hero-author-name">
-                  {playlist.userId?.fullName || 'Người dùng Purrfect'}
+                  {playlist.userId?.fullName || t('playlist_user')}
                 </span>
                 <span className="playlist-hero-author-role">
                   {playlist.userId?.role === 'INSTRUCTOR'
-                    ? 'Giảng viên Purrfect'
+                    ? t('playlist_instructor')
                     : playlist.userId?.role === 'ADMIN'
-                      ? 'Quản trị viên hệ thống'
-                      : 'Học viên'}
+                      ? t('playlist_admin')
+                      : t('playlist_student')}
                 </span>
               </div>
             </div>
@@ -464,7 +475,8 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
               <div className="playlist-hero-stat-item">
                 <IconlyPlay size={16} color="#0056d2" />
                 <span>
-                  <strong>{playlist.courses?.length || 0}</strong> khóa học
+                  <strong>{playlist.courses?.length || 0}</strong>{' '}
+                  {t('playlist_course_unit')}
                 </span>
               </div>
 
@@ -472,7 +484,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                 <div className="playlist-hero-stat-item">
                   <IconlyTimeCircle size={16} color="#059669" />
                   <span>
-                    <strong>{totalHours}</strong> giờ học tổng cộng
+                    <strong>{totalHours}</strong> {t('playlist_total_hours')}
                   </span>
                 </div>
               )}
@@ -480,14 +492,17 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
               <div className="playlist-hero-stat-item">
                 <IconlyHeart size={16} color="#ef4444" />
                 <span>
-                  <strong>{playlist.followerCount || 0}</strong> người theo dõi
+                  <strong>{playlist.followerCount || 0}</strong>{' '}
+                  {t('playlist_followers')}
                 </span>
               </div>
 
               <div className="playlist-hero-stat-item">
                 <span>
-                  Cập nhật:{' '}
-                  {new Date(playlist.updatedAt).toLocaleDateString('vi-VN')}
+                  {t('playlist_updated')}{' '}
+                  {new Date(playlist.updatedAt).toLocaleDateString(
+                    language === 'en' ? 'en-US' : 'vi-VN',
+                  )}
                 </span>
               </div>
             </div>
@@ -509,8 +524,8 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     />
                     <span>
                       {playlist.isFollowedByMe
-                        ? 'Đang theo dõi'
-                        : 'Theo dõi playlist này'}
+                        ? t('playlist_following')
+                        : t('playlist_follow')}
                     </span>
                   </button>
 
@@ -518,9 +533,9 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     type="button"
                     className="btn-playlist-secondary"
                     onClick={handleSharePlaylist}
-                    title="Sao chép liên kết"
+                    title={t('playlist_copy_link')}
                   >
-                    <span>Chia sẻ playlist</span>
+                    <span>{t('playlist_share')}</span>
                   </button>
                 </>
               ) : (
@@ -531,7 +546,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     onClick={handleOpenEditModal}
                   >
                     <IconlyEdit size={16} color="#ffffff" />
-                    <span>Chỉnh sửa thông tin</span>
+                    <span>{t('playlist_edit')}</span>
                   </button>
 
                   <button
@@ -540,7 +555,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     onClick={() => setDeleteConfirmOpen(true)}
                   >
                     <IconlyDelete size={16} color="#e11d48" />
-                    <span>Xóa playlist</span>
+                    <span>{t('playlist_delete')}</span>
                   </button>
 
                   <button
@@ -548,7 +563,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     className="btn-playlist-secondary"
                     onClick={handleSharePlaylist}
                   >
-                    <span>Chia sẻ</span>
+                    <span>{t('playlist_share')}</span>
                   </button>
                 </>
               )}
@@ -562,10 +577,10 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
         <section className="playlist-content-section">
           <div className="playlist-content-header">
             <h2 className="playlist-content-title">
-              Nội dung các khóa học trong lộ trình
+              {t('playlist_content_title')}
             </h2>
             <span className="playlist-content-count-pill">
-              {playlist.courses?.length || 0} khóa học
+              {playlist.courses?.length || 0} {t('playlist_course_unit')}
             </span>
           </div>
 
@@ -582,18 +597,15 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     margin: 0,
                   }}
                 >
-                  Chưa có khóa học nào trong danh sách phát này
+                  {t('playlist_empty_courses')}
                 </h4>
-                <p>
-                  Duyệt qua danh mục khóa học của Purrfect và nhấn "Lưu vào
-                  Playlist" để bắt đầu xây dựng lộ trình học tập của riêng bạn.
-                </p>
+                <p>{t('playlist_empty_courses_help')}</p>
                 <button
                   type="button"
                   className="btn-playlist-primary"
                   onClick={() => navigate('/')}
                 >
-                  Khám phá các khóa học ngay
+                  {t('playlist_explore')}
                 </button>
               </div>
             ) : (
@@ -632,13 +644,17 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                       {course.durationHours && (
                         <span className="playlist-course-meta-chip">
                           <IconlyTimeCircle size={14} color="#64748b" />
-                          <span>{course.durationHours}h học</span>
+                          <span>
+                            {course.durationHours}h {t('playlist_hours')}
+                          </span>
                         </span>
                       )}
 
                       {course.level && (
                         <span className="playlist-course-meta-chip">
-                          <span>Trình độ: {course.level}</span>
+                          <span>
+                            {t('playlist_level')} {course.level}
+                          </span>
                         </span>
                       )}
 
@@ -653,15 +669,19 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                         <span className="playlist-course-meta-chip">
                           <IconlyUserGroup size={14} color="#64748b" />
                           <span>
-                            {course.totalStudents.toLocaleString('vi-VN')} học
-                            viên
+                            {course.totalStudents.toLocaleString(
+                              language === 'en' ? 'en-US' : 'vi-VN',
+                            )}{' '}
+                            {t('playlist_students')}
                           </span>
                         </span>
                       )}
                     </div>
 
                     <div className="playlist-course-price-tag">
-                      {course.price <= 0 ? 'Miễn phí' : formatVND(course.price)}
+                      {course.price <= 0
+                        ? t('playlist_free')
+                        : formatVND(course.price)}
                     </div>
                   </div>
 
@@ -672,7 +692,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                       className="btn-course-enroll"
                       onClick={() => navigate(`/courses/${course.slug}`)}
                     >
-                      Vào học
+                      {t('playlist_start_learning')}
                     </button>
 
                     {/* Dành cho chủ sở hữu: Sắp xếp thứ tự & Gỡ bỏ */}
@@ -681,7 +701,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                         <button
                           type="button"
                           className="btn-reorder-icon"
-                          title="Di chuyển lên trên"
+                          title={t('playlist_move_up')}
                           disabled={idx === 0}
                           onClick={() => handleReorderCourse(idx, 'up')}
                         >
@@ -691,7 +711,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                         <button
                           type="button"
                           className="btn-reorder-icon"
-                          title="Di chuyển xuống dưới"
+                          title={t('playlist_move_down')}
                           disabled={idx === playlist.courses.length - 1}
                           onClick={() => handleReorderCourse(idx, 'down')}
                         >
@@ -701,7 +721,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                         <button
                           type="button"
                           className="btn-remove-course-icon"
-                          title="Gỡ khỏi danh sách phát"
+                          title={t('playlist_remove_course')}
                           onClick={() => handleRemoveCourse(course._id)}
                         >
                           <IconlyDelete size={15} color="#ef4444" />
@@ -731,18 +751,17 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
             <div className="playlist-modal-header">
               <div className="playlist-modal-header-info">
                 <h3 className="playlist-modal-title">
-                  Chỉnh sửa danh sách phát
+                  {t('playlist_edit_title')}
                 </h3>
                 <p className="playlist-modal-subtitle">
-                  Cập nhật tên gọi, mô tả và chế độ hiển thị cho playlist của
-                  bạn
+                  {t('playlist_edit_subtitle')}
                 </p>
               </div>
               <button
                 type="button"
                 className="playlist-modal-close-btn"
                 onClick={() => setIsEditModalOpen(false)}
-                aria-label="Đóng"
+                aria-label={t('playlist_close')}
               >
                 <IconlyClose size={18} />
               </button>
@@ -755,7 +774,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     htmlFor="editPlaylistName"
                     className="playlist-form-label"
                   >
-                    Tên danh sách phát{' '}
+                    {t('playlist_name')}{' '}
                     <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
@@ -764,7 +783,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     className="playlist-input"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
-                    placeholder="Ví dụ: Lộ trình Frontend React Pro..."
+                    placeholder={t('playlist_name_placeholder')}
                     maxLength={100}
                     required
                     autoFocus
@@ -776,7 +795,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     htmlFor="editPlaylistDesc"
                     className="playlist-form-label"
                   >
-                    Mô tả danh sách phát (tùy chọn)
+                    {t('playlist_description_optional')}
                   </label>
                   <textarea
                     id="editPlaylistDesc"
@@ -784,7 +803,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     rows={3}
                     value={formDesc}
                     onChange={(e) => setFormDesc(e.target.value)}
-                    placeholder="Mô tả mục tiêu học tập hoặc lộ trình chi tiết..."
+                    placeholder={t('playlist_description_placeholder')}
                     maxLength={500}
                   />
                 </div>
@@ -798,11 +817,10 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                     />
                     <div>
                       <strong style={{ display: 'block', color: '#0f172a' }}>
-                        Cho phép công khai danh sách phát
+                        {t('playlist_allow_public')}
                       </strong>
                       <span style={{ fontSize: '12.5px', color: '#64748b' }}>
-                        Những người học khác có thể tìm kiếm, tham khảo và theo
-                        dõi playlist này của bạn.
+                        {t('playlist_allow_public_help')}
                       </span>
                     </div>
                   </label>
@@ -816,14 +834,16 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                   onClick={() => setIsEditModalOpen(false)}
                   disabled={formSubmitting}
                 >
-                  Hủy
+                  {t('playlist_cancel')}
                 </button>
                 <button
                   type="submit"
                   className="playlist-btn-primary"
                   disabled={formSubmitting || !formName.trim()}
                 >
-                  {formSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+                  {formSubmitting
+                    ? t('playlist_saving')
+                    : t('playlist_save_changes')}
                 </button>
               </div>
             </form>
@@ -846,13 +866,13 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
           >
             <div className="playlist-modal-header">
               <h3 className="playlist-modal-title" style={{ color: '#ef4444' }}>
-                Xác nhận xóa danh sách phát
+                {t('playlist_confirm_delete')}
               </h3>
               <button
                 type="button"
                 className="playlist-modal-close-btn"
                 onClick={() => setDeleteConfirmOpen(false)}
-                aria-label="Đóng"
+                aria-label={t('playlist_close')}
               >
                 <IconlyClose size={18} />
               </button>
@@ -880,7 +900,7 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                 onClick={() => setDeleteConfirmOpen(false)}
                 disabled={deleteSubmitting}
               >
-                Giữ lại
+                {t('playlist_keep')}
               </button>
               <button
                 type="button"
@@ -889,7 +909,9 @@ export const PlaylistDetailPage: React.FC<PlaylistDetailPageProps> = ({
                 onClick={handleConfirmDelete}
                 disabled={deleteSubmitting}
               >
-                {deleteSubmitting ? 'Đang xóa...' : 'Đồng ý xóa'}
+                {deleteSubmitting
+                  ? t('playlist_deleting')
+                  : t('playlist_delete_confirm')}
               </button>
             </div>
           </div>

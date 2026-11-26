@@ -27,6 +27,7 @@ import userRoutes from './routes/userRoutes';
 import playlistRoutes from './routes/playlistRoutes';
 import instructorCourseRoutes from './routes/instructorCourseRoutes';
 import discussionRoutes from './routes/discussionRoutes';
+import lectureNoteRoutes from './routes/lectureNoteRoutes';
 import reviewRoutes from './routes/reviewRoutes';
 
 import refundRoutes from './routes/refundRoutes';
@@ -125,6 +126,8 @@ app.use('/api/playlists', playlistRoutes);
 app.use('/api/instructor/courses', instructorCourseRoutes);
 app.use('/api/v1', discussionRoutes);
 app.use('/api', discussionRoutes);
+app.use('/api/v1', lectureNoteRoutes);
+app.use('/api', lectureNoteRoutes);
 app.use('/api/v1', reviewRoutes);
 app.use('/api', reviewRoutes);
 

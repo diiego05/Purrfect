@@ -26,7 +26,7 @@ export const InstructorWithdrawalPage: React.FC = () => {
 
   // Form states
   const [withdrawAmount, setWithdrawAmount] = useState<string>('');
-  const [bankName, setBankName] = useState<string>('Vietcombank');
+  const [bankName, setBankName] = useState<string>('');
   const [bankAccount, setBankAccount] = useState<string>('');
   const [accountHolder, setAccountHolder] = useState<string>('');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
@@ -324,31 +324,15 @@ export const InstructorWithdrawalPage: React.FC = () => {
               <label htmlFor="bankName">
                 Ngân hàng thụ hưởng <span className="req">*</span>
               </label>
-              <select
+              <input
                 id="bankName"
+                type="text"
+                placeholder="Ví dụ: Vietcombank, MB Bank, ACB..."
                 value={bankName}
                 onChange={(e) => setBankName(e.target.value)}
+                maxLength={100}
                 required
-              >
-                <option value="Vietcombank">
-                  Vietcombank - TMCP Ngoại thương VN
-                </option>
-                <option value="MB Bank">MB Bank - Ngân hàng Quân đội</option>
-                <option value="Techcombank">
-                  Techcombank - Kỹ thương Việt Nam
-                </option>
-                <option value="BIDV">BIDV - Đầu tư & Phát triển VN</option>
-                <option value="Vietinbank">
-                  Vietinbank - Công thương Việt Nam
-                </option>
-                <option value="ACB">ACB - Á Châu</option>
-                <option value="VPBank">VPBank - Việt Nam Thịnh Vượng</option>
-                <option value="TPBank">TPBank - Tiên Phong</option>
-                <option value="Sacombank">
-                  Sacombank - Sài Gòn Thương Tín
-                </option>
-                <option value="Khác">Ngân hàng khác</option>
-              </select>
+              />
             </div>
 
             <div className="wp-form-group">

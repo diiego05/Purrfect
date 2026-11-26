@@ -3,6 +3,9 @@
    ========================================================================== */
 .app-layout {
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
   display: flex;
   flex-direction: column;
 }
@@ -1785,6 +1788,7 @@
 
   .hero-title {
     font-size: 32px;
+    overflow-wrap: anywhere;
   }
 
   .hero-onboarding-prompt {
@@ -1817,5 +1821,81 @@
   .btn-trial-lesson {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* Narrow phones: keep the header and hero inside a 320–480px viewport. */
+@media (max-width: 480px) {
+  .header-container {
+    min-width: 0;
+    padding: 8px 10px;
+    gap: 5px;
+  }
+
+  .header-left,
+  .header-right {
+    min-width: 0;
+    gap: 5px;
+  }
+
+  .header-logo-img {
+    width: 82px;
+    max-width: 82px;
+    height: auto;
+  }
+
+  .header-icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .header-ai-btn,
+  .header-purrpoint-chip {
+    display: none;
+  }
+
+  .header-avatar-btn .user-avatar-img,
+  .guest-avatar-icon-wrapper {
+    width: 32px;
+    height: 32px;
+  }
+
+  .hero-section {
+    padding: 32px 0 48px;
+  }
+
+  .hero-container {
+    width: 100%;
+    min-width: 0;
+    padding: 0 16px;
+    gap: 24px;
+  }
+
+  .hero-content,
+  .hero-default-content,
+  .hero-onboarding-prompt {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .hero-title {
+    font-size: clamp(28px, 9vw, 34px);
+    line-height: 1.16;
+    margin-bottom: 16px;
+  }
+
+  .hero-description {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  .hero-onboarding-prompt {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .hero-onboarding-heading {
+    font-size: 18px;
   }
 }

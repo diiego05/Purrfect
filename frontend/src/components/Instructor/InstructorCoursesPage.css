@@ -18,7 +18,7 @@
 /* 1. Header */
 .instructor-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 28px;
@@ -241,7 +241,8 @@
   border-radius: 14px;
   padding: 18px 20px;
   display: flex;
-  align-items: center;
+  /* Keep thumbnail, course title, and actions on the same visual row. */
+  align-items: flex-start;
   gap: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   transition: all 0.2s ease;
@@ -364,6 +365,8 @@
   gap: 8px;
   flex-wrap: wrap;
   flex-shrink: 0;
+  /* Do not vertically center actions against multi-line course metadata. */
+  align-self: flex-start;
 }
 
 .btn-action-edit {

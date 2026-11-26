@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, useEffect, useRef, type FC } from 'react';
 import type { Course, CourseSection, CourseLecture } from '../../types/course';
 import {
   fetchCourseBySlug,
@@ -18,6 +18,7 @@ import {
   IconlyChevronUp,
 } from '../Onboarding/IconlyIcons';
 import { LectureDiscussionPanel } from './LectureDiscussionPanel';
+import { LectureNotesPanel } from './LectureNotesPanel';
 import { QuizPlayer } from './QuizPlayer';
 import { toast } from '../../context/ToastContext';
 import { formatVND } from '../../utils/format';
@@ -50,13 +51,15 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
     Record<string, boolean>
   >({});
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'discussion' | 'transcript'
+    'overview' | 'notes' | 'discussion' | 'transcript'
   >('overview');
   const [discussionCount, setDiscussionCount] = useState<number>(0);
   const [showLockedModal, setShowLockedModal] = useState<CourseLecture | null>(
     null,
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -284,6 +287,7 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
     lecture: CourseLecture,
   ) => {
     setActiveLecture({ sectionIndex, lectureIndex, lecture });
+    setVideoCurrentTime(0);
     setExpandedSections((prev) => ({ ...prev, [sectionIndex]: true }));
 
     if (!canAccessLecture(lecture)) {
@@ -439,7 +443,10 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
               disabled={currentFlatIndex <= 0}
               title="Bài học trước"
             >
-              ‹ Bài trước
+              <span className="learning-step-label">‹ Bài trước</span>
+              <span className="learning-step-icon" aria-hidden="true">
+                ‹
+              </span>
             </button>
             <button
               type="button"
@@ -448,7 +455,10 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
               disabled={currentFlatIndex >= flatLectures.length - 1}
               title="Bài học kế tiếp"
             >
-              Bài tiếp ›
+              <span className="learning-step-label">Bài tiếp ›</span>
+              <span className="learning-step-icon" aria-hidden="true">
+                ›
+              </span>
             </button>
           </div>
 
@@ -739,6 +749,7 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
               ) : activeLecture.lecture.contentUrl ? (
                 <div className="learning-video-container">
                   <video
+                    ref={videoRef}
                     key={
                       activeLecture.lecture.contentUrl ||
                       activeLecture.lecture.title
@@ -747,6 +758,9 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                     autoPlay
                     className="learning-video-element"
                     src={activeLecture.lecture.contentUrl}
+                    onTimeUpdate={(event) =>
+                      setVideoCurrentTime(event.currentTarget.currentTime)
+                    }
                   />
                 </div>
               ) : (
@@ -812,7 +826,14 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                 className={`learning-tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
                 onClick={() => setActiveTab('overview')}
               >
-                Tổng quan & Ghi chú
+                Tổng quan
+              </button>
+              <button
+                type="button"
+                className={`learning-tab-btn ${activeTab === 'notes' ? 'active' : ''}`}
+                onClick={() => setActiveTab('notes')}
+              >
+                Ghi chú
               </button>
               <button
                 type="button"
@@ -859,6 +880,29 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {activeTab === 'notes' && (
+                <LectureNotesPanel
+                  courseId={String(course._id)}
+                  lectureId={
+                    activeLecture?.lecture._id
+                      ? String(activeLecture.lecture._id)
+                      : undefined
+                  }
+                  currentTime={videoCurrentTime}
+                  onSeek={(seconds) => {
+                    if (!videoRef.current) {
+                      toast.warning(
+                        'Ghi chú này chỉ có thể tua lại khi đang xem bài giảng video.',
+                      );
+                      return;
+                    }
+                    videoRef.current.currentTime = seconds;
+                    videoRef.current.play().catch(() => undefined);
+                    setVideoCurrentTime(seconds);
+                  }}
+                />
               )}
 
               {activeTab === 'discussion' && (

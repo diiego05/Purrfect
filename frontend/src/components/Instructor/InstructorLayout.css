@@ -20,9 +20,11 @@
   border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
-  position: sticky;
+  position: fixed;
   top: 0;
-  height: 100vh;
+  bottom: 0;
+  left: 0;
+  height: 100dvh;
   z-index: 40;
   transition: width 0.25s ease;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
@@ -73,6 +75,7 @@
 
 .instructor-sidebar-nav {
   flex: 1;
+  min-height: 0;
   padding: 1.25rem 0.85rem;
   display: flex;
   flex-direction: column;
@@ -136,6 +139,7 @@
 
 /* Sidebar Footer */
 .instructor-sidebar-footer {
+  margin-top: auto;
   padding: 1.15rem 1rem;
   border-top: 1px solid #e2e8f0;
   display: flex;
@@ -208,6 +212,7 @@
 /* Main Area */
 .instructor-main-container {
   flex: 1;
+  margin-left: 270px;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -280,6 +285,9 @@
 @media (max-width: 1024px) {
   .instructor-sidebar {
     width: 76px;
+  }
+  .instructor-main-container {
+    margin-left: 76px;
   }
   .instructor-brand-badge,
   .instructor-nav-section-label,
