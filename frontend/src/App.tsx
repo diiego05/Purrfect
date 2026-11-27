@@ -37,6 +37,8 @@ import { InstructorApplyPage } from './components/Instructor/InstructorApplyPage
 import { PublicInstructorCoursesPage } from './components/Instructor/PublicInstructorCoursesPage';
 
 import { ProfilePage } from './components/Profile/ProfilePage';
+import { MyCertificatesPage } from './components/Certificates/MyCertificatesPage';
+import { CertificateVerifyPage } from './components/Certificates/CertificateVerifyPage';
 import { PlaylistsPage } from './components/Playlist/PlaylistsPage';
 import { PlaylistDetailPage } from './components/Playlist/PlaylistDetailPage';
 import { InstructorLayout } from './components/Instructor/InstructorLayout';
@@ -309,6 +311,41 @@ function MainRouter() {
         <Header />
         <main className="main-content">
           <MyCoursesPage />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Trang Xác thực Chứng chỉ Công khai (/certificates/verify/:code, /xac-thuc-chung-chi/:code)
+  const certVerifyMatch = normalizedPath.match(
+    /^\/(?:certificates\/verify|xac-thuc-chung-chi)\/([^/]+)$/,
+  );
+  if (certVerifyMatch) {
+    const code = decodeURIComponent(certVerifyMatch[1]);
+    return (
+      <div className="app-layout">
+        <Header />
+        <main className="main-content">
+          <CertificateVerifyPage key={code} code={code} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Trang Chứng chỉ của tôi (/certificates, /my-certificates, /chung-chi, /chung-chi-cua-toi)
+  if (
+    normalizedPath === '/certificates' ||
+    normalizedPath === '/my-certificates' ||
+    normalizedPath === '/chung-chi' ||
+    normalizedPath === '/chung-chi-cua-toi'
+  ) {
+    return (
+      <div className="app-layout">
+        <Header />
+        <main className="main-content">
+          <MyCertificatesPage />
         </main>
         <Footer />
       </div>

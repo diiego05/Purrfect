@@ -105,6 +105,70 @@
   z-index: 10;
 }
 
+.profile-quick-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.profile-quick-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.profile-quick-card:hover {
+  transform: translateY(-2px);
+  border-color: #93c5fd;
+  box-shadow: 0 8px 20px rgba(0, 86, 210, 0.08);
+}
+
+.profile-quick-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-quick-icon--cert {
+  background: #eff6ff;
+}
+
+.profile-quick-icon--course {
+  background: #ecfdf5;
+}
+
+.profile-quick-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.profile-quick-text strong {
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.profile-quick-text small {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
 .profile-card {
   background: #ffffff;
   border-radius: 16px;

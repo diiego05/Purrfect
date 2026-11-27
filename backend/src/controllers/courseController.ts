@@ -13,6 +13,8 @@ import {
   getPersonalizedRecommendations,
   recordInteraction,
 } from '../services/recommendationService';
+import { issueCertificate } from './certificateController';
+import { computeCourseProgress } from '../utils/courseProgress';
 
 // Danh sách dữ liệu mẫu chất lượng cao khởi tạo ban đầu
 export const initialCategories = [
@@ -574,6 +576,15 @@ export const recordCourseInteraction = async (
         searchKeyword,
         metadata,
       });
+
+      // Tự động kiểm tra & cấp chứng chỉ nếu học viên vừa hoàn thành 100% khóa học (BR16.1)
+      if (
+        actionType === 'PROGRESS' &&
+        courseId &&
+        mongoose.Types.ObjectId.isValid(String(courseId))
+      ) {
+        await issueCertificate(req.user._id.toString(), String(courseId));
+      }
     }
 
     res.status(200).json({ success: true, message: 'Đã ghi nhận tương tác' });
@@ -1068,92 +1079,41 @@ export const getMyEnrolledCourses = async (
       .populate('categoryId', 'name slug')
       .lean();
 
-    // 4. Lấy tiến độ học từ UserInteraction
-    const progressInteractions = await UserInteraction.find({
-      userId,
-      courseId: { $in: courseIds },
-      actionType: 'PROGRESS',
-    }).lean();
+    // 4 & 5. Tính toán tiến độ từng khóa học nhất quán qua computeCourseProgress
+    const result = await Promise.all(
+      courses.map(async (course: any) => {
+        const cId = course._id.toString();
+        const orderInfo = courseOrderMap.get(cId) || {
+          status: 'PAID',
+          enrolledAt: course.createdAt,
+          isManualEnrollment: false,
+        };
 
-    // Group progress theo courseId
-    const courseCompletedLecturesMap = new Map<string, Set<string>>();
-    progressInteractions.forEach((pi) => {
-      const cId = pi.courseId?.toString();
-      if (!cId) return;
-      const meta = (pi.metadata || {}) as Record<string, any>;
-      if (meta.action === 'ENTER_LEARNING_ROOM') return;
+        const progress = await computeCourseProgress(
+          userId.toString(),
+          course,
+        );
+        const totalLectures = progress.totalLectures || 1;
 
-      const isCompleted =
-        meta.isCompleted === true ||
-        meta.completed === true ||
-        meta.action === 'COMPLETED_LECTURE' ||
-        (typeof meta.watchPercent === 'number' && meta.watchPercent >= 80) ||
-        (typeof meta.progressPercent === 'number' &&
-          meta.progressPercent >= 80);
-
-      if (isCompleted) {
-        if (!courseCompletedLecturesMap.has(cId)) {
-          courseCompletedLecturesMap.set(cId, new Set<string>());
-        }
-        const set = courseCompletedLecturesMap.get(cId)!;
-        if (meta.lectureId) {
-          set.add(String(meta.lectureId));
-        } else if (
-          meta.sectionIndex !== undefined &&
-          meta.lectureIndex !== undefined
-        ) {
-          set.add(`${meta.sectionIndex}-${meta.lectureIndex}`);
-        } else if (meta.lectureTitle) {
-          set.add(String(meta.lectureTitle));
-        }
-      }
-    });
-
-    // 5. Tính toán tiến độ từng khóa học
-    const result = courses.map((course: any) => {
-      const cId = course._id.toString();
-      const orderInfo = courseOrderMap.get(cId) || {
-        status: 'PAID',
-        enrolledAt: course.createdAt,
-        isManualEnrollment: false,
-      };
-
-      let totalLectures = 0;
-      if (Array.isArray(course.sections)) {
-        course.sections.forEach((sec: any) => {
-          if (Array.isArray(sec.lectures)) {
-            totalLectures += sec.lectures.length;
-          }
-        });
-      }
-      if (totalLectures === 0) totalLectures = 1;
-
-      const completedSet =
-        courseCompletedLecturesMap.get(cId) || new Set<string>();
-      const completedCount = completedSet.size;
-      const progressPercent = Math.min(
-        100,
-        Math.round((completedCount / totalLectures) * 100),
-      );
-
-      return {
-        _id: course._id,
-        title: course.title,
-        slug: course.slug,
-        thumbnailUrl: course.thumbnailUrl,
-        instructor: course.instructorId,
-        category: course.categoryId,
-        level: course.level,
-        durationText: course.durationText,
-        enrolledAt: orderInfo.enrolledAt,
-        accessStatus: orderInfo.status, // 'PAID' or 'REFUND_PENDING'
-        isManualEnrollment: Boolean(orderInfo.isManualEnrollment),
-        totalLectures,
-        completedLectures: completedCount,
-        progressPercent,
-        isCompleted: progressPercent >= 100,
-      };
-    });
+        return {
+          _id: course._id,
+          title: course.title,
+          slug: course.slug,
+          thumbnailUrl: course.thumbnailUrl,
+          instructor: course.instructorId,
+          category: course.categoryId,
+          level: course.level,
+          durationText: course.durationText,
+          enrolledAt: orderInfo.enrolledAt,
+          accessStatus: orderInfo.status, // 'PAID' or 'REFUND_PENDING'
+          isManualEnrollment: Boolean(orderInfo.isManualEnrollment),
+          totalLectures,
+          completedLectures: progress.completedCount,
+          progressPercent: progress.progressPercent,
+          isCompleted: progress.isCompleted100,
+        };
+      }),
+    );
 
     // Sắp xếp theo ngày đăng ký mới nhất lên đầu
     result.sort(
