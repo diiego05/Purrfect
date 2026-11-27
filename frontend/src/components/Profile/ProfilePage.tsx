@@ -9,6 +9,8 @@ import {
   IconlyClose,
   IconlyEdit,
   IconlyTimeCircle,
+  IconlyAward,
+  IconlyPlay,
 } from '../Onboarding/IconlyIcons';
 import './ProfilePage.css';
 
@@ -268,6 +270,37 @@ export const ProfilePage: React.FC = () => {
 
       {/* 2. Main Body Form */}
       <main className="profile-main-container">
+        {/* Thanh truy cập nhanh trên Trang cá nhân (UC16 Trigger) */}
+        <div className="profile-quick-nav">
+          <button
+            type="button"
+            className="profile-quick-card"
+            onClick={() => navigate('/my-certificates')}
+          >
+            <span className="profile-quick-icon profile-quick-icon--cert">
+              <IconlyAward size={20} color="#0056d2" />
+            </span>
+            <span className="profile-quick-text">
+              <strong>Chứng chỉ của tôi</strong>
+              <small>Xem bản xem trước, tải PDF &amp; chia sẻ xác thực</small>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="profile-quick-card"
+            onClick={() => navigate('/my-courses')}
+          >
+            <span className="profile-quick-icon profile-quick-icon--course">
+              <IconlyPlay size={20} color="#059669" />
+            </span>
+            <span className="profile-quick-text">
+              <strong>Khóa học của tôi</strong>
+              <small>Tiếp tục học tập để đạt 100% và nhận chứng chỉ</small>
+            </span>
+          </button>
+        </div>
+
         <div className="profile-card">
           {/* Thông báo thành công */}
           {successMessage && (

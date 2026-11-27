@@ -34,6 +34,7 @@ import refundRoutes from './routes/refundRoutes';
 import withdrawalRoutes from './routes/withdrawalRoutes';
 
 import moderationRoutes from './routes/moderationRoutes';
+import certificateRoutes from './routes/certificateRoutes';
 import instructorApplicationRoutes from './routes/instructorApplicationRoutes';
 import adminStatisticsRoutes from './routes/adminStatisticsRoutes';
 
@@ -130,6 +131,10 @@ app.use('/api/v1', lectureNoteRoutes);
 app.use('/api', lectureNoteRoutes);
 app.use('/api/v1', reviewRoutes);
 app.use('/api', reviewRoutes);
+
+// Chứng chỉ học viên (UC16) - mount trước moderationRoutes để tránh route '/:id' chặn '/my-certificates'
+app.use('/api/v1', certificateRoutes);
+app.use('/api', certificateRoutes);
 
 app.use('/api/refunds', refundRoutes);
 app.use('/api/v1/refunds', refundRoutes);

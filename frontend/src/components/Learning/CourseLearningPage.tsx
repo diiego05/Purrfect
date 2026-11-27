@@ -4,6 +4,11 @@ import {
   fetchCourseBySlug,
   recordCourseInteraction,
 } from '../../services/courseApi';
+import {
+  getCourseLearningProgress,
+  issueCertificate,
+  type Certificate,
+} from '../../services/certificateApi';
 import { paymentApi } from '../../services/paymentApi';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -50,6 +55,8 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
   const [completedLectures, setCompletedLectures] = useState<
     Record<string, boolean>
   >({});
+  const [earnedCertificate, setEarnedCertificate] =
+    useState<Certificate | null>(null);
   const [activeTab, setActiveTab] = useState<
     'overview' | 'notes' | 'discussion' | 'transcript'
   >('overview');
@@ -111,6 +118,17 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
               if (res && res.isEnrolled) {
                 enrolled = true;
                 setIsEnrolled(true);
+                const progressData = await getCourseLearningProgress(data._id);
+                if (isMounted && progressData) {
+                  const map: Record<string, boolean> = {};
+                  progressData.completedKeys.forEach((key) => {
+                    map[key] = true;
+                  });
+                  setCompletedLectures(map);
+                  if (progressData.certificate) {
+                    setEarnedCertificate(progressData.certificate);
+                  }
+                }
               } else if (res && res.refundStatus) {
                 setRefundStatus(res.refundStatus);
               }
@@ -331,11 +349,56 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
     setExpandedSections((prev) => ({ ...prev, [sIdx]: !prev[sIdx] }));
   };
 
-  const toggleCompleteLecture = (lectureKey: string) => {
-    setCompletedLectures((prev) => ({
-      ...prev,
-      [lectureKey]: !prev[lectureKey],
-    }));
+  const toggleCompleteLecture = async (lectureKey: string) => {
+    const willComplete = !completedLectures[lectureKey];
+    const nextState: Record<string, boolean> = {
+      ...completedLectures,
+      [lectureKey]: willComplete,
+    };
+    setCompletedLectures(nextState);
+
+    if (!course?._id || !isAuthenticated) return;
+
+    const [sStr, lStr] = lectureKey.split('-');
+    const sectionIndex = parseInt(sStr, 10);
+    const lectureIndex = parseInt(lStr, 10);
+    const targetItem = flatLectures.find(
+      (item) =>
+        item.sectionIndex === sectionIndex &&
+        item.lectureIndex === lectureIndex,
+    );
+
+    await recordCourseInteraction({
+      actionType: 'PROGRESS',
+      courseId: course._id,
+      metadata: {
+        action: willComplete ? 'COMPLETED_LECTURE' : 'UNCOMPLETED_LECTURE',
+        isCompleted: willComplete,
+        lectureId: String(targetItem?.lecture?._id || ''),
+        lectureTitle: targetItem?.lecture?.title || '',
+        sectionIndex,
+        lectureIndex,
+      },
+    });
+
+    const nextCompletedCount = Object.values(nextState).filter(Boolean).length;
+    if (
+      willComplete &&
+      isEnrolled &&
+      flatLectures.length > 0 &&
+      nextCompletedCount >= flatLectures.length &&
+      !earnedCertificate
+    ) {
+      try {
+        const cert = await issueCertificate(course._id);
+        setEarnedCertificate(cert);
+        toast.success(
+          'Chúc mừng! Bạn đã hoàn thành 100% khóa học và nhận được chứng chỉ!',
+        );
+      } catch {
+        // Trường hợp chưa đủ điều kiện hoặc đã có chứng chỉ
+      }
+    }
   };
 
   const getDocumentViewerUrl = (url?: string, fileName?: string): string => {
@@ -1007,6 +1070,26 @@ export const CourseLearningPage: FC<CourseLearningPageProps> = ({ slug }) => {
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
+                {(earnedCertificate || (isEnrolled && progressPercent >= 100)) && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/my-certificates')}
+                    style={{
+                      marginTop: '10px',
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #0056d2 0%, #1d4ed8 100%)',
+                      color: '#ffffff',
+                      fontWeight: 600,
+                      fontSize: '0.84rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    🎓 Xem chứng chỉ của tôi
+                  </button>
+                )}
               </div>
             </div>
 
